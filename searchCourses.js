@@ -3,6 +3,48 @@
 const Volleyball_ID = 285;
 const DAYS_OF_WEEK = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
 
+async function fetchAllSports() {
+  const filter = {
+    allowAsLinkedProduct: true,
+    isActive: 1
+  };
+  const encoded = encodeURIComponent(JSON.stringify(filter));
+  const url = `https://backbone-web-api.production.munster.delcom.nl/products?s=${encoded}&limit=1000&sort=description,ASC`;
+
+  try {
+    const res = await fetch(url, { headers: { Accept: 'application/json' } });
+    if (!res.ok) {
+        console.error('Fehler beim Laden der Sportarten:', res.status);
+        return [];
+    }
+    const data = await res.json();
+    return data.data || [];
+  } catch (e) {
+    console.error('Fehler:', e);
+    return [];
+  }
+}
+
+async function findProducts(searchTerm) {
+  const allSports = await fetchAllSports();
+  const lowerTerm = searchTerm.toLowerCase();
+  
+  return allSports.filter(s => 
+    s.description.toLowerCase().includes(lowerTerm)
+  );
+}
+
+async function listAllSports() {
+  console.log('Lade Liste aller Sportarten...');
+  const sports = await fetchAllSports();
+  
+  console.log(`\nGefundene Sportarten: ${sports.length}\n`);
+  sports.forEach(s => {
+      console.log(`- ${s.description} (ID: ${s.id})`);
+  });
+  console.log('\nNutze "node searchCourses.js --course <NAME>" um Kurse zu suchen.');
+}
+
 function buildDateRange(startOffsetDays = 0, endOffsetDays = 8) {
   const start = new Date();
   start.setDate(start.getDate() + startOffsetDays);
@@ -163,9 +205,11 @@ function printUsage() {
 📚 Kurssuche - Verwendung
 ========================
 
-node searchCourses.js [--level LEVEL] [--min-available COUNT] [--days DAYS] [--help]
+node searchCourses.js [--course NAME] [--list-sports] [--level LEVEL] [--min-available COUNT] [--days DAYS] [--help]
 
 Parameter:
+  --course NAME           Name des Sportkurses (z.B. "Volleyball", "Pilates")
+  --list-sports           Listet alle verfügbaren Sportarten auf
   --level LEVEL           Filter nach Niveau (z.B. 1, 2, 3)
   --min-available COUNT   Nur Kurse mit mindestens COUNT freien Plätzen
   --days DAYS             Zeitraum in Tagen (Standard: 8)
@@ -173,7 +217,11 @@ Parameter:
 
 Beispiele:
   node searchCourses.js
-  → Alle Volleyball-Kurse der nächsten 8 Tage
+  → Alle Volleyball-Kurse (Standard)
+
+  node searchCourses.js --course Pilates
+  → Alle Pilates-Kurse
+
 
   node searchCourses.js --level 3
   → Nur Level 3 Kurse
@@ -189,6 +237,8 @@ Beispiele:
 function parseArgs() {
   const args = process.argv.slice(2);
   const options = {
+    course: null,
+    listSports: false,
     level: undefined,
     minAvailable: undefined,
     days: 8
@@ -200,6 +250,10 @@ function parseArgs() {
     if (arg === '--help') {
       printUsage();
       process.exit(0);
+    } else if (arg === '--list-sports') {
+      options.listSports = true;
+    } else if (arg === '--course' && args[i + 1]) {
+      options.course = args[++i];
     } else if (arg === '--level' && args[i + 1]) {
       options.level = parseInt(args[++i]);
     } else if (arg === '--min-available' && args[i + 1]) {
@@ -215,10 +269,32 @@ function parseArgs() {
 async function main() {
   const options = parseArgs();
 
-  console.log('🔍 Suche Volleyball-Kurse...\n');
+  if (options.listSports) {
+    await listAllSports();
+    return;
+  }
+
+  let productIds = [Volleyball_ID];
+  let courseName = 'Volleyball';
+
+  if (options.course) {
+    console.log(`🔍 Suche nach Sportart: "${options.course}"...`);
+    let products = await findProducts(options.course);
+    
+    if (products.length === 0) {
+       console.error(`Keine Sportart gefunden, die "${options.course}" enthält.`);
+       return;
+    }
+    
+    productIds = products.map(p => p.id);
+    courseName = products.map(p => p.description).join(', ');
+    console.log(`Gefundene Sportarten: ${products.map(p => `${p.description} (ID: ${p.id})`).join(', ')}\n`);
+  } else {
+    console.log('Suche nach Volleyball-Kursen (Standard). Nutze --course für andere Sportarten.\n');
+  }
 
   const { bookings, filtered } = await searchCourses({
-    linkedProductIds: [Volleyball_ID],
+    linkedProductIds: productIds,
     startOffsetDays: 0,
     endOffsetDays: options.days,
     level: options.level,

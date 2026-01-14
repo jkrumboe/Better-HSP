@@ -1,6 +1,7 @@
 # Token und Auth-Daten
 token-store.json
 auth-data.json
+scheduled-jobs.json
 
 # Dependencies
 node_modules/
@@ -18,3 +19,4 @@ Thumbs.db
 # Logs
 *.log
 npm-debug.log*
+data/

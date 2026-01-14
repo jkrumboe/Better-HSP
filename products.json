@@ -1,0 +1,2842 @@
+{
+  "13": {
+    "id": 13,
+    "description": "Yoga Hatha"
+  },
+  "14": {
+    "id": 14,
+    "description": "Pilates"
+  },
+  "20": {
+    "id": 20,
+    "description": "Cage Soccer Platzmiete"
+  },
+  "23": {
+    "id": 23,
+    "description": "Lehrschwimmbecken Platzmiete"
+  },
+  "24": {
+    "id": 24,
+    "description": "Spike Ball/Roundnet Set"
+  },
+  "32": {
+    "id": 32,
+    "description": "Universitätssporthalle Trakt 1-3"
+  },
+  "33": {
+    "id": 33,
+    "description": "Universitätssporthalle Trakt 1"
+  },
+  "34": {
+    "id": 34,
+    "description": "Universitätssporthalle Trakt 2"
+  },
+  "35": {
+    "id": 35,
+    "description": "Universitätssporthalle Trakt 3"
+  },
+  "36": {
+    "id": 36,
+    "description": "Universitätssporthalle Gymnastikraum"
+  },
+  "37": {
+    "id": 37,
+    "description": "Universitätssporthalle Lehrschwimmbecken"
+  },
+  "38": {
+    "id": 38,
+    "description": "Universitätssporthalle Box-/Judo Raum und Fechtraum"
+  },
+  "39": {
+    "id": 39,
+    "description": "Universitätssporthalle Box-/Judo Raum"
+  },
+  "40": {
+    "id": 40,
+    "description": "Universitätssporthalle Fechtraum"
+  },
+  "41": {
+    "id": 41,
+    "description": "Universitätssporthalle Kraft-/Crosstrainingraum"
+  },
+  "42": {
+    "id": 42,
+    "description": "Universitätssporthalle Trakt 1 A (Trampolin Einstiegskurse)"
+  },
+  "43": {
+    "id": 43,
+    "description": "Sportzentrum Campus Lounge"
+  },
+  "44": {
+    "id": 44,
+    "description": "Sportzentrum Campus Café"
+  },
+  "45": {
+    "id": 45,
+    "description": "Sportzentrum Raum 4 (Multifunktionsraum)"
+  },
+  "46": {
+    "id": 46,
+    "description": "Sportzentrum Raum 5 (Schulungsraum)"
+  },
+  "47": {
+    "id": 47,
+    "description": "Sportzentrum Raum 6 (ZFS)"
+  },
+  "48": {
+    "id": 48,
+    "description": "Sportzentrum Raum 8 (Campus Gym)"
+  },
+  "49": {
+    "id": 49,
+    "description": "Sportzentrum Raum 101 (Tanzraum)"
+  },
+  "50": {
+    "id": 50,
+    "description": "Sportzentrum Raum 102 (Labor)"
+  },
+  "51": {
+    "id": 51,
+    "description": "Sportzentrum Raum 103 (Multifunktionsraum)"
+  },
+  "52": {
+    "id": 52,
+    "description": "Sportzentrum Raum 104 (Multifunktionsraum)"
+  },
+  "53": {
+    "id": 53,
+    "description": "Sportzentrum Raum 105 (Multifunktionsraum)"
+  },
+  "54": {
+    "id": 54,
+    "description": "Sportzentrum Raum 112 (Dojo)"
+  },
+  "55": {
+    "id": 55,
+    "description": "Sportzentrum Platzhalter"
+  },
+  "56": {
+    "id": 56,
+    "description": "Ballsporthalle Trakt 1-3"
+  },
+  "57": {
+    "id": 57,
+    "description": "Ballsporthalle Trakt 1"
+  },
+  "58": {
+    "id": 58,
+    "description": "Ballsporthalle Trakt 2"
+  },
+  "59": {
+    "id": 59,
+    "description": "Ballsporthalle Trakt 3"
+  },
+  "60": {
+    "id": 60,
+    "description": "Ballsporthalle HO 41 (Seminarraum)"
+  },
+  "61": {
+    "id": 61,
+    "description": "Ballsporthalle Open Lab"
+  },
+  "62": {
+    "id": 62,
+    "description": "Ballsporthalle Platzhalter"
+  },
+  "63": {
+    "id": 63,
+    "description": "Leichtathletikhalle Trakt 1-5"
+  },
+  "64": {
+    "id": 64,
+    "description": "Leichtathletikhalle Trakt 1"
+  },
+  "65": {
+    "id": 65,
+    "description": "Leichtathletikhalle Trakt 2"
+  },
+  "66": {
+    "id": 66,
+    "description": "Leichtathletikhalle Trakt 3"
+  },
+  "67": {
+    "id": 67,
+    "description": "Leichtathletikhalle Trakt 4"
+  },
+  "68": {
+    "id": 68,
+    "description": "Leichtathletikhalle Trakt 5"
+  },
+  "69": {
+    "id": 69,
+    "description": "Leichtathletikhalle Kraftraum"
+  },
+  "70": {
+    "id": 70,
+    "description": "Leichtathletikhalle HO51 (Seminarraum)"
+  },
+  "71": {
+    "id": 71,
+    "description": "Leichtathletikhalle Platzhalter"
+  },
+  "72": {
+    "id": 72,
+    "description": "Leonardo Campus 11 Raum101 (Bewegungsraum 1)"
+  },
+  "73": {
+    "id": 73,
+    "description": "Leonardo Campus 11 Raum 302 (Bewegungsraum 2)"
+  },
+  "74": {
+    "id": 74,
+    "description": "Leonardo Campus 11 Raum 303 (Bewegungsraum 3)"
+  },
+  "75": {
+    "id": 75,
+    "description": "Leonardo Campus 11 Raum 304 (Bewegungsraum 4)   "
+  },
+  "76": {
+    "id": 76,
+    "description": "Leonardo Campus 11 Raum 305 (Bewegungsraum 5)"
+  },
+  "77": {
+    "id": 77,
+    "description": "Leonardo Campus 11 Raum 119 (Besprechungsraum)    "
+  },
+  "78": {
+    "id": 78,
+    "description": "Leonardo Campus 11 Raum 123 (Seminarraum)     "
+  },
+  "79": {
+    "id": 79,
+    "description": "Leonardo Campus 11 Platzhalter"
+  },
+  "80": {
+    "id": 80,
+    "description": "Horstmarer Landweg 50 HO101 (Seminarraum)"
+  },
+  "81": {
+    "id": 81,
+    "description": "Horstmarer Landweg 50 HO102 (Seminarraum) "
+  },
+  "82": {
+    "id": 82,
+    "description": "Horstmarer Landweg 50 HO104 (Seminarraum)  "
+  },
+  "83": {
+    "id": 83,
+    "description": "Horstmarer Landweg 50 Platzhalter"
+  },
+  "84": {
+    "id": 84,
+    "description": "Leonardo-Campus 17 Leo 21 (Seminarraum)"
+  },
+  "85": {
+    "id": 85,
+    "description": "Leonardo-Campus 17 Leo 22 (Seminarraum) "
+  },
+  "86": {
+    "id": 86,
+    "description": "Leonardo-Campus 17 Platzhalter"
+  },
+  "87": {
+    "id": 87,
+    "description": "Sportplatz 1 (gesamt)"
+  },
+  "88": {
+    "id": 88,
+    "description": "Sportplatz 1 (Hälfte 1)"
+  },
+  "89": {
+    "id": 89,
+    "description": "Sportplatz 1 (Hälfte 2)"
+  },
+  "90": {
+    "id": 90,
+    "description": "Sportplatz 1 Laufbahn   (gesamt)"
+  },
+  "91": {
+    "id": 91,
+    "description": "Sportplatz 1 Laufbahn   (Gruppe 1)"
+  },
+  "92": {
+    "id": 92,
+    "description": "Sportplatz 1 Laufbahn   (Gruppe 2) "
+  },
+  "93": {
+    "id": 93,
+    "description": "Sportplatz 1 Laufbahn   (Gruppe 3)  "
+  },
+  "94": {
+    "id": 94,
+    "description": "Sportplatz 1 Laufbahn   (Gruppe 4)  "
+  },
+  "95": {
+    "id": 95,
+    "description": "Sportplatz 1 Laufbahn   (Gruppe 5)"
+  },
+  "96": {
+    "id": 96,
+    "description": "Sportplatz 1 Platzhalter"
+  },
+  "97": {
+    "id": 97,
+    "description": "Sportplatz 2 (gesamt)"
+  },
+  "98": {
+    "id": 98,
+    "description": "Sportplatz 2 (Hälfte 1)"
+  },
+  "99": {
+    "id": 99,
+    "description": "Sportplatz 2 (2 Hälfte)"
+  },
+  "100": {
+    "id": 100,
+    "description": "Sportplatz 2 (Laufbahn)"
+  },
+  "101": {
+    "id": 101,
+    "description": "Wurfplatz"
+  },
+  "102": {
+    "id": 102,
+    "description": "Mehrzweckplatz"
+  },
+  "103": {
+    "id": 103,
+    "description": "Mehrzweckplatz (1 Hälfte)"
+  },
+  "104": {
+    "id": 104,
+    "description": "Mehrzweckplatz (2 Hälfte)"
+  },
+  "105": {
+    "id": 105,
+    "description": "Slackline-Anlage"
+  },
+  "106": {
+    "id": 106,
+    "description": "Cage Soccer Platz"
+  },
+  "107": {
+    "id": 107,
+    "description": "Campus Thenics"
+  },
+  "108": {
+    "id": 108,
+    "description": "Padel Tennis Platz"
+  },
+  "109": {
+    "id": 109,
+    "description": "Tennisplätze HOMALA (gesamt)"
+  },
+  "110": {
+    "id": 110,
+    "description": "Tennisplätze HOMALA (Platz 1)"
+  },
+  "111": {
+    "id": 111,
+    "description": "Tennisplätze HOMALA (Platz 2)"
+  },
+  "112": {
+    "id": 112,
+    "description": "Tennisplätze HOMALA (Platz 3)"
+  },
+  "113": {
+    "id": 113,
+    "description": "Beach Anlage (gesamt)"
+  },
+  "114": {
+    "id": 114,
+    "description": "Beach Anlage (Platz 1)"
+  },
+  "115": {
+    "id": 115,
+    "description": "Beach Anlage (Platz 2)"
+  },
+  "116": {
+    "id": 116,
+    "description": "Beach Anlage (Platz 3)"
+  },
+  "117": {
+    "id": 117,
+    "description": "Beach Anlage (Platz 4)"
+  },
+  "118": {
+    "id": 118,
+    "description": "Tanzzelt"
+  },
+  "119": {
+    "id": 119,
+    "description": "Fliednerstraße (Sporthalle)"
+  },
+  "120": {
+    "id": 120,
+    "description": "Fliednerstraße Gymnastikraum"
+  },
+  "121": {
+    "id": 121,
+    "description": "Fliednerstraße Lehrschwimmbecken"
+  },
+  "122": {
+    "id": 122,
+    "description": "Fliednerstraße FL 018 (Seminarraum)"
+  },
+  "123": {
+    "id": 123,
+    "description": "Fliednerstraße Sporthalle Trakt 3 (Jonglage)"
+  },
+  "124": {
+    "id": 124,
+    "description": "Scharnhorststraße (Sporthalle)"
+  },
+  "125": {
+    "id": 125,
+    "description": "Scharnhorststraße (cycling Pool)"
+  },
+  "126": {
+    "id": 126,
+    "description": "Tennis Platzmiete"
+  },
+  "127": {
+    "id": 127,
+    "description": "Rückenfitness"
+  },
+  "129": {
+    "id": 129,
+    "description": "Padel Anlage Platzmiete"
+  },
+  "130": {
+    "id": 130,
+    "description": "Slackline-Anlage Platzreservierung"
+  },
+  "131": {
+    "id": 131,
+    "description": "Slackline-Set"
+  },
+  "132": {
+    "id": 132,
+    "description": "Mehrzweckplatz (Platzmiete)"
+  },
+  "133": {
+    "id": 133,
+    "description": "Campus Thenics Platzmiete "
+  },
+  "134": {
+    "id": 134,
+    "description": "Powerfitness"
+  },
+  "135": {
+    "id": 135,
+    "description": "Coburg (Freibad)"
+  },
+  "137": {
+    "id": 137,
+    "description": "Dojo (Raummiete)"
+  },
+  "138": {
+    "id": 138,
+    "description": "Yoga Vinyasa"
+  },
+  "140": {
+    "id": 140,
+    "description": "Entspannung"
+  },
+  "143": {
+    "id": 143,
+    "description": "Yoga Ashtanga"
+  },
+  "144": {
+    "id": 144,
+    "description": "Autogenes Training"
+  },
+  "145": {
+    "id": 145,
+    "description": "Yoga Power"
+  },
+  "146": {
+    "id": 146,
+    "description": "Kinderhaus (Hallenbad)"
+  },
+  "147": {
+    "id": 147,
+    "description": "Kinderhaus (Hallenbad)"
+  },
+  "148": {
+    "id": 148,
+    "description": "Mitte (Hallenbad)"
+  },
+  "149": {
+    "id": 149,
+    "description": "Ost (Hallenbad)"
+  },
+  "150": {
+    "id": 150,
+    "description": "Roxel (Hallenbad)"
+  },
+  "151": {
+    "id": 151,
+    "description": "Süd (Hallenbad)"
+  },
+  "152": {
+    "id": 152,
+    "description": "Yoga Vinyasa Kooperationsangebot TK"
+  },
+  "153": {
+    "id": 153,
+    "description": "Adolph-Kolping Berufskolleg (Sporthalle)"
+  },
+  "154": {
+    "id": 154,
+    "description": "Aegidii-Ludgeri-Grundschule"
+  },
+  "155": {
+    "id": 155,
+    "description": "A.-v.-Droste-Hülshoff Gymn. (Sporthalle)"
+  },
+  "156": {
+    "id": 156,
+    "description": "A.-v.-Droste-Hülshoff Gymn. (Gymnastikraum)"
+  },
+  "157": {
+    "id": 157,
+    "description": "Bodelschwinghschule (Sporthalle)"
+  },
+  "158": {
+    "id": 158,
+    "description": "Dreifaltigkeitsschule ( Sporthalle)"
+  },
+  "159": {
+    "id": 159,
+    "description": "Erich-Kästner-Schule (Sporthalle)"
+  },
+  "160": {
+    "id": 160,
+    "description": "Erich-Klausener-Schule (Sporthalle)"
+  },
+  "161": {
+    "id": 161,
+    "description": "Erna-de-Vries-Schule (neue Halle)"
+  },
+  "162": {
+    "id": 162,
+    "description": "Erna-de-Vries-Schule (alte Sporthalle)"
+  },
+  "163": {
+    "id": 163,
+    "description": "Fhr.-vom Stein-Schule (Sporthalle)"
+  },
+  "164": {
+    "id": 164,
+    "description": "Gesamtschule Mitte (Sporthalle)"
+  },
+  "165": {
+    "id": 165,
+    "description": "Halle der TG Münster (Sporthalle)"
+  },
+  "166": {
+    "id": 166,
+    "description": "Johannisschule (Sporthalle)"
+  },
+  "167": {
+    "id": 167,
+    "description": "Realschule im Kreuzviertel (Sporthalle)"
+  },
+  "169": {
+    "id": 169,
+    "description": "Martin-Luther-Schule"
+  },
+  "170": {
+    "id": 170,
+    "description": "Matthias-Claudius-Schule (Sporthalle)"
+  },
+  "171": {
+    "id": 171,
+    "description": "Mauritzschule (Sporthalle)"
+  },
+  "172": {
+    "id": 172,
+    "description": "Pascal-Gymnasium (Sporthalle)"
+  },
+  "173": {
+    "id": 173,
+    "description": "Paul-Schneider-Schule (Sporthalle)"
+  },
+  "174": {
+    "id": 174,
+    "description": "Primusschule (Sporthalle)"
+  },
+  "175": {
+    "id": 175,
+    "description": "Realschule im Kreuzviertel"
+  },
+  "176": {
+    "id": 176,
+    "description": "Schillergymnasium (Sporthalle)"
+  },
+  "177": {
+    "id": 177,
+    "description": "Schlaungymnasium (alte Sporthalle)"
+  },
+  "178": {
+    "id": 178,
+    "description": "Schlaungymnasium (neue Sporthalle)"
+  },
+  "179": {
+    "id": 179,
+    "description": "Schulzentrum Kinderhaus (Sporthalle)"
+  },
+  "180": {
+    "id": 180,
+    "description": "Überwasserschule (Sporthalle)"
+  },
+  "181": {
+    "id": 181,
+    "description": "Waldschule Kinderhaus"
+  },
+  "182": {
+    "id": 182,
+    "description": "Wilhelm-Hittorf-Gymnasium (große Sporthalle)"
+  },
+  "183": {
+    "id": 183,
+    "description": "Tennisplätze Borkstraße (gesamt)"
+  },
+  "184": {
+    "id": 184,
+    "description": "Tennisplätze Borkstraße (Platz 1)"
+  },
+  "185": {
+    "id": 185,
+    "description": "Tennisplätze Borkstraße (Platz 2)"
+  },
+  "186": {
+    "id": 186,
+    "description": "Tennishalle DJK Wacker (gesamt)"
+  },
+  "187": {
+    "id": 187,
+    "description": "Tennishalle DJK Wacker (Platz 1)"
+  },
+  "188": {
+    "id": 188,
+    "description": "Tennishalle DJK Wacker (Platz 2)"
+  },
+  "189": {
+    "id": 189,
+    "description": "Tennishalle DJK Wacker (Platz 3)"
+  },
+  "190": {
+    "id": 190,
+    "description": "Tennisplätze Sentruper Höhe (Platz 8+9)"
+  },
+  "191": {
+    "id": 191,
+    "description": "Tennisplätze Sentruper Höhe ( Platz 8)"
+  },
+  "192": {
+    "id": 192,
+    "description": "Tennisplätze Sentruper Höhe (Platz 9)"
+  },
+  "193": {
+    "id": 193,
+    "description": "Treffpunkt Bahnhof Zentrum Nord"
+  },
+  "194": {
+    "id": 194,
+    "description": "Golfanlage Haus Köbbing"
+  },
+  "195": {
+    "id": 195,
+    "description": "Golfplatz Münster Tinnen"
+  },
+  "196": {
+    "id": 196,
+    "description": "Golfübungsanlage \"Handicap Hunter\""
+  },
+  "197": {
+    "id": 197,
+    "description": "Kunstrasenplatz Gievenbeck"
+  },
+  "198": {
+    "id": 198,
+    "description": "Marathonplatz"
+  },
+  "199": {
+    "id": 199,
+    "description": "Soccer-Halle Rummenigge"
+  },
+  "200": {
+    "id": 200,
+    "description": "Sportanlage Hiltrup Süd"
+  },
+  "201": {
+    "id": 201,
+    "description": "Sportanlage Wangeroogeweg"
+  },
+  "202": {
+    "id": 202,
+    "description": "Sportpark Sentruper Höhe"
+  },
+  "203": {
+    "id": 203,
+    "description": "Sportplatz Eintracht Münster"
+  },
+  "204": {
+    "id": 204,
+    "description": "Südpark ABI"
+  },
+  "205": {
+    "id": 205,
+    "description": "Tennis- und Hockey Club (hockey place)"
+  },
+  "206": {
+    "id": 206,
+    "description": "Treffpunkt Bahnhof Davensberg (Bahnhof)"
+  },
+  "207": {
+    "id": 207,
+    "description": "Treffpunkt Bahnhof Havixbeck (Bahnhof)"
+  },
+  "208": {
+    "id": 208,
+    "description": "Treffpunkt Bahnhof Sythen (Bahnhof)"
+  },
+  "209": {
+    "id": 209,
+    "description": "Treffpunkt HBF Münster (Platz vor dem Haupteingang)"
+  },
+  "211": {
+    "id": 211,
+    "description": "Test resource 2"
+  },
+  "212": {
+    "id": 212,
+    "description": "Yoga Hatha duplicated"
+  },
+  "213": {
+    "id": 213,
+    "description": "Flyfit-Studio (Hall of Sport)"
+  },
+  "214": {
+    "id": 214,
+    "description": "Aasee"
+  },
+  "215": {
+    "id": 215,
+    "description": "Annette-Alle/Himmelreichallee"
+  },
+  "216": {
+    "id": 216,
+    "description": "BG Münster"
+  },
+  "217": {
+    "id": 217,
+    "description": "DAV Sektion Müsnter"
+  },
+  "218": {
+    "id": 218,
+    "description": "Bootshaus Rheinstraße"
+  },
+  "219": {
+    "id": 219,
+    "description": "Boulderhalle Monolit"
+  },
+  "220": {
+    "id": 220,
+    "description": "DJK Wacker Mecklenbeck Sporthalle"
+  },
+  "221": {
+    "id": 221,
+    "description": "DJK Wacker Mecklenbeck Tennishalle"
+  },
+  "222": {
+    "id": 222,
+    "description": "Sentruper Höhe Gymnastikraum"
+  },
+  "223": {
+    "id": 223,
+    "description": "Mensa am Ring"
+  },
+  "224": {
+    "id": 224,
+    "description": "Ninfly Trampolinhalle"
+  },
+  "225": {
+    "id": 225,
+    "description": "Peterhafen"
+  },
+  "226": {
+    "id": 226,
+    "description": "Reiterhof Stuft"
+  },
+  "227": {
+    "id": 227,
+    "description": "Uni-Kursraum AE 209"
+  },
+  "228": {
+    "id": 228,
+    "description": "Schlossgarten"
+  },
+  "229": {
+    "id": 229,
+    "description": "Sport-raus im Haus der GWS"
+  },
+  "230": {
+    "id": 230,
+    "description": "Sportzentrum Bürgerschützen"
+  },
+  "231": {
+    "id": 231,
+    "description": "VH Schovelkoten"
+  },
+  "232": {
+    "id": 232,
+    "description": "VI-Dance"
+  },
+  "233": {
+    "id": 233,
+    "description": "Wersepark Sudmühle Lehrschwimmbecken"
+  },
+  "234": {
+    "id": 234,
+    "description": "Yachtschule Overschmidt"
+  },
+  "235": {
+    "id": 235,
+    "description": "Prüfungsamt I"
+  },
+  "236": {
+    "id": 236,
+    "description": "Georgskommende G 209"
+  },
+  "237": {
+    "id": 237,
+    "description": "Fürstenberghaus"
+  },
+  "238": {
+    "id": 238,
+    "description": "FH Steinfurt"
+  },
+  "239": {
+    "id": 239,
+    "description": "Schloss"
+  },
+  "241": {
+    "id": 241,
+    "description": "Course resource"
+  },
+  "243": {
+    "id": 243,
+    "description": "Overbooking resource"
+  },
+  "244": {
+    "id": 244,
+    "description": "Test Beschreibung "
+  },
+  "245": {
+    "id": 245,
+    "description": "Hantelscheibe"
+  },
+  "246": {
+    "id": 246,
+    "description": "Golfclub Münster-Wilkinghege e. V."
+  },
+  "247": {
+    "id": 247,
+    "description": "Golf"
+  },
+  "248": {
+    "id": 248,
+    "description": "Angelsteg 2"
+  },
+  "250": {
+    "id": 250,
+    "description": "Philipps Muckibude"
+  },
+  "252": {
+    "id": 252,
+    "description": "Philipps Test"
+  },
+  "254": {
+    "id": 254,
+    "description": "Campus - Fußball - Liga"
+  },
+  "255": {
+    "id": 255,
+    "description": "Frühstück Nikolausturnier"
+  },
+  "256": {
+    "id": 256,
+    "description": "Wiese am Leonardo-Campus 11"
+  },
+  "258": {
+    "id": 258,
+    "description": "Chalet Souvenir 1"
+  },
+  "259": {
+    "id": 259,
+    "description": "Skitour Jolimont"
+  },
+  "261": {
+    "id": 261,
+    "description": "Skitour Les Sapins"
+  },
+  "262": {
+    "id": 262,
+    "description": "Übernachtung Freitag"
+  },
+  "263": {
+    "id": 263,
+    "description": "Münster"
+  },
+  "265": {
+    "id": 265,
+    "description": "Campingplatz El Rosal"
+  },
+  "266": {
+    "id": 266,
+    "description": "Wellenreiten | Spanien"
+  },
+  "267": {
+    "id": 267,
+    "description": "Basketball NKT"
+  },
+  "268": {
+    "id": 268,
+    "description": "Rennradtrikot (Herren)"
+  },
+  "269": {
+    "id": 269,
+    "description": "Übernachtungen Test"
+  },
+  "270": {
+    "id": 270,
+    "description": "Rennradhose (Herren)"
+  },
+  "273": {
+    "id": 273,
+    "description": "Ferienunterkunft Hvide Sande"
+  },
+  "275": {
+    "id": 275,
+    "description": "Windsurfen | Dänemark"
+  },
+  "276": {
+    "id": 276,
+    "description": "Windsurfen | Dänemark"
+  },
+  "277": {
+    "id": 277,
+    "description": "Nikolausturnier Roundnet"
+  },
+  "278": {
+    "id": 278,
+    "description": "Achtsamkeit und Meditation"
+  },
+  "280": {
+    "id": 280,
+    "description": "Fußball (Cage Soccer) "
+  },
+  "281": {
+    "id": 281,
+    "description": "Acrobatic Rock'n' Roll"
+  },
+  "282": {
+    "id": 282,
+    "description": "Calisthenics"
+  },
+  "283": {
+    "id": 283,
+    "description": "Handball"
+  },
+  "284": {
+    "id": 284,
+    "description": "Aquafitness"
+  },
+  "285": {
+    "id": 285,
+    "description": "Volleyball "
+  },
+  "287": {
+    "id": 287,
+    "description": "Tauchsee Hemoor"
+  },
+  "288": {
+    "id": 288,
+    "description": "Tauchen Grundkurs"
+  },
+  "289": {
+    "id": 289,
+    "description": "Tennis"
+  },
+  "290": {
+    "id": 290,
+    "description": "Leichtathletik"
+  },
+  "291": {
+    "id": 291,
+    "description": "Flag Football"
+  },
+  "292": {
+    "id": 292,
+    "description": "Baseball/Softball"
+  },
+  "293": {
+    "id": 293,
+    "description": "Floorball"
+  },
+  "294": {
+    "id": 294,
+    "description": "Hockey"
+  },
+  "295": {
+    "id": 295,
+    "description": "Lacrosse"
+  },
+  "296": {
+    "id": 296,
+    "description": "Quidditch/Quadball"
+  },
+  "297": {
+    "id": 297,
+    "description": "Rugby"
+  },
+  "298": {
+    "id": 298,
+    "description": "Afrolatin Bachata Show-Team"
+  },
+  "299": {
+    "id": 299,
+    "description": "Hip Hop"
+  },
+  "300": {
+    "id": 300,
+    "description": "Modern- und Jazz-Dance"
+  },
+  "301": {
+    "id": 301,
+    "description": "Kizomba"
+  },
+  "302": {
+    "id": 302,
+    "description": "Lyrical Dance"
+  },
+  "303": {
+    "id": 303,
+    "description": "Afrolatin- Salsa Infinity"
+  },
+  "304": {
+    "id": 304,
+    "description": "Tanzimprovisation"
+  },
+  "305": {
+    "id": 305,
+    "description": "Zouk"
+  },
+  "306": {
+    "id": 306,
+    "description": "Klettern"
+  },
+  "307": {
+    "id": 307,
+    "description": "Segeln"
+  },
+  "308": {
+    "id": 308,
+    "description": "Meditation"
+  },
+  "309": {
+    "id": 309,
+    "description": "Bridge"
+  },
+  "310": {
+    "id": 310,
+    "description": "Doppelkopf"
+  },
+  "311": {
+    "id": 311,
+    "description": "Rennradsport"
+  },
+  "312": {
+    "id": 312,
+    "description": "eSports"
+  },
+  "313": {
+    "id": 313,
+    "description": "Improvisationstheater"
+  },
+  "314": {
+    "id": 314,
+    "description": "Treffpunkt Fachschaft Sport"
+  },
+  "315": {
+    "id": 315,
+    "description": "Treffpunkt 6, Haltepunkt Zentrum Nord"
+  },
+  "316": {
+    "id": 316,
+    "description": "Gravel/Cyclocross"
+  },
+  "317": {
+    "id": 317,
+    "description": "Mountainbiking"
+  },
+  "318": {
+    "id": 318,
+    "description": "Kickern"
+  },
+  "319": {
+    "id": 319,
+    "description": "Schach"
+  },
+  "320": {
+    "id": 320,
+    "description": "Badminton "
+  },
+  "321": {
+    "id": 321,
+    "description": "Crossminton / Speed Badminton"
+  },
+  "322": {
+    "id": 322,
+    "description": "Tischtennis"
+  },
+  "323": {
+    "id": 323,
+    "description": "Basketball 3x3 Card Multifunktionsplatz"
+  },
+  "324": {
+    "id": 324,
+    "description": "Tennis Card"
+  },
+  "325": {
+    "id": 325,
+    "description": "Beach Platzmiete"
+  },
+  "326": {
+    "id": 326,
+    "description": "Padel Tennis Card"
+  },
+  "327": {
+    "id": 327,
+    "description": "(Tennis Kurse) Sub Preis"
+  },
+  "328": {
+    "id": 328,
+    "description": "Calisthenics Platzmiete"
+  },
+  "329": {
+    "id": 329,
+    "description": "Baguazhang"
+  },
+  "330": {
+    "id": 330,
+    "description": "Body Weight Athletics"
+  },
+  "331": {
+    "id": 331,
+    "description": "Body Workout"
+  },
+  "332": {
+    "id": 332,
+    "description": "Dance Fitness"
+  },
+  "333": {
+    "id": 333,
+    "description": "Triathlon - Schwimmen"
+  },
+  "334": {
+    "id": 334,
+    "description": "Forró"
+  },
+  "335": {
+    "id": 335,
+    "description": "Fußball (outdoor)"
+  },
+  "336": {
+    "id": 336,
+    "description": "Ballett"
+  },
+  "337": {
+    "id": 337,
+    "description": "Mittelalter- und Renaissancetanz"
+  },
+  "338": {
+    "id": 338,
+    "description": "Futsal (Breitensport) "
+  },
+  "339": {
+    "id": 339,
+    "description": "Gesellschaftsspiele"
+  },
+  "340": {
+    "id": 340,
+    "description": "Orientalischer Tanz"
+  },
+  "341": {
+    "id": 341,
+    "description": "Taijiquan"
+  },
+  "342": {
+    "id": 342,
+    "description": "Taiji Schwert"
+  },
+  "343": {
+    "id": 343,
+    "description": "Ultimate Frisbee"
+  },
+  "344": {
+    "id": 344,
+    "description": "Völkerball"
+  },
+  "345": {
+    "id": 345,
+    "description": "Zumba®"
+  },
+  "346": {
+    "id": 346,
+    "description": "Jonglage"
+  },
+  "347": {
+    "id": 347,
+    "description": "Slackline"
+  },
+  "351": {
+    "id": 351,
+    "description": "Roundnet"
+  },
+  "352": {
+    "id": 352,
+    "description": "Step Aerobic"
+  },
+  "355": {
+    "id": 355,
+    "description": "West Coast Swing STAR"
+  },
+  "356": {
+    "id": 356,
+    "description": "Brazilian Jiu Jitsu"
+  },
+  "357": {
+    "id": 357,
+    "description": "Karate"
+  },
+  "358": {
+    "id": 358,
+    "description": "Karate Wado"
+  },
+  "359": {
+    "id": 359,
+    "description": "Judo"
+  },
+  "360": {
+    "id": 360,
+    "description": "Ju-Jutsu"
+  },
+  "361": {
+    "id": 361,
+    "description": "Taekwondo"
+  },
+  "362": {
+    "id": 362,
+    "description": "Seven Star Mantis Kung Fu "
+  },
+  "363": {
+    "id": 363,
+    "description": "Aikido"
+  },
+  "364": {
+    "id": 364,
+    "description": "Aikikai"
+  },
+  "365": {
+    "id": 365,
+    "description": "Krav Maga"
+  },
+  "366": {
+    "id": 366,
+    "description": "Shaolin Kempo"
+  },
+  "367": {
+    "id": 367,
+    "description": "Ving Tsun"
+  },
+  "368": {
+    "id": 368,
+    "description": "Baby- und Kleinkinderschwimmen 6-36 Monate"
+  },
+  "369": {
+    "id": 369,
+    "description": "Padel Tennis Level 1"
+  },
+  "370": {
+    "id": 370,
+    "description": "Iyengar Yoga"
+  },
+  "371": {
+    "id": 371,
+    "description": "Yin Yoga"
+  },
+  "372": {
+    "id": 372,
+    "description": "Dance Yoga"
+  },
+  "373": {
+    "id": 373,
+    "description": "Partner*innen Yoga"
+  },
+  "374": {
+    "id": 374,
+    "description": "Akrobatik"
+  },
+  "375": {
+    "id": 375,
+    "description": "Basketball"
+  },
+  "376": {
+    "id": 376,
+    "description": "Bouldern"
+  },
+  "377": {
+    "id": 377,
+    "description": "Bogensport"
+  },
+  "378": {
+    "id": 378,
+    "description": "Boxen"
+  },
+  "379": {
+    "id": 379,
+    "description": "Fechten"
+  },
+  "380": {
+    "id": 380,
+    "description": "Crosstraining"
+  },
+  "381": {
+    "id": 381,
+    "description": "Fit over 60"
+  },
+  "382": {
+    "id": 382,
+    "description": "Indoor Cycling "
+  },
+  "383": {
+    "id": 383,
+    "description": "Kickbox-Fitness"
+  },
+  "384": {
+    "id": 384,
+    "description": "Parkour und Freerunning"
+  },
+  "385": {
+    "id": 385,
+    "description": "Rhönradturnen Level 1"
+  },
+  "386": {
+    "id": 386,
+    "description": "Selbstbehauptung und Selbstverteidigung für Frauen "
+  },
+  "387": {
+    "id": 387,
+    "description": "Trampolinturnen"
+  },
+  "388": {
+    "id": 388,
+    "description": "Turnen"
+  },
+  "389": {
+    "id": 389,
+    "description": "Campus Gym Einstiegskurse"
+  },
+  "390": {
+    "id": 390,
+    "description": "Progressive Muskelrelaxation"
+  },
+  "391": {
+    "id": 391,
+    "description": "Resilienz für mehr Gelassenheit"
+  },
+  "392": {
+    "id": 392,
+    "description": "Massage"
+  },
+  "393": {
+    "id": 393,
+    "description": "Pilates meets Yoga"
+  },
+  "394": {
+    "id": 394,
+    "description": "Wirbelsäulengymnastik"
+  },
+  "395": {
+    "id": 395,
+    "description": "Rücken-Fitness"
+  },
+  "396": {
+    "id": 396,
+    "description": "Poledance"
+  },
+  "397": {
+    "id": 397,
+    "description": "Thai Bo Fitness"
+  },
+  "398": {
+    "id": 398,
+    "description": "Schnüffelspiele"
+  },
+  "399": {
+    "id": 399,
+    "description": "Sportschießen"
+  },
+  "400": {
+    "id": 400,
+    "description": "Sensibilisierungsschulung für Übungsleitende"
+  },
+  "401": {
+    "id": 401,
+    "description": "Freediving Level 1"
+  },
+  "403": {
+    "id": 403,
+    "description": "Kanu Bootsgewöhnung Werse"
+  },
+  "404": {
+    "id": 404,
+    "description": "Beachvolleyball Camp "
+  },
+  "405": {
+    "id": 405,
+    "description": "Beachvolleyballcamp Norditalien"
+  },
+  "406": {
+    "id": 406,
+    "description": "Kanu Bootsgewöhnung Lehrschwimmbecken"
+  },
+  "407": {
+    "id": 407,
+    "description": "Kanu Bootsgewöhnung Rollkurs"
+  },
+  "408": {
+    "id": 408,
+    "description": "Kanuwandern Werse "
+  },
+  "409": {
+    "id": 409,
+    "description": "Kanuwochenende Werse/Ems"
+  },
+  "410": {
+    "id": 410,
+    "description": "A-Kurs Österreich"
+  },
+  "411": {
+    "id": 411,
+    "description": "Kanu Wildwasserwoche Österreich Anfänger:innen"
+  },
+  "412": {
+    "id": 412,
+    "description": "Kanu Wildwasserwoche Österreich Fortgeschrittene "
+  },
+  "413": {
+    "id": 413,
+    "description": "Kanu Wildwasserwoche Slowenien Anfänger:innen "
+  },
+  "414": {
+    "id": 414,
+    "description": "Kanu Wildwasserwoche Slowenien Fortgeschrittene"
+  },
+  "415": {
+    "id": 415,
+    "description": "Hof Aussertal | Basis"
+  },
+  "416": {
+    "id": 416,
+    "description": "Skilehrendenausbildung | Hintertux | Basis"
+  },
+  "417": {
+    "id": 417,
+    "description": "Skilehrendenausbildung | Hintertux | DSV"
+  },
+  "418": {
+    "id": 418,
+    "description": "Chalet  Jolimont"
+  },
+  "419": {
+    "id": 419,
+    "description": "Skitour Souvenir"
+  },
+  "420": {
+    "id": 420,
+    "description": "Chalet Souvenir"
+  },
+  "421": {
+    "id": 421,
+    "description": "Tauchen | Fortgeschrittene Tauchscheine CMAS**/***"
+  },
+  "422": {
+    "id": 422,
+    "description": "Tauchen | Sonderkurse"
+  },
+  "423": {
+    "id": 423,
+    "description": "Tauchtour | Beginner | Deutschland"
+  },
+  "424": {
+    "id": 424,
+    "description": "Tauchtour | Fortgeschrittene | Hemoor"
+  },
+  "425": {
+    "id": 425,
+    "description": "Tauchtour | Beginner | Kroatien"
+  },
+  "426": {
+    "id": 426,
+    "description": "Tauchtour | Beginner | Spanien"
+  },
+  "427": {
+    "id": 427,
+    "description": "Tauchen | Fortgeschrittene | Tagestour "
+  },
+  "428": {
+    "id": 428,
+    "description": "Trekkingtour | Schweden"
+  },
+  "429": {
+    "id": 429,
+    "description": "Windsurfen | Holland"
+  },
+  "430": {
+    "id": 430,
+    "description": "Windsurfen | Südfrankreich"
+  },
+  "431": {
+    "id": 431,
+    "description": "Rennrad | Mallorca"
+  },
+  "432": {
+    "id": 432,
+    "description": "Trekkingtour | Nepal "
+  },
+  "441": {
+    "id": 441,
+    "description": "Delcom test resource 1"
+  },
+  "442": {
+    "id": 442,
+    "description": "Test activity Delcom"
+  },
+  "443": {
+    "id": 443,
+    "description": "Test resource(delegate) 1"
+  },
+  "444": {
+    "id": 444,
+    "description": "Test resource(delegate) 2"
+  },
+  "445": {
+    "id": 445,
+    "description": "Test resource(delegate) 3"
+  },
+  "446": {
+    "id": 446,
+    "description": "Test activity(delegate) 1"
+  },
+  "447": {
+    "id": 447,
+    "description": "POS 1"
+  },
+  "448": {
+    "id": 448,
+    "description": "Treffpunkt Fachschaft Sport II"
+  },
+  "449": {
+    "id": 449,
+    "description": "Fußball Frauen (Cage Soccer)  "
+  },
+  "450": {
+    "id": 450,
+    "description": "Fußball Frauen (outdoor)"
+  },
+  "451": {
+    "id": 451,
+    "description": "Universitätssporthalle Trakt 2+3"
+  },
+  "452": {
+    "id": 452,
+    "description": "Fußball  (Halle)"
+  },
+  "454": {
+    "id": 454,
+    "description": "Thai Bo Fitness Sportpass"
+  },
+  "455": {
+    "id": 455,
+    "description": "PowerFitness Sportpass"
+  },
+  "456": {
+    "id": 456,
+    "description": "Schnüffelspiele Sportpass"
+  },
+  "457": {
+    "id": 457,
+    "description": "Fußball (Cage Soccer)  Sportpass"
+  },
+  "458": {
+    "id": 458,
+    "description": "Fußball  (Halle) Sportpass"
+  },
+  "459": {
+    "id": 459,
+    "description": "Fußball Frauen (Cage Soccer)   Sportpass"
+  },
+  "460": {
+    "id": 460,
+    "description": "Fußball Frauen (outdoor) Sportpass"
+  },
+  "461": {
+    "id": 461,
+    "description": "Fußball  (outdoor) Sportpass "
+  },
+  "462": {
+    "id": 462,
+    "description": "Futsal (Breitensport)  Sportpass"
+  },
+  "463": {
+    "id": 463,
+    "description": "Badminton  Rückschlagspiele Club"
+  },
+  "464": {
+    "id": 464,
+    "description": "Indoor Cycling  GLF"
+  },
+  "465": {
+    "id": 465,
+    "description": "Body Shape"
+  },
+  "466": {
+    "id": 466,
+    "description": "Pump"
+  },
+  "467": {
+    "id": 467,
+    "description": "Ausdauer-Inlineskaten / Speedskating"
+  },
+  "468": {
+    "id": 468,
+    "description": "Triathlon - Laufen"
+  },
+  "469": {
+    "id": 469,
+    "description": "Triathlon - Radfahren"
+  },
+  "470": {
+    "id": 470,
+    "description": "Treffpunkt 4, Leichtathletikhalle"
+  },
+  "471": {
+    "id": 471,
+    "description": "Triathlon - Stabilisationstraining"
+  },
+  "472": {
+    "id": 472,
+    "description": "Laufen"
+  },
+  "473": {
+    "id": 473,
+    "description": "Laufen - Tempotraining"
+  },
+  "474": {
+    "id": 474,
+    "description": "Laufen - Kraft- und Stabilisationstraining"
+  },
+  "475": {
+    "id": 475,
+    "description": "Rennradsport Ausdauer- und Athletik Club"
+  },
+  "476": {
+    "id": 476,
+    "description": "Gravel/Cyclocross Ausdauer- und Athletik Club"
+  },
+  "477": {
+    "id": 477,
+    "description": "Vereinsheim Schovelkoten"
+  },
+  "478": {
+    "id": 478,
+    "description": "eSports-Raum"
+  },
+  "479": {
+    "id": 479,
+    "description": "Skat"
+  },
+  "480": {
+    "id": 480,
+    "description": "Dungeon and Dragon"
+  },
+  "481": {
+    "id": 481,
+    "description": "Jugger"
+  },
+  "482": {
+    "id": 482,
+    "description": "Treffpunkt 5 Leichtathletikhalle"
+  },
+  "483": {
+    "id": 483,
+    "description": "Gewinnspiel - VIP Tickets Hochschulsportschau"
+  },
+  "484": {
+    "id": 484,
+    "description": "Gewinnspiel - Leonardo-Campus-Run Startplätze"
+  },
+  "485": {
+    "id": 485,
+    "description": "Gewinnspiel - Campus Café Gutschein"
+  },
+  "486": {
+    "id": 486,
+    "description": "Gewinnspiel - 3 Monate Gym und Sportpass"
+  },
+  "487": {
+    "id": 487,
+    "description": "Jivamukti Spiritual Warrior"
+  },
+  "488": {
+    "id": 488,
+    "description": "Yoga Armbalancen Workshop"
+  },
+  "489": {
+    "id": 489,
+    "description": "Acroyoga"
+  },
+  "490": {
+    "id": 490,
+    "description": "Dance Fitness queers & friends"
+  },
+  "491": {
+    "id": 491,
+    "description": "Fitness für Mehrgewichtige"
+  },
+  "492": {
+    "id": 492,
+    "description": "Intervalltraining"
+  },
+  "493": {
+    "id": 493,
+    "description": "Sportpark Sentruper Höhe (Treffpunkt Laufen, Level 3)"
+  },
+  "494": {
+    "id": 494,
+    "description": "Laufen für Anfänger \"Feierabendrunde\""
+  },
+  "495": {
+    "id": 495,
+    "description": "Basketball Frauen"
+  },
+  "496": {
+    "id": 496,
+    "description": "twerXout®"
+  },
+  "497": {
+    "id": 497,
+    "description": "Münsterland-Tour Kunsttour"
+  },
+  "498": {
+    "id": 498,
+    "description": "Münsterland-Tour Promenaden-Tour"
+  },
+  "499": {
+    "id": 499,
+    "description": "Engelenschanze"
+  },
+  "500": {
+    "id": 500,
+    "description": "Servatiiplatz"
+  },
+  "501": {
+    "id": 501,
+    "description": "Rückenfitness Kooperationsangebote TK"
+  },
+  "502": {
+    "id": 502,
+    "description": "Rückenfitness Kooperationsangebot TK"
+  },
+  "503": {
+    "id": 503,
+    "description": "Campingplatz Ijsselmeer"
+  },
+  "504": {
+    "id": 504,
+    "description": "Windsurfen Holland"
+  },
+  "505": {
+    "id": 505,
+    "description": "612002| Windsurfen Holland"
+  },
+  "506": {
+    "id": 506,
+    "description": "612003| Windsurfen Holland"
+  },
+  "507": {
+    "id": 507,
+    "description": "612004| Windsurfen Holland"
+  },
+  "508": {
+    "id": 508,
+    "description": "Schwimmen "
+  },
+  "509": {
+    "id": 509,
+    "description": "Prellball"
+  },
+  "510": {
+    "id": 510,
+    "description": "HO 62.16"
+  },
+  "511": {
+    "id": 511,
+    "description": "Entspannung und Dehnen"
+  },
+  "512": {
+    "id": 512,
+    "description": "Aquafitness für mehrgewichtige Personen"
+  },
+  "513": {
+    "id": 513,
+    "description": "Ballsporthalle Trakt 2+3"
+  },
+  "514": {
+    "id": 514,
+    "description": "Ballsporthalle Trakt 1+2"
+  },
+  "515": {
+    "id": 515,
+    "description": "Indoor Cycling  Marathon (3h)"
+  },
+  "516": {
+    "id": 516,
+    "description": "Universitätssporthalle Trakt 1+2"
+  },
+  "517": {
+    "id": 517,
+    "description": "Rücklastschriftgebühr"
+  },
+  "518": {
+    "id": 518,
+    "description": "Kunstrasenplatz Sentruper Höhe"
+  },
+  "519": {
+    "id": 519,
+    "description": "Kunstrasenplatz Arnheimweg"
+  },
+  "520": {
+    "id": 520,
+    "description": "Rennradhose Frauen Größe xs"
+  },
+  "521": {
+    "id": 521,
+    "description": "Baby- und Kinderschwimmen Anmeldung 2. Kind, 5 Kurstermine"
+  },
+  "522": {
+    "id": 522,
+    "description": "WS25/26 Baby- und Kinderschwimmen Anmeldung 2. Kind"
+  },
+  "523": {
+    "id": 523,
+    "description": "Rücklastschrift"
+  },
+  "524": {
+    "id": 524,
+    "description": "Sonderbelegung"
+  },
+  "525": {
+    "id": 525,
+    "description": "Klettern (Fels outdoor)"
+  },
+  "526": {
+    "id": 526,
+    "description": "Feiertage Platz-und Hallensperrung"
+  },
+  "527": {
+    "id": 527,
+    "description": "Dodgeball/Völkerball"
+  },
+  "528": {
+    "id": 528,
+    "description": "Eskrima"
+  },
+  "529": {
+    "id": 529,
+    "description": "Gongkwon Yusul"
+  },
+  "530": {
+    "id": 530,
+    "description": "Selbstverteidigung für FLINTA*"
+  },
+  "531": {
+    "id": 531,
+    "description": "Kick- und Thaiboxen"
+  },
+  "532": {
+    "id": 532,
+    "description": "Rollschuhtanz für Fortgeschrittene"
+  },
+  "533": {
+    "id": 533,
+    "description": "MentalStrategien "
+  },
+  "534": {
+    "id": 534,
+    "description": "Trampolinturnen Einstiegskurse"
+  },
+  "535": {
+    "id": 535,
+    "description": "Zoom-Meeting"
+  },
+  "536": {
+    "id": 536,
+    "description": "Tai Chi Chuan"
+  },
+  "537": {
+    "id": 537,
+    "description": "Fußball Wettkampf Frauen (outdoor) "
+  },
+  "538": {
+    "id": 538,
+    "description": "Rettungsschwimmen"
+  },
+  "539": {
+    "id": 539,
+    "description": "Sporthalle Kreuzschule"
+  },
+  "540": {
+    "id": 540,
+    "description": "West Coast Swing Beginner-Level"
+  },
+  "541": {
+    "id": 541,
+    "description": "West Coast Swing Improver-Level "
+  },
+  "542": {
+    "id": 542,
+    "description": "West Coast Swing Level 4-5"
+  },
+  "543": {
+    "id": 543,
+    "description": "Beachvolleyball Level 1"
+  },
+  "544": {
+    "id": 544,
+    "description": "Tamburello Beach"
+  },
+  "545": {
+    "id": 545,
+    "description": "Münsterland-Tour Münsters Norden"
+  },
+  "546": {
+    "id": 546,
+    "description": "Münsterland-Tour Hidden Places "
+  },
+  "547": {
+    "id": 547,
+    "description": "Münsterland-Tour Entlang des Wassers "
+  },
+  "548": {
+    "id": 548,
+    "description": "Münsterland-Tour Münsters Westen  "
+  },
+  "549": {
+    "id": 549,
+    "description": "Capoeira"
+  },
+  "550": {
+    "id": 550,
+    "description": "Rudern"
+  },
+  "551": {
+    "id": 551,
+    "description": "Golf Technikkurs"
+  },
+  "552": {
+    "id": 552,
+    "description": "Xingyiquan"
+  },
+  "553": {
+    "id": 553,
+    "description": "Cheerleading"
+  },
+  "554": {
+    "id": 554,
+    "description": "Acrobatic Rock 'n' Roll"
+  },
+  "555": {
+    "id": 555,
+    "description": "Einradhockey"
+  },
+  "556": {
+    "id": 556,
+    "description": "Afrolatin- Bachata Level 1 "
+  },
+  "557": {
+    "id": 557,
+    "description": "Afrolatin- Salsa Level 1"
+  },
+  "558": {
+    "id": 558,
+    "description": "Afrolatin- Salsa Cubana Level 1"
+  },
+  "559": {
+    "id": 559,
+    "description": "Afrolatin- Kizomba Level 1"
+  },
+  "560": {
+    "id": 560,
+    "description": "Afrolatin- Bachata Level 2"
+  },
+  "561": {
+    "id": 561,
+    "description": "Afrolatin- Bachata Level 3"
+  },
+  "562": {
+    "id": 562,
+    "description": "Afrolatin- Bachata Level 4"
+  },
+  "563": {
+    "id": 563,
+    "description": "Afrolatin- Salsa Level 2"
+  },
+  "564": {
+    "id": 564,
+    "description": "Afrolatin- Salsa Level 3"
+  },
+  "565": {
+    "id": 565,
+    "description": "Afrolatin- Salsa Level 4"
+  },
+  "566": {
+    "id": 566,
+    "description": "Afrolatin- Salsa Cubana Level 2"
+  },
+  "567": {
+    "id": 567,
+    "description": "Afrolatin- Salsa Cubana Level 3"
+  },
+  "568": {
+    "id": 568,
+    "description": "Schwimmen Wettkampf"
+  },
+  "569": {
+    "id": 569,
+    "description": "Hallenbad Hiltrup"
+  },
+  "570": {
+    "id": 570,
+    "description": "Afrolatin- Kizomba Level 2"
+  },
+  "571": {
+    "id": 571,
+    "description": "Afrolatin- Kizomba Level 3 "
+  },
+  "572": {
+    "id": 572,
+    "description": "Afrolatin- Kizomba Level 4"
+  },
+  "573": {
+    "id": 573,
+    "description": "Afrolatin Spezial - Salsa Solo Choreo"
+  },
+  "574": {
+    "id": 574,
+    "description": "Afrolatin- STAR"
+  },
+  "575": {
+    "id": 575,
+    "description": "Sportzentrum Bürgerschützen B"
+  },
+  "576": {
+    "id": 576,
+    "description": "Rudern Fortgeschrittene"
+  },
+  "577": {
+    "id": 577,
+    "description": "Bootshaus Rheinstraße B"
+  },
+  "578": {
+    "id": 578,
+    "description": "Federfußball"
+  },
+  "579": {
+    "id": 579,
+    "description": "Ratsgymnasium "
+  },
+  "580": {
+    "id": 580,
+    "description": "Turnen Wettkampfsport"
+  },
+  "581": {
+    "id": 581,
+    "description": "Turnen Wettkampfsport TG Termine"
+  },
+  "582": {
+    "id": 582,
+    "description": "Selbstverteidigung für MINTAS*"
+  },
+  "583": {
+    "id": 583,
+    "description": "West Coast Swing WSASTA"
+  },
+  "584": {
+    "id": 584,
+    "description": "Gesellschaftstanz Level 1"
+  },
+  "585": {
+    "id": 585,
+    "description": "Gesellschaftstanz Level 2 "
+  },
+  "586": {
+    "id": 586,
+    "description": "Gesellschaftstanz Level 3A"
+  },
+  "587": {
+    "id": 587,
+    "description": "Gesellschaftstanz Level 4A"
+  },
+  "588": {
+    "id": 588,
+    "description": "Gesellschaftstanz Level 5"
+  },
+  "589": {
+    "id": 589,
+    "description": "Gesellschaftstanz Infinity"
+  },
+  "590": {
+    "id": 590,
+    "description": "Gesellschaftstanz STAR und STAR+"
+  },
+  "591": {
+    "id": 591,
+    "description": "Gesellschaftstanz Level 3B"
+  },
+  "592": {
+    "id": 592,
+    "description": "Gesellschaftstanz Level 4B"
+  },
+  "593": {
+    "id": 593,
+    "description": "Tennis- und Hockey-Club Platz 1"
+  },
+  "594": {
+    "id": 594,
+    "description": "Tennis- und Hockey-Club Platz 2"
+  },
+  "595": {
+    "id": 595,
+    "description": "Tennis- und Hockey-Club Platz 3"
+  },
+  "596": {
+    "id": 596,
+    "description": "Tennis- und Hockey-Club Platz 4"
+  },
+  "597": {
+    "id": 597,
+    "description": "Floor Dance"
+  },
+  "598": {
+    "id": 598,
+    "description": "Rhönradturnen Level 3"
+  },
+  "599": {
+    "id": 599,
+    "description": "Wandern"
+  },
+  "600": {
+    "id": 600,
+    "description": "Ballsporthalle Trakt 1-2"
+  },
+  "601": {
+    "id": 601,
+    "description": "West Coast Swing Workshop Practice Night "
+  },
+  "602": {
+    "id": 602,
+    "description": "Zumba® PARTY"
+  },
+  "603": {
+    "id": 603,
+    "description": "Gesellschaftstanz Tango Spezialkurs "
+  },
+  "604": {
+    "id": 604,
+    "description": "Beachvolleyball Level 2"
+  },
+  "605": {
+    "id": 605,
+    "description": "Beachvolleyball Level 3"
+  },
+  "606": {
+    "id": 606,
+    "description": "Beachvolleyball Level 4"
+  },
+  "607": {
+    "id": 607,
+    "description": "Fliednerstraße Sporthalle Trakt 2 (Akrobatik) "
+  },
+  "608": {
+    "id": 608,
+    "description": "Kulturquartier "
+  },
+  "609": {
+    "id": 609,
+    "description": "West Coast Swing Workshop"
+  },
+  "610": {
+    "id": 610,
+    "description": "Tango Argentino"
+  },
+  "611": {
+    "id": 611,
+    "description": "Beach Anlage (Platz 1+2)"
+  },
+  "612": {
+    "id": 612,
+    "description": "Beach Anlage (Platz 1-3)"
+  },
+  "613": {
+    "id": 613,
+    "description": "Beach Anlage (Platz 3+4)"
+  },
+  "614": {
+    "id": 614,
+    "description": "Beach Anlage (Platz 2-4)"
+  },
+  "615": {
+    "id": 615,
+    "description": "Crosstraining Open Box"
+  },
+  "616": {
+    "id": 616,
+    "description": "test"
+  },
+  "617": {
+    "id": 617,
+    "description": "Judo WK"
+  },
+  "618": {
+    "id": 618,
+    "description": "HSG"
+  },
+  "619": {
+    "id": 619,
+    "description": "Kanupolo"
+  },
+  "620": {
+    "id": 620,
+    "description": "Gesellschaftstanz Spezialkurs Quickstep & Langsamer Walzer "
+  },
+  "621": {
+    "id": 621,
+    "description": "Ball des Hochschulsports"
+  },
+  "622": {
+    "id": 622,
+    "description": "Gesellschaftsspiele Social Deduction"
+  },
+  "623": {
+    "id": 623,
+    "description": "Tennis Nachmeldung"
+  },
+  "624": {
+    "id": 624,
+    "description": "Afrolatin- Salsa Cubana Level 4 "
+  },
+  "625": {
+    "id": 625,
+    "description": "Sensibilisierungsschulung - Prävention sexualisierter Gewalt"
+  },
+  "626": {
+    "id": 626,
+    "description": "Yoga-Special Sommersonnenwende"
+  },
+  "627": {
+    "id": 627,
+    "description": "Treffpunkt Aaseeterassen"
+  },
+  "628": {
+    "id": 628,
+    "description": "Treffpunkt Schillerbrücke"
+  },
+  "629": {
+    "id": 629,
+    "description": "Pump X Hot Iron Cross"
+  },
+  "630": {
+    "id": 630,
+    "description": "Münsterland-Tour True Crime"
+  },
+  "631": {
+    "id": 631,
+    "description": "Campus Café Bingo "
+  },
+  "632": {
+    "id": 632,
+    "description": "Kanu | Bootsgewöhnung | Werse "
+  },
+  "633": {
+    "id": 633,
+    "description": "Wersepark Sudmühle"
+  },
+  "634": {
+    "id": 634,
+    "description": "Gesellschaftstanz Spezialkurs Paso Doble"
+  },
+  "635": {
+    "id": 635,
+    "description": "Gesellschaftstanz Spezialkurs Rollenwechsel"
+  },
+  "636": {
+    "id": 636,
+    "description": "Gesellschaftstanz Spezialkurs LW/TG/QS"
+  },
+  "637": {
+    "id": 637,
+    "description": "Gesellschaftstanz Spezialkurs Discofox"
+  },
+  "638": {
+    "id": 638,
+    "description": "Gesellschaftstanz Level 3+"
+  },
+  "639": {
+    "id": 639,
+    "description": "Gesellschaftstanz Level 4+"
+  },
+  "640": {
+    "id": 640,
+    "description": "Gesellschaftstanz Level 2+"
+  },
+  "641": {
+    "id": 641,
+    "description": "Yoga Vinyasa mit Partnerelementen"
+  },
+  "642": {
+    "id": 642,
+    "description": "Rollschuhtanz Beginner Workshop"
+  },
+  "643": {
+    "id": 643,
+    "description": "Test"
+  },
+  "644": {
+    "id": 644,
+    "description": "Gesellschaftstanz Spezialkurs Booster"
+  },
+  "645": {
+    "id": 645,
+    "description": "West Coast Swing Level 3-4"
+  },
+  "646": {
+    "id": 646,
+    "description": "West Coast Swing Level 2"
+  },
+  "647": {
+    "id": 647,
+    "description": "West Coast Swing Advanced-Level"
+  },
+  "648": {
+    "id": 648,
+    "description": "Debattieren"
+  },
+  "649": {
+    "id": 649,
+    "description": "Lotharinger Halle"
+  },
+  "650": {
+    "id": 650,
+    "description": "Indoor Cycling  Einstiegs-/Schnuppertraining"
+  },
+  "651": {
+    "id": 651,
+    "description": "Leichtathletik Einstiegs-/Schnuppertraining"
+  },
+  "652": {
+    "id": 652,
+    "description": "Tamburello Indoor "
+  },
+  "653": {
+    "id": 653,
+    "description": "Treffpunkt Horstmarer Landweg"
+  },
+  "654": {
+    "id": 654,
+    "description": "Lehrtrainer*in KraftFitness"
+  },
+  "655": {
+    "id": 655,
+    "description": "Lehrtrainer*in Groupfitness"
+  },
+  "656": {
+    "id": 656,
+    "description": "Fachqualifikation Pilates*trainerin"
+  },
+  "657": {
+    "id": 657,
+    "description": "Core & Stability (10 LE)"
+  },
+  "658": {
+    "id": 658,
+    "description": "Ersthelferausbildung"
+  },
+  "659": {
+    "id": 659,
+    "description": "Improvisationstheater Musik trifft auf Improtheater (Workshop)"
+  },
+  "660": {
+    "id": 660,
+    "description": "„Rückzahlung fälschliche Erstattung“  7,50"
+  },
+  "661": {
+    "id": 661,
+    "description": "„Rückzahlung fälschliche Erstattung“  10 "
+  },
+  "662": {
+    "id": 662,
+    "description": "„Rückzahlung fälschliche Erstattung“  12,50  "
+  },
+  "663": {
+    "id": 663,
+    "description": "„Rückzahlung fälschliche Erstattung“  15"
+  },
+  "664": {
+    "id": 664,
+    "description": "Lehre IfS"
+  },
+  "665": {
+    "id": 665,
+    "description": "AG unbetreut IfS_alt"
+  },
+  "666": {
+    "id": 666,
+    "description": "K-Pop-Dance"
+  },
+  "667": {
+    "id": 667,
+    "description": "Gesellschaftstanz Spezialkurs Choreo Leader"
+  },
+  "668": {
+    "id": 668,
+    "description": "Refund correction"
+  },
+  "669": {
+    "id": 669,
+    "description": "Gesellschaftstanz: Tanz- Single-Treff"
+  },
+  "670": {
+    "id": 670,
+    "description": "test activiteit"
+  },
+  "671": {
+    "id": 671,
+    "description": "Thriller Dance-Workshop"
+  },
+  "672": {
+    "id": 672,
+    "description": "Chalet Les Sapins 1"
+  },
+  "673": {
+    "id": 673,
+    "description": "Chalet Jolimont 1"
+  },
+  "674": {
+    "id": 674,
+    "description": "Skikurse | Les Sapins | Frühjahr"
+  },
+  "675": {
+    "id": 675,
+    "description": "Chalet Les Sapins 2"
+  },
+  "676": {
+    "id": 676,
+    "description": "Chalet Les Sapins 3"
+  },
+  "677": {
+    "id": 677,
+    "description": "Chalet Les Sapins 4"
+  },
+  "678": {
+    "id": 678,
+    "description": "Chalet Les Sapins 5"
+  },
+  "679": {
+    "id": 679,
+    "description": "Chalet Les Sapins 6"
+  },
+  "680": {
+    "id": 680,
+    "description": "Chalet Les Sapins 7"
+  },
+  "681": {
+    "id": 681,
+    "description": "Chalet Les Sapins Winter"
+  },
+  "682": {
+    "id": 682,
+    "description": "Chalet Jolimont 2"
+  },
+  "683": {
+    "id": 683,
+    "description": "Skikurse | Les Sapins | Winter"
+  },
+  "684": {
+    "id": 684,
+    "description": "Skikurse | Les Sapins | Winter"
+  },
+  "685": {
+    "id": 685,
+    "description": "Skikurse | Jolimont | Frühjahr"
+  },
+  "686": {
+    "id": 686,
+    "description": "Lehrtrainer*in YogaFitness"
+  },
+  "687": {
+    "id": 687,
+    "description": "Padel Tennis Level 2"
+  },
+  "688": {
+    "id": 688,
+    "description": "Padel Tennis Level 3"
+  },
+  "689": {
+    "id": 689,
+    "description": "Tennis Level 1"
+  },
+  "690": {
+    "id": 690,
+    "description": "Tennis Level 2"
+  },
+  "691": {
+    "id": 691,
+    "description": "Tennis Level 3"
+  },
+  "692": {
+    "id": 692,
+    "description": "Tennis Level 4"
+  },
+  "693": {
+    "id": 693,
+    "description": "Sport an der FH Münster - Standort Steinfurt"
+  },
+  "694": {
+    "id": 694,
+    "description": "Skilehrendenausbildung | Hintertux"
+  },
+  "695": {
+    "id": 695,
+    "description": "Hof Aussertal | DSV"
+  },
+  "696": {
+    "id": 696,
+    "description": "Campus Café PubQuiz"
+  },
+  "697": {
+    "id": 697,
+    "description": "Sporthalle Münster Ost"
+  },
+  "698": {
+    "id": 698,
+    "description": "Kanucamp Slowenien (A)"
+  },
+  "699": {
+    "id": 699,
+    "description": "Surflodge Dänemark"
+  },
+  "700": {
+    "id": 700,
+    "description": "test"
+  },
+  "701": {
+    "id": 701,
+    "description": "Kanu | Wildwassertour | Slowenien"
+  },
+  "702": {
+    "id": 702,
+    "description": "Kanucamp Slowenien (F)"
+  },
+  "703": {
+    "id": 703,
+    "description": "Windsurfen | Dänemark"
+  },
+  "704": {
+    "id": 704,
+    "description": "Windsurfen | Holland"
+  },
+  "705": {
+    "id": 705,
+    "description": "Sport an der FH Münster - Standort Steinfurt"
+  },
+  "706": {
+    "id": 706,
+    "description": "Beachvolleyballcamp | Norditalien"
+  },
+  "707": {
+    "id": 707,
+    "description": "West Coast Swing High-Level "
+  },
+  "708": {
+    "id": 708,
+    "description": "Tanzzelt B"
+  },
+  "709": {
+    "id": 709,
+    "description": "Gesellschaftstanz Spezialkurs Choreo Follower"
+  },
+  "710": {
+    "id": 710,
+    "description": "Seepferdchenkurs ab 5 Jahre"
+  },
+  "711": {
+    "id": 711,
+    "description": "Seepferdchenkurs PLUS ab 5 Jahre"
+  },
+  "712": {
+    "id": 712,
+    "description": "Seeräuberkurs ab 5 Jahre"
+  },
+  "713": {
+    "id": 713,
+    "description": "Wasserbewältigung ab 3-5 Jahre"
+  },
+  "714": {
+    "id": 714,
+    "description": "Wasserbewältigung ab 3-5 Jahre Eltern-Kind-Kurs"
+  },
+  "715": {
+    "id": 715,
+    "description": "Aquafitness FLINTA*"
+  },
+  "716": {
+    "id": 716,
+    "description": "Kraul-Technik-Schwimmen Erwachsene (Flachwasser)"
+  },
+  "717": {
+    "id": 717,
+    "description": "Schwimmen für Anfänger*innen Erwachsene (Flachwasser)"
+  },
+  "718": {
+    "id": 718,
+    "description": "Fit over 60 Wassergymnastik"
+  },
+  "719": {
+    "id": 719,
+    "description": "Open Choreo Workshop"
+  },
+  "720": {
+    "id": 720,
+    "description": "Open Choreo Workshop"
+  },
+  "721": {
+    "id": 721,
+    "description": "Kanu | Kenterrolle | Rollkurs"
+  },
+  "722": {
+    "id": 722,
+    "description": "Kanu | Wildwassertour | Österreich "
+  },
+  "723": {
+    "id": 723,
+    "description": "F-Kurs Österreich"
+  },
+  "724": {
+    "id": 724,
+    "description": "Bootshaus Sudmühle"
+  },
+  "725": {
+    "id": 725,
+    "description": "Kanu | Kanuwochenende | Werse-Ems"
+  },
+  "726": {
+    "id": 726,
+    "description": "Pub Quiz"
+  },
+  "727": {
+    "id": 727,
+    "description": "Sportzentrum Campus Café 2"
+  },
+  "728": {
+    "id": 728,
+    "description": "Tauchen Grundkurs"
+  },
+  "729": {
+    "id": 729,
+    "description": "Apnoe-, Flossentraining"
+  },
+  "730": {
+    "id": 730,
+    "description": "Tauchen Sonderbrevets"
+  },
+  "731": {
+    "id": 731,
+    "description": "Tauchen Sonderbrevets"
+  },
+  "732": {
+    "id": 732,
+    "description": "Nitrox"
+  },
+  "733": {
+    "id": 733,
+    "description": "Orientierung "
+  },
+  "734": {
+    "id": 734,
+    "description": "Gruppenführung"
+  },
+  "735": {
+    "id": 735,
+    "description": "Tieftauchen"
+  },
+  "736": {
+    "id": 736,
+    "description": "Nachttauchen"
+  },
+  "737": {
+    "id": 737,
+    "description": "Gesellschaftstanz Spezialkurs "
+  },
+  "738": {
+    "id": 738,
+    "description": "Triathlon meets Leichtathletik"
+  },
+  "739": {
+    "id": 739,
+    "description": "Rathaus"
+  },
+  "740": {
+    "id": 740,
+    "description": "Universitätssporthalle Lehrschwimmbecken 2"
+  },
+  "741": {
+    "id": 741,
+    "description": "Poledance"
+  },
+  "742": {
+    "id": 742,
+    "description": "Tanzstudio VI-Dance Münster"
+  },
+  "743": {
+    "id": 743,
+    "description": "„Rückzahlung fälschliche Erstattung“  908"
+  },
+  "744": {
+    "id": 744,
+    "description": "Selbstbehauptung und Selbstverteidigung für Frauen  Fortgeschrittene"
+  },
+  "745": {
+    "id": 745,
+    "description": "Reiten"
+  },
+  "746": {
+    "id": 746,
+    "description": "Reitschule Hippo-Fun"
+  },
+  "747": {
+    "id": 747,
+    "description": "Sunday Flow"
+  },
+  "748": {
+    "id": 748,
+    "description": "Teilzahlung Test"
+  },
+  "749": {
+    "id": 749,
+    "description": "Gesellschafttanz Formation"
+  },
+  "750": {
+    "id": 750,
+    "description": "Sentruper Höhe Zweifachsporthalle"
+  },
+  "751": {
+    "id": 751,
+    "description": "„Rückzahlung fälschliche Erstattung“  998"
+  },
+  "752": {
+    "id": 752,
+    "description": "Übungszeit betreut IfS"
+  },
+  "753": {
+    "id": 753,
+    "description": "Übungszeit unbetreut IfS"
+  },
+  "754": {
+    "id": 754,
+    "description": "„Rückzahlung fälschliche Erstattung“  449"
+  },
+  "755": {
+    "id": 755,
+    "description": "„Rückzahlung fälschliche Erstattung“  429"
+  },
+  "756": {
+    "id": 756,
+    "description": "„Rückzahlung fälschliche Erstattung“  189"
+  },
+  "757": {
+    "id": 757,
+    "description": "„Rückzahlung fälschliche Erstattung“  25"
+  },
+  "758": {
+    "id": 758,
+    "description": "Mittelparty des Gesellschaftstanzes"
+  },
+  "759": {
+    "id": 759,
+    "description": "Gesellschaftstanz Spezialkurs Slowfox"
+  },
+  "760": {
+    "id": 760,
+    "description": "Fit im Kopf, stark im Körper"
+  },
+  "761": {
+    "id": 761,
+    "description": "Thai Yoga - Entspannung trifft Partner*innenarbeit"
+  },
+  "762": {
+    "id": 762,
+    "description": "Special PowerFitness – Fatburn nach dem Festtagsschmaus"
+  },
+  "763": {
+    "id": 763,
+    "description": "Indoor Cycling  Marathon (2h) "
+  },
+  "764": {
+    "id": 764,
+    "description": "Indoor Cycling  Marathon (1h)  "
+  },
+  "765": {
+    "id": 765,
+    "description": "Zahlung nach Rücklastschrift 878"
+  },
+  "766": {
+    "id": 766,
+    "description": "Qigong"
+  },
+  "767": {
+    "id": 767,
+    "description": "Wolbeck (Hallenbad)"
+  },
+  "768": {
+    "id": 768,
+    "description": "DHM | Jolimont | 2026"
+  },
+  "769": {
+    "id": 769,
+    "description": "DHM Eventpaket "
+  },
+  "770": {
+    "id": 770,
+    "description": "DHM | Anmeldung Wettkämpfe"
+  },
+  "771": {
+    "id": 771,
+    "description": "Deutsche Hochschul Meisterschaften | Ski Alpin | Les Crosets, Portes du Soleil "
+  }
+}

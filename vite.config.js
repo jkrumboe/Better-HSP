@@ -10,10 +10,17 @@ export default defineConfig({
       '/api': {
         target: `http://localhost:${backendPort}`,
         changeOrigin: true
+      },
+      '/ws': {
+        target: `ws://localhost:${backendPort}`,
+        ws: true
       }
     },
     hmr: {
       clientPort: 5173
-    }
+    },
+    allowedHosts: [
+      'betterhsp.example.com'
+    ]
   }
 })

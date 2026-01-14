@@ -19,17 +19,19 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const tokenStoreFile = path.join(__dirname, 'token-store.json');
+const tokenStoreFile = path.join(__dirname, 'data', 'token-store.json');
 const authDataFile = path.join(__dirname, 'auth-data.json');
+const authDataFileData = path.join(__dirname, 'data', 'auth-data.json');
 
 if (fs.existsSync(tokenStoreFile)) {
   console.log('✅ Token-Store existiert bereits!\n');
   const tokens = JSON.parse(fs.readFileSync(tokenStoreFile, 'utf-8'));
   console.log('Gespeicherte Tokens:');
   console.log(JSON.stringify(tokens, null, 2));
-} else if (fs.existsSync(authDataFile)) {
-  console.log('📁 Importiere aus auth-data.json...\n');
-  const authData = JSON.parse(fs.readFileSync(authDataFile, 'utf-8'));
+} else if (fs.existsSync(authDataFile) || fs.existsSync(authDataFileData)) {
+  const fileToRead = fs.existsSync(authDataFile) ? authDataFile : authDataFileData;
+  console.log(`📁 Importiere aus ${path.basename(fileToRead)}...\n`);
+  const authData = JSON.parse(fs.readFileSync(fileToRead, 'utf-8'));
   importFromLocalStorage(authData);
 } else {
   console.log('⚠️  Weder token-store.json noch auth-data.json vorhanden.');

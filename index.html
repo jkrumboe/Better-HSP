@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>🏐 HSP-Bot - Kursanmeldung</title>
+  <title>🏐 Better-HSP - Kursanmeldung</title>
   <style>
     * {
       box-sizing: border-box;
@@ -13,9 +13,9 @@
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      background: #f5f5f5;
       min-height: 100vh;
-      color: #e0e0e0;
+      color: #333;
     }
 
     .container {
@@ -31,17 +31,26 @@
 
     header h1 {
       font-size: 2.5em;
-      color: #00d4ff;
+      color: #91C736;
       margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 15px;
+    }
+
+    header h1 img {
+      height: 50px;
+      width: auto;
     }
 
     header p {
-      color: #888;
+      color: #666;
       font-size: 1.1em;
     }
 
     .status-bar {
-      background: rgba(255,255,255,0.05);
+      background: #fff;
       border-radius: 12px;
       padding: 15px 25px;
       margin-bottom: 30px;
@@ -50,6 +59,7 @@
       align-items: center;
       flex-wrap: wrap;
       gap: 15px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
 
     .status-item {
@@ -66,8 +76,8 @@
     }
 
     .status-dot.connected {
-      background: #44ff44;
-      box-shadow: 0 0 10px #44ff44;
+      background: #91C736;
+      box-shadow: 0 0 10px #91C736;
     }
 
     .tabs {
@@ -78,30 +88,34 @@
 
     .tab {
       padding: 12px 24px;
-      background: rgba(255,255,255,0.05);
+      background: #fff;
       border: none;
       border-radius: 8px;
-      color: #888;
+      color: #666;
       cursor: pointer;
       font-size: 1em;
       transition: all 0.3s;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.08);
     }
 
     .tab:hover {
-      background: rgba(255,255,255,0.1);
+      background: #f9f9f9;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.12);
     }
 
     .tab.active {
-      background: #00d4ff;
-      color: #1a1a2e;
+      background: #91C736;
+      color: #fff;
       font-weight: bold;
+      box-shadow: 0 2px 8px rgba(145,199,54,0.3);
     }
 
     .panel {
       display: none;
-      background: rgba(255,255,255,0.03);
+      background: #fff;
       border-radius: 16px;
-      padding: 16px;
+      padding: 24px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
 
     .panel.active {
@@ -109,39 +123,36 @@
     }
 
     h2 {
-      color: #00d4ff;
+      color: #91C736;
       margin-bottom: 20px;
       font-size: 1.5em;
-    }
-
-    .form-group {
-      margin-bottom: 20px;
     }
 
     label {
       display: block;
       margin-bottom: 8px;
-      color: #aaa;
+      color: #666;
       font-size: 0.95em;
     }
 
     input, select, textarea {
       width: 100%;
       padding: 12px 15px;
-      background: rgba(255,255,255,0.1);
-      border: 1px solid rgba(255,255,255,0.1);
+      background: #f9f9f9;
+      border: 1px solid #ddd;
       border-radius: 8px;
-      color: #fff;
+      color: #333;
       font-size: 1em;
     }
 
     option {
-      color: #000;
+      color: #333;
     }
 
     input:focus, select:focus, textarea:focus {
       outline: none;
-      border-color: #00d4ff;
+      border-color: #91C736;
+      background: #fff;
     }
 
     textarea {
@@ -163,28 +174,31 @@
     }
 
     .btn-primary {
-      background: #00d4ff;
-      color: #1a1a2e;
+      background: #91C736;
+      color: #fff;
       font-weight: bold;
+      box-shadow: 0 2px 4px rgba(145,199,54,0.2);
     }
 
     .btn-primary:hover {
-      background: #00b8e0;
+      background: #7fb32a;
       transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(145,199,54,0.3);
     }
 
     .btn-primary:disabled,
     .btn-secondary:disabled {
       opacity: 0.5;
-      background-color: #1a1a1a;
-      color: #fff;
+      background-color: #ccc;
+      color: #666;
       cursor: not-allowed;
       transform: none !important;
+      box-shadow: none;
     }
 
     .btn-primary:disabled:hover,
     .btn-secondary:disabled:hover {
-      background: #00d4ff;
+      background: #ccc;
       transform: none;
     }
 
@@ -198,15 +212,36 @@
     }
 
     .btn-secondary {
-      background: rgba(255,255,255,0.1);
-      color: #fff;
+      background: #fff;
+      color: #91C736;
+      border: 2px solid #91C736;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .btn-secondary:hover {
+      background: #f0f8e8;
+      transform: translateY(-1px);
     }
 
     .filter-row {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      gap: 15px;
-      margin-bottom: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      width: 100%;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .header-filter {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .header-filter h2 {
+      margin: 0;
     }
 
     .courses-list {
@@ -214,7 +249,7 @@
     }
 
     .course-card {
-      background: rgba(255,255,255,0.05);
+      background: #fff;
       border-radius: 12px;
       padding: 20px;
       margin-bottom: 15px;
@@ -223,28 +258,31 @@
       gap: 15px;
       align-items: center;
       transition: all 0.3s;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
     }
 
     .course-card:hover {
-      background: rgba(255,255,255,0.08);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+      transform: translateY(-2px);
     }
 
     .course-card.full {
       border: 1px dashed #ff4444;
+      opacity: 0.7;
     }
 
     .course-card.booked {
-      border: 2px solid #44ff44;
-      background: rgba(68, 255, 68, 0.05);
+      border: 2px solid #91C736;
+      background: #f0f8e8;
     }
 
     .course-card.waiting {
       border: 2px solid #ffaa00;
-      background: rgba(255, 170, 0, 0.05);
+      background: #fff9e6;
     }
 
     .course-info h3 {
-      color: #fff;
+      color: #333;
       margin-bottom: 8px;
       font-size: 1.1em;
     }
@@ -253,13 +291,12 @@
       display: flex;
       flex-wrap: wrap;
       gap: 15px;
-      color: #888;
+      color: #666;
       font-size: 0.9em;
     }
 
     .course-meta span {
       display: flex;
-      align-items: center;
       gap: 5px;
     }
 
@@ -271,12 +308,12 @@
     }
 
     .availability.available {
-      background: rgba(68, 255, 68, 0.2);
-      color: #44ff44;
+      background: rgba(145, 199, 54, 0.15);
+      color: #91C736;
     }
 
     .availability.full {
-      background: rgba(255, 68, 68, 0.2);
+      background: rgba(255, 68, 68, 0.15);
       color: #ff4444;
     }
 
@@ -287,19 +324,36 @@
     }
 
     .course-actions .btn {
+      justify-content: center;
       padding: 8px 16px;
       font-size: 0.9em;
     }
 
+    .btn-link {
+      background: none;
+      border: none;
+      color: #91C736;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 1.2rem ;
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .btn-link:hover {
+      color: #7fb32a;
+      text-decoration: underline;
+    }
+
     .instructions {
-      background: rgba(0, 212, 255, 0.1);
+      background: #f0f8e8;
       border-radius: 12px;
       padding: 20px;
       margin-bottom: 20px;
     }
 
     .instructions h3 {
-      color: #00d4ff;
+      color: #91C736;
       margin-bottom: 15px;
     }
 
@@ -313,38 +367,40 @@
     }
 
     .instructions code {
-      background: rgba(0,0,0,0.3);
+      background: rgba(145,199,54,0.2);
       padding: 2px 8px;
       border-radius: 4px;
       font-family: monospace;
-      color: #00d4ff;
+      color: #5a8c1f;
     }
 
     .log-container {
-      background: #0d1117;
+      background: #f9f9f9;
       border-radius: 12px;
       padding: 20px;
       margin-top: 20px;
       max-height: 400px;
       overflow-y: auto;
+      border: 1px solid #ddd;
     }
 
     .log-entry {
       font-family: monospace;
       font-size: 0.9em;
       padding: 8px 0;
-      border-bottom: 1px solid rgba(255,255,255,0.05);
+      border-bottom: 1px solid #e0e0e0;
       display: flex;
       gap: 10px;
+      color: #333;
     }
 
     .log-entry .time {
-      color: #666;
+      color: #999;
       min-width: 80px;
     }
 
     .log-entry.success {
-      color: #44ff44;
+      color: #91C736;
     }
 
     .log-entry.error {
@@ -352,7 +408,7 @@
     }
 
     .log-entry.info {
-      color: #00d4ff;
+      color: #2196F3;
     }
 
     .log-entry.warning {
@@ -364,11 +420,12 @@
     }
 
     .job-card {
-      background: rgba(255,255,255,0.05);
+      background: #fff9e6;
       border-radius: 12px;
       padding: 20px;
       margin-bottom: 15px;
       border-left: 4px solid #ffaa00;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
     }
 
     .job-header {
@@ -381,7 +438,7 @@
     .job-stats {
       display: flex;
       gap: 20px;
-      color: #888;
+      color: #666;
       font-size: 0.9em;
     }
 
@@ -389,14 +446,24 @@
       display: inline-block;
       width: 20px;
       height: 20px;
-      border: 3px solid rgba(255,255,255,0.3);
+      border: 3px solid #e0e0e0;
       border-radius: 50%;
-      border-top-color: #00d4ff;
+      border-top-color: #91C736;
       animation: spin 1s linear infinite;
     }
 
     @keyframes spin {
       to { transform: rotate(360deg); }
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+
+    @keyframes flash {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; background: rgba(145, 199, 54, 0.1); }
     }
 
     .modal {
@@ -406,7 +473,7 @@
       left: 0;
       right: 0;
       bottom: 0;
-      background: rgba(0,0,0,0.8);
+      background: rgba(0,0,0,0.6);
       z-index: 1000;
       align-items: center;
       justify-content: center;
@@ -417,11 +484,12 @@
     }
 
     .modal-content {
-      background: #1a1a2e;
+      background: #fff;
       border-radius: 16px;
       padding: 30px;
       max-width: 500px;
       width: 90%;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
     }
 
     .modal-header {
@@ -431,12 +499,20 @@
       margin-bottom: 20px;
     }
 
+    .modal-header h3 {
+      color: #333;
+    }
+
     .modal-close {
       background: none;
       border: none;
-      color: #888;
+      color: #999;
       font-size: 1.5em;
       cursor: pointer;
+    }
+
+    .modal-close:hover {
+      color: #333;
     }
 
     .alert {
@@ -446,28 +522,176 @@
     }
 
     .alert-success {
-      background: rgba(68, 255, 68, 0.2);
-      border: 1px solid #44ff44;
-      color: #44ff44;
+      background: rgba(145, 199, 54, 0.15);
+      border: 1px solid #91C736;
+      color: #5a8c1f;
     }
 
     .alert-error {
-      background: rgba(255, 68, 68, 0.2);
+      background: rgba(255, 68, 68, 0.15);
       border: 1px solid #ff4444;
-      color: #ff4444;
+      color: #cc0000;
     }
 
     .hidden {
       display: none !important;
     }
 
-    @media (max-width: 768px) {
+    .scheduled-jobs {
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 1px solid #e0e0e0;
+    }
+
+    .scheduled-job-card {
+      background: #f9f9f9;
+      border-radius: 12px;
+      padding: 15px 20px;
+      margin-bottom: 15px;
+      border-left: 4px solid #91C736;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+
+    .scheduled-job-card.running {
+      border-left-color: #ffaa00;
+      background: #fff9e6;
+    }
+
+    .scheduled-job-card.completed {
+      border-left-color: #91C736;
+      opacity: 0.7;
+    }
+
+    .scheduled-job-card.failed {
+      border-left-color: #ff4444;
+      background: #fff5f5;
+    }
+
+    .schedule-info {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 10px;
+      margin-top: 10px;
+      font-size: 0.9em;
+      color: #666;
+    }
+
+    .schedule-info-item {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .schedule-info-label {
+      font-size: 0.8em;
+      color: #999;
+    }
+
+    .schedule-time-highlight {
+      color: #91C736;
+      font-weight: bold;
+    }
+
+   @media (max-width: 768px) {
+      .container {
+        padding: 15px;
+      }
+
+      header h1 {
+        font-size: 1.8em;
+      }
+
+      header p {
+        font-size: 0.9em;
+      }
+
+      .header-filter {
+        gap: 15px;
+      }
+
+      .header-filter h2 {
+        font-size: 1.3em;
+      }
+
+      .tabs {
+        justify-content: center;
+      }
+
+      .filter-row {
+        flex-direction: column;
+        gap: 12px;
+        width: 100%;
+      }
+
+      .filter-row .form-group {
+        width: 100%;
+      }
+
+      .filter-row input,
+      .filter-row select {
+        padding: 10px 12px;
+        font-size: 16px; /* Prevents zoom on iOS */
+      }
+
+      .filter-row label {
+        font-size: 0.9em;
+        margin-bottom: 6px;
+      }
+
+      .btn {
+        width: 100%;
+        justify-content: center;
+        padding: 12px 20px;
+        font-size: 1em;
+      }
+
       .course-card {
         grid-template-columns: 1fr;
+        padding: 15px;
+        gap: 12px;
       }
       
       .course-actions {
         flex-direction: row;
+        width: 100%;
+      }
+
+      .course-actions .btn {
+        flex: 1;
+      }
+
+      .course-meta {
+        font-size: 0.85em;
+        gap: 10px;
+      }
+
+      .tabs {
+        gap: 5px;
+      }
+
+      .tab {
+        padding: 10px 12px;
+        font-size: 0.9em;
+      }
+
+      .modal-content {
+        width: 90%;
+        max-width: 90%;
+        padding: 20px;
+      }
+
+      .status-bar {
+        flex-direction: column;
+        gap: 8px;
+        padding: 12px;
+      }
+
+      .status-item {
+        font-size: 0.9em;
+      }
+
+      input, select, textarea {
+        font-size: 16px; /* Prevents zoom on iOS */
       }
     }
   </style>
@@ -475,7 +699,7 @@
 <body>
   <div class="container">
     <header>
-      <h1>🏐 HSP-Bot</h1>
+      <h1><img src="resources/logo.png" alt="HSP Logo"> HSP-Bot</h1>
       <p>Automatische Kursanmeldung für den Hochschulsport</p>
     </header>
 
@@ -503,8 +727,14 @@
     <!-- Kurse suchen Panel -->
     <div class="panel active" id="panel-courses">
       <h2>Kurse suchen</h2>
-      
+      <div class="header-filter">
       <div class="filter-row">
+        <div class="form-group">
+          <label>Sportart</label>
+          <input list="sportsList" id="filterSport" placeholder="Tippen zum Suchen..." autocomplete="off">
+          <datalist id="sportsList"></datalist>
+          <input type="hidden" id="filterSportId">
+        </div>
         <div class="form-group">
           <label>Zeitraum (Tage)</label>
           <input type="number" id="filterDays" value="8" min="1" max="30">
@@ -523,7 +753,8 @@
           <input type="number" id="filterAvailable" value="0" min="0">
         </div>
         <div class="form-group" style="display: flex; align-items: flex-end;">
-          <button class="btn btn-primary" id="searchBtn">🔍 Suchen</button>
+          <button class="btn btn-primary" id="searchBtn">Suchen</button>
+          </div>
         </div>
       </div>
 
@@ -536,7 +767,7 @@
 
     <!-- Anmeldung Panel -->
     <div class="panel" id="panel-register">
-      <h2>📝 Kurs-Anmeldung</h2>
+      <h2>Kurs-Anmeldung</h2>
       
       <div class="form-group">
         <label>Booking ID</label>
@@ -565,6 +796,11 @@
 
       <div class="active-jobs" id="activeJobs"></div>
 
+      <div class="scheduled-jobs" id="scheduledJobsSection">
+        <h3 style="margin-bottom: 15px;">Geplante Buchungen</h3>
+        <div id="scheduledJobsList"></div>
+      </div>
+
       <div class="log-container" id="logContainer">
         <div class="log-entry info">
           <span class="time">--:--:--</span>
@@ -580,7 +816,7 @@
       <div class="instructions">
         <h3>Anleitung zum Abrufen der Auth-Daten</h3>
         <ol>
-          <li>Öffne die <a href="https://buchung.hssp-muenster.de/" target="_blank" style="color: #00d4ff;">HSP-Website</a> und melde dich an</li>
+          <li>Öffne die <a href="https://buchung.hssp-muenster.de/" target="_blank" style="color: #91C736;">HSP-Website</a> und melde dich an</li>
           <li>Drücke <code>F12</code> um die Entwickler-Tools zu öffnen</li>
           <li>Wechsle zum Tab <code>Console</code></li>
           <li>Gib folgenden Befehl ein und drücke Enter:
@@ -594,6 +830,13 @@
       <div class="form-group">
         <label>Auth-Daten (JSON)</label>
         <textarea id="authDataInput" placeholder='Hier den kopierten Text einfügen...'></textarea>
+      </div>
+
+      <div class="form-group">
+        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+          <input type="checkbox" id="autoFixJson" checked style="width: auto;">
+          <span>Automatische Format-Korrektur (bei Problemen deaktivieren)</span>
+        </label>
       </div>
 
       <button class="btn btn-primary" id="importAuthBtn">Importieren</button>
@@ -623,16 +866,160 @@
     </div>
   </div>
 
+  <!-- Schedule Modal -->
+  <div class="modal" id="scheduleModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Buchung planen</h3>
+        <button class="modal-close" onclick="closeScheduleModal()">×</button>
+      </div>
+      <p id="scheduleModalCourse" style="margin-bottom: 15px; color: #91C736; font-weight: bold;"></p>
+      <div class="schedule-info" style="margin-bottom: 20px;">
+        <div class="schedule-info-item">
+          <span class="schedule-info-label">Kurs-Startzeit</span>
+          <span id="scheduleCourseTime"></span>
+        </div>
+        <div class="schedule-info-item">
+          <span class="schedule-info-label">Buchung verfügbar ab</span>
+          <span id="scheduleBookingAvailable" class="schedule-time-highlight"></span>
+        </div>
+        <div class="schedule-info-item">
+          <span class="schedule-info-label">Polling startet</span>
+          <span id="schedulePollingStart"></span>
+        </div>
+        <div class="schedule-info-item">
+          <span class="schedule-info-label">Polling endet</span>
+          <span id="schedulePollingStop"></span>
+        </div>
+      </div>
+      <p style="font-size: 0.9em; color: #666; margin-bottom: 20px;">
+        Der Bot startet automatisch im zufälligen 10-Sekunden-Fenster vor der Buchungsverfügbarkeit und versucht bis 20 Sekunden danach, dich anzumelden.
+      </p>
+      <div id="scheduleModalError" class="alert alert-error hidden" style="margin-bottom: 15px;"></div>
+      <input type="hidden" id="scheduleBookingId">
+      <input type="hidden" id="scheduleCourseStartTime">
+      <input type="hidden" id="scheduleCourseDescription">
+      <button class="btn btn-primary" onclick="confirmSchedule()" id="scheduleConfirmBtn">Buchung planen</button>
+    </div>
+  </div>
+
+   <!-- Map Service Selection Modal -->
+  <div class="modal" id="mapModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="mapModalTitle">Kartendienst wählen</h3>
+        <button class="modal-close" onclick="closeMapModal()">×</button>
+      </div>
+      <p id="mapModalSubtitle">Wähle einen Kartendienst:</p>
+      <div id="mapServiceButtons" style="display: flex; flex-direction: column; gap: 10px; margin-top: 20px;">
+        <!-- Buttons will be dynamically added here -->
+      </div>
+    </div>
+  </div>
+
   <script>
     // WebSocket Verbindung
     let ws = null;
     let activeJobs = new Map();
+    let locationsData = {};
+    let scheduledJobsMap = new Map(); // Map of bookingId -> scheduled job
+
+    // Load locations data
+    async function loadLocations() {
+      try {
+        const res = await fetch('/api/locations');
+        if (res.ok) {
+          locationsData = await res.json();
+          console.log(`Loaded ${Object.keys(locationsData).length} locations`);
+        }
+      } catch (error) {
+        console.error('Failed to load locations:', error);
+      }
+    }
+
+    // Open location in map service
+    function openLocation(locationId, locationName) {
+      // Look up location by ID
+      const location = locationsData[locationId];
+      
+      if (!location || !location.latitude || !location.longitude) {
+        console.error('Location not found:', locationId, locationName);
+        alert('Standort-Daten nicht verfügbar');
+        return;
+      }
+
+      const lat = location.latitude;
+      const lng = location.longitude;
+      const name = location.description || locationName;
+      
+      // Detect device type
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+      
+      // Build map service options
+      let services = [];
+      
+      if (isMobile && isIOS) {
+        services = [
+          { name: 'Apple Maps', url: `maps://maps.apple.com/?q=${encodeURIComponent(name)}&ll=${lat},${lng}` },
+          { name: 'Google Maps', url: `https://maps.google.com/?q=${lat},${lng}` }
+        ];
+      } else if (isMobile) {
+        services = [
+          { name: 'Google Maps', url: `geo:${lat},${lng}?q=${lat},${lng}(${encodeURIComponent(name)})` }
+        ];
+      } else {
+        services = [
+          { name: 'Google Maps', url: `https://www.google.com/maps?q=${lat},${lng}` },
+          { name: 'OpenStreetMap', url: `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}&zoom=19` }
+        ];
+      }
+      
+      // Show modal with service options
+      showMapModal(name, services);
+    }
+
+    function showMapModal(locationName, services) {
+      const modal = document.getElementById('mapModal');
+      const title = document.getElementById('mapModalTitle');
+      const subtitle = document.getElementById('mapModalSubtitle');
+      const buttonsContainer = document.getElementById('mapServiceButtons');
+      
+      title.textContent = 'Kartendienst wählen';
+      subtitle.textContent = `Standort: ${locationName}`;
+      
+      // Clear previous buttons
+      buttonsContainer.innerHTML = '';
+      
+      // Add service buttons
+      services.forEach(service => {
+        const button = document.createElement('button');
+        button.className = 'btn btn-primary';
+        button.textContent = service.name;
+        button.onclick = () => {
+          window.open(service.url, '_blank');
+          closeMapModal();
+        };
+        buttonsContainer.appendChild(button);
+      });
+      
+      // Add cancel button
+      const cancelBtn = document.createElement('button');
+      cancelBtn.className = 'btn btn-secondary';
+      cancelBtn.textContent = 'Abbrechen';
+      cancelBtn.onclick = closeMapModal;
+      buttonsContainer.appendChild(cancelBtn);
+      
+      modal.style.display = 'flex';
+    }
+
+    function closeMapModal() {
+      document.getElementById('mapModal').style.display = 'none';
+    }
 
     function connectWebSocket() {
-      // In development, connect to backend server directly
-      const wsUrl = window.location.hostname === 'localhost' 
-        ? 'ws://localhost:3000'
-        : `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}`;
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${protocol}//${window.location.host}/ws`;
       ws = new WebSocket(wsUrl);
 
       ws.onopen = () => {
@@ -656,9 +1043,10 @@
       const logContainer = document.getElementById('logContainer');
       const time = new Date().toLocaleTimeString('de-DE');
 
-      switch (data.type) {
+       switch (data.type) {
         case 'jobStarted':
           addLog('info', `Job gestartet: Booking ${data.bookingId}, Intervall: ${data.intervalSeconds}s`);
+          isPolling = true;
           activeJobs.set(data.jobId, {
             bookingId: data.bookingId,
             attempts: 0,
@@ -666,6 +1054,31 @@
             maxAttempts: data.maxAttempts
           });
           renderActiveJobs();
+          break;
+
+        case 'scheduleTriggered':
+          addLog('info', `Geplante Buchung gestartet: Booking ${data.bookingId}`);
+          loadScheduledJobs();
+          break;
+
+        case 'scheduleAttempt':
+          const schedType = data.success ? 'success' : (data.rateLimited ? 'warning' : 'info');
+          addLog(schedType, `Versuch ${data.attempt}: ${data.message}`);
+          break;
+
+        case 'scheduleCompleted':
+          addLog(data.success ? 'success' : 'warning', 
+            `Geplante Buchung beendet: ${data.message} (${data.totalAttempts} Versuche)`);
+          loadScheduledJobs();
+          // Refresh course list if successful
+          if (data.success) {
+            setTimeout(() => searchCourses(true), 1000);
+          }
+          break;
+
+        case 'scheduleError':
+          addLog('error', `Fehler bei geplanter Buchung: ${data.message}`);
+          loadScheduledJobs();
           break;
 
         case 'attempt':
@@ -689,12 +1102,18 @@
           addLog(data.success ? 'success' : 'info', 
             `Job beendet nach ${data.totalAttempts} Versuchen: ${data.success ? 'Erfolgreich!' : data.message}`);
           activeJobs.delete(data.jobId);
+          isPolling = activeJobs.size > 0;
           renderActiveJobs();
+          // Refresh course list if successful booking (silent mode)
+          if (data.success) {
+            setTimeout(() => searchCourses(true), 1000);
+          }
           break;
 
         case 'jobStopped':
           addLog('info', `Job gestoppt nach ${data.totalAttempts} Versuchen`);
           activeJobs.delete(data.jobId);
+          isPolling = activeJobs.size > 0;
           renderActiveJobs();
           break;
 
@@ -778,42 +1197,178 @@
       }
     }
 
+    // Sportarten laden
+    let sportsMap = new Map();
+    async function loadSports() {
+      try {
+        const res = await fetch('/api/sports');
+        const sports = await res.json();
+        
+        const datalist = document.getElementById('sportsList');
+        const input = document.getElementById('filterSport');
+        
+        sports.forEach(s => {
+          const option = document.createElement('option');
+          option.value = s.name;
+          datalist.appendChild(option);
+          sportsMap.set(s.name, s.id);
+          
+          // Default Volleyball
+          if (s.id === 285) {
+             input.value = s.name;
+             document.getElementById('filterSportId').value = s.id;
+          }
+        });
+        
+        // Input Handler für ID Mapping
+        input.addEventListener('input', (e) => {
+            const val = e.target.value;
+            const id = sportsMap.get(val);
+            if (id) {
+                document.getElementById('filterSportId').value = id;
+            } else {
+                document.getElementById('filterSportId').value = '';
+            }
+        });
+        
+        // Initial search if we have a default
+        if (input.value) document.getElementById('searchBtn').click();
+
+      } catch (e) {
+        console.error('Fehler beim Laden der Sportarten:', e);
+      }
+    }
+
+    // Enter-Taste für Suche
+    ['filterSport', 'filterDays', 'filterLevel', 'filterAvailable'].forEach(id => {
+      const element = document.getElementById(id);
+      if (element) {
+        element.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            document.getElementById('searchBtn').click();
+          }
+        });
+      }
+    });
+
     // Kurse suchen
-    document.getElementById('searchBtn').addEventListener('click', async () => {
+    let autoRefreshInterval = null;
+    let isPolling = false;
+    let isRefreshing = false;
+
+    async function searchCourses(silent = false) {
       const days = document.getElementById('filterDays').value;
       const level = document.getElementById('filterLevel').value;
       const minAvailable = document.getElementById('filterAvailable').value;
+      const sportId = document.getElementById('filterSportId').value;
+      
+      // Fallback: Wenn User tippt aber nicht exakt auswählt, versuchen wir zu matchen (case insensitive)
+      if (!sportId) {
+         const val = document.getElementById('filterSport').value.toLowerCase();
+         for (let [name, id] of sportsMap.entries()) {
+             if (name.toLowerCase() === val) {
+                 document.getElementById('filterSportId').value = id;
+                 break;
+             }
+         }
+      }
+      
+      // Wenn immer noch kein ID, warnen (oder Volleyball nehmen?)
+      const finalSportId = document.getElementById('filterSportId').value || 285; // Fallback Volleyball
 
-      document.getElementById('coursesLoading').classList.remove('hidden');
-      document.getElementById('coursesList').innerHTML = '';
+      // Only show loading and clear list on initial search, not on refresh
+      if (!silent) {
+        document.getElementById('coursesLoading').classList.remove('hidden');
+        document.getElementById('coursesList').innerHTML = '';
+      } else {
+        isRefreshing = true;
+      }
 
       try {
         const params = new URLSearchParams({ days });
         if (level) params.append('level', level);
         if (minAvailable > 0) params.append('minAvailable', minAvailable);
+        if (finalSportId) params.append('sportId', finalSportId);
 
         const res = await fetch(`/api/courses?${params}`);
         const data = await res.json();
 
-        renderCourses(data.courses);
+        renderCourses(data.courses, silent);
       } catch (error) {
-        document.getElementById('coursesList').innerHTML = 
-          `<div class="alert alert-error">Fehler: ${error.message}</div>`;
+        if (!silent) {
+          document.getElementById('coursesList').innerHTML = 
+            `<div class="alert alert-error">Fehler: ${error.message}</div>`;
+        }
       } finally {
         document.getElementById('coursesLoading').classList.add('hidden');
+        isRefreshing = false;
       }
+    }
+
+    document.getElementById('searchBtn').addEventListener('click', async () => {
+      await searchCourses(false);
+      startAutoRefresh();
     });
 
-    function renderCourses(courses) {
+    // Auto-refresh every 30 seconds (at :00 and :30 of each minute)
+    function startAutoRefresh() {
+      // Clear existing interval
+      if (autoRefreshInterval) {
+        clearInterval(autoRefreshInterval);
+      }
+
+      // Calculate time until next 30-second mark
+      const now = new Date();
+      const seconds = now.getSeconds();
+      const msUntilNext30 = ((30 - (seconds % 30)) % 30) * 1000;
+
+      // Wait until next 30-second mark, then refresh every 30 seconds
+      setTimeout(() => {
+        // Do initial refresh
+        if (!isPolling) {
+          searchCourses(true);
+        }
+
+        // Set up interval for every 30 seconds
+        autoRefreshInterval = setInterval(() => {
+          if (!isPolling) {
+            searchCourses(true);
+          }
+        }, 30000);
+      }, msUntilNext30 || 30000);
+    }
+
+    function renderCourses(courses, silent = false) {
       const container = document.getElementById('coursesList');
       
-      if (courses.length === 0) {
+      if (courses.length === 0 && !silent) {
         container.innerHTML = '<p style="text-align: center; color: #888; padding: 40px;">Keine Kurse gefunden</p>';
         return;
       }
 
+      if (courses.length === 0 && silent) {
+        return; // Don't clear existing courses on silent refresh if no results
+      }
+
       const days = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
       
+      // If silent refresh, update existing cards instead of replacing all HTML
+      if (silent && container.children.length > 0) {
+        courses.forEach(course => {
+          const existingCard = container.querySelector(`[data-course-id="${course.id}"]`);
+          if (existingCard) {
+            updateCourseCard(existingCard, course);
+          } else {
+            // New course appeared, add it
+            const newCard = createCourseCard(course, days);
+            container.appendChild(newCard);
+          }
+        });
+        return;
+      }
+
+      // Initial render or explicit refresh
       let html = '';
       courses.forEach(course => {
         const date = new Date(course.startDate);
@@ -828,32 +1383,49 @@
         // Check user participation status
         const isBooked = course.userParticipation?.participationStatus === 1;
         const isWaiting = course.userParticipation?.participationStatus === 3;
+        const isScheduled = scheduledJobsMap.has(course.id);
         const cardClass = isBooked ? 'booked' : (isWaiting ? 'waiting' : (isFull ? 'full' : ''));
-        const statusBadge = isBooked ? '<span style="color: #44ff44; font-weight: bold;">✓ Angemeldet</span>' 
-                          : (isWaiting ? '<span style="color: #ffaa00; font-weight: bold;">Warteliste</span>' : '');
+        let statusBadge = '';
+        if (isBooked) {
+          statusBadge = '<span style="color: #91C736; font-weight: bold;">Angemeldet</span>';
+        } else if (isWaiting) {
+          statusBadge = '<span style="color: #ffaa00; font-weight: bold;">⚠️ Warteliste</span>';
+        } else if (isScheduled) {
+          const scheduledJob = scheduledJobsMap.get(course.id);
+          const statusIcon = scheduledJob.status === 'running' ? '🔄' : '📅';
+          statusBadge = `<span style="color: #91C736; font-weight: bold;">${statusIcon} Geplant</span>`;
+        }
+
+        const locationButton = course.locationId 
+          ? `<button class="btn-link" onclick="openLocation(${course.locationId}, '${course.location.replace(/'/g, "\\'")}')">🗺️</button>`
+          : '';
 
         html += `
-          <div class="course-card ${cardClass}">
+          <div class="course-card ${cardClass}" data-course-id="${course.id}">
             <div class="course-info">
               <h3>${course.description} ${statusBadge}</h3>
               <div class="course-meta">
-                <span>📅 ${dayName}, ${dateStr}</span>
-                <span>🕐 ${time} Uhr</span>
-                <span>📍 ${course.location}</span>
-                <span>🎫 ID: ${course.id}</span>
+                ${course.level ? `<strong>${course.level}</strong>` : ''}
+                <span>${dayName}, ${dateStr}</span>
+                <span>${time} Uhr</span>
+                <span>${course.location} ${locationButton}</span>
+                <span>ID: ${course.id}</span>
                 ${supervisors}
               </div>
             </div>
             <div style="display: flex; align-items: center; gap: 15px;">
-              <span class="availability ${isFull ? 'full' : 'available'}">
-                ${isFull ? 'Voll' : ` ${course.available} frei`}
+              <span class="availability ${isFull ? 'full' : 'available'}" data-available="${course.available}">
+                ${isFull ? 'Voll' : `${course.available} frei`}
               </span>
               <div class="course-actions">
                 <button class="btn btn-primary" onclick="quickRegister(${course.id})" ${isBooked || isWaiting ? 'disabled' : ''}>
-                  ${isBooked ? '✓ Angemeldet' : (isWaiting ? 'Warteliste' : (isFull ? 'Warteliste' : 'Anmelden'))}
+                  ${isBooked ? 'Angemeldet' : (isWaiting ? 'Warteliste' : (isFull ? 'Warteliste' : 'Anmelden'))}
                 </button>
                 <button class="btn btn-secondary" onclick="openPollingModal(${course.id})" ${isBooked || isWaiting ? 'disabled' : ''}>
                   Polling
+                </button>
+                <button class="btn btn-secondary" onclick="openScheduleModal(${course.id}, '${course.startDate}', '${course.description.replace(/'/g, "\\'")}')" ${isBooked || isWaiting || isScheduled ? 'disabled' : ''}>
+                  ${isScheduled ? 'Geplant' : 'Planen'}
                 </button>
               </div>
             </div>
@@ -862,6 +1434,90 @@
       });
 
       container.innerHTML = html;
+    }
+
+    // Update existing course card without full re-render
+    function updateCourseCard(card, course) {
+      const availabilityEl = card.querySelector('.availability');
+      const oldAvailable = parseInt(availabilityEl.dataset.available) || 0;
+      const newAvailable = course.available;
+      const isFull = newAvailable <= 0;
+
+      // Update availability with animation if changed
+      if (oldAvailable !== newAvailable) {
+        availabilityEl.dataset.available = newAvailable;
+        availabilityEl.className = `availability ${isFull ? 'full' : 'available'}`;
+        availabilityEl.innerHTML = isFull ? 'Voll' : `${newAvailable} frei`;
+        
+        // Add pulse animation
+        availabilityEl.style.animation = 'pulse 0.5s ease-in-out';
+        setTimeout(() => {
+          availabilityEl.style.animation = '';
+        }, 500);
+      }
+
+      // Check current booking status from the card
+      const wasBooked = card.classList.contains('booked');
+      const wasWaiting = card.classList.contains('waiting');
+      const wasInAnyStatus = wasBooked || wasWaiting;
+
+      // Check new booking status
+      const isBooked = course.userParticipation?.participationStatus === 1;
+      const isWaiting = course.userParticipation?.participationStatus === 3;
+      const isInAnyStatus = isBooked || isWaiting;
+      
+      // Update if status changed in any direction
+      if (wasInAnyStatus !== isInAnyStatus || (isInAnyStatus && (wasBooked !== isBooked || wasWaiting !== isWaiting))) {
+        const buttons = card.querySelectorAll('button');
+        const primaryBtn = card.querySelector('.btn-primary');
+        const titleEl = card.querySelector('h3');
+        
+        if (isBooked) {
+          // Booked
+          card.className = 'course-card booked';
+          buttons.forEach(btn => btn.disabled = true);
+          if (primaryBtn) primaryBtn.textContent = 'Angemeldet';
+          // Update title badge
+          if (titleEl) {
+            const titleText = titleEl.textContent.split('<span')[0].trim();
+            const courseName = course.description;
+            titleEl.innerHTML = `${courseName} <span style="color: #91C736; font-weight: bold;">✓ Angemeldet</span>`;
+          }
+        } else if (isWaiting) {
+          // Waiting list
+          card.className = 'course-card waiting';
+          buttons.forEach(btn => btn.disabled = true);
+          if (primaryBtn) primaryBtn.textContent = '⏳ Warteliste';
+          // Update title badge
+          if (titleEl) {
+            const courseName = course.description;
+            titleEl.innerHTML = `${courseName} <span style="color: #ffaa00; font-weight: bold;">Warteliste</span>`;
+          }
+        } else {
+          // No longer booked/waiting (cancelled)
+          card.className = `course-card ${isFull ? 'full' : ''}`;
+          buttons.forEach(btn => btn.disabled = false);
+          if (primaryBtn) {
+            primaryBtn.textContent = isFull ? 'Warteliste' : 'Anmelden';
+          }
+          // Remove badge from title
+          if (titleEl) {
+            const courseName = course.description;
+            titleEl.textContent = courseName;
+          }
+        }
+        
+        // Add flash animation for any status change
+        card.style.animation = 'flash 0.5s ease-in-out';
+        setTimeout(() => {
+          card.style.animation = '';
+        }, 500);
+      }
+    }
+
+    function createCourseCard(course, days) {
+      // This would create a new card element, but for now we can skip since courses don't usually appear mid-session
+      return null;
     }
 
     // Schnelle Anmeldung
@@ -889,6 +1545,8 @@
             addLog('info', `Server: ${JSON.stringify(data.fullResponse)}`);
           }
           alert('✅ Erfolgreich angemeldet!');
+          // Refresh course list after successful booking (silent mode)
+          setTimeout(() => searchCourses(true), 1000);
         } else {
           addLog('error', `❌ ${data.message}`);
           if (data.fullResponse) {
@@ -910,6 +1568,196 @@
 
     function closePollingModal() {
       document.getElementById('pollingModal').classList.remove('active');
+    }
+
+    // Schedule Modal
+    async function openScheduleModal(bookingId, courseStartTime, courseDescription) {
+      const modal = document.getElementById('scheduleModal');
+      const errorDiv = document.getElementById('scheduleModalError');
+      errorDiv.classList.add('hidden');
+      
+      document.getElementById('scheduleBookingId').value = bookingId;
+      document.getElementById('scheduleCourseStartTime').value = courseStartTime;
+      document.getElementById('scheduleCourseDescription').value = courseDescription;
+      document.getElementById('scheduleModalCourse').textContent = courseDescription;
+      
+      // Format course time
+      const courseDate = new Date(courseStartTime);
+      const days = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
+      document.getElementById('scheduleCourseTime').textContent = 
+        `${days[courseDate.getDay()]}, ${courseDate.toLocaleDateString('de-DE')} um ${courseDate.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr`;
+      
+      // Fetch booking info from server
+      try {
+        const res = await fetch(`/api/schedule/info?courseStartTime=${encodeURIComponent(courseStartTime)}`);
+        const info = await res.json();
+        
+        const bookingAvailable = new Date(info.bookingAvailableAt);
+        const pollingStart = new Date(info.pollingStartAt);
+        const pollingStop = new Date(info.pollingStopAt);
+        
+        document.getElementById('scheduleBookingAvailable').textContent = 
+          `${days[bookingAvailable.getDay()]}, ${bookingAvailable.toLocaleDateString('de-DE')} um ${bookingAvailable.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr`;
+        document.getElementById('schedulePollingStart').textContent = 
+          `~${pollingStart.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })} Uhr (zufällig)`;
+        document.getElementById('schedulePollingStop').textContent = 
+          `${pollingStop.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })} Uhr`;
+        
+        const confirmBtn = document.getElementById('scheduleConfirmBtn');
+        if (info.isInPast) {
+          errorDiv.textContent = 'Der Buchungszeitraum ist bereits abgelaufen.';
+          errorDiv.classList.remove('hidden');
+          confirmBtn.disabled = true;
+        } else if (info.isInWindow) {
+          document.getElementById('schedulePollingStart').textContent = 'Sofort (Fenster aktiv)';
+          confirmBtn.disabled = false;
+        } else {
+          confirmBtn.disabled = false;
+        }
+      } catch (error) {
+        console.error('Error fetching schedule info:', error);
+        errorDiv.textContent = 'Fehler beim Laden der Buchungsinformationen.';
+        errorDiv.classList.remove('hidden');
+      }
+      
+      modal.classList.add('active');
+    }
+
+    function closeScheduleModal() {
+      document.getElementById('scheduleModal').classList.remove('active');
+    }
+
+    async function confirmSchedule() {
+      const bookingId = document.getElementById('scheduleBookingId').value;
+      const courseStartTime = document.getElementById('scheduleCourseStartTime').value;
+      const courseDescription = document.getElementById('scheduleCourseDescription').value;
+      const errorDiv = document.getElementById('scheduleModalError');
+      
+      try {
+        const res = await fetch('/api/schedule', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ bookingId: parseInt(bookingId), courseStartTime, courseDescription })
+        });
+        
+        const data = await res.json();
+        
+        if (res.ok && data.success) {
+          closeScheduleModal();
+          addLog('success', `Buchung geplant für Booking ${bookingId}`);
+          loadScheduledJobs();
+          // Switch to register tab to show scheduled jobs
+          document.querySelector('[data-tab="register"]').click();
+        } else {
+          errorDiv.textContent = data.error || 'Fehler beim Planen der Buchung';
+          errorDiv.classList.remove('hidden');
+        }
+      } catch (error) {
+        errorDiv.textContent = error.message;
+        errorDiv.classList.remove('hidden');
+      }
+    }
+
+    // Load and render scheduled jobs
+    async function loadScheduledJobs() {
+      try {
+        const res = await fetch('/api/schedule');
+        const data = await res.json();
+        const jobs = data.jobs || [];
+        
+        // Update scheduled jobs map
+        scheduledJobsMap.clear();
+        jobs.forEach(job => {
+          if (job.status === 'pending' || job.status === 'running') {
+            scheduledJobsMap.set(job.bookingId, job);
+          }
+        });
+        
+        renderScheduledJobs(jobs);
+        
+        // Refresh course cards to show scheduled status
+        const coursesList = document.getElementById('coursesList');
+        if (coursesList && coursesList.children.length > 0) {
+          searchCourses(true);
+        }
+      } catch (error) {
+        console.error('Error loading scheduled jobs:', error);
+      }
+    }
+
+    function renderScheduledJobs(jobs) {
+      const container = document.getElementById('scheduledJobsList');
+      const section = document.getElementById('scheduledJobsSection');
+      
+      const pendingJobs = jobs.filter(j => j.status === 'pending' || j.status === 'running');
+      
+      if (pendingJobs.length === 0) {
+        container.innerHTML = '<p style="color: #666;">Keine geplanten Buchungen</p>';
+        return;
+      }
+      
+      const days = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
+      
+      let html = '';
+      pendingJobs.forEach(job => {
+        const bookingAvailable = new Date(job.bookingAvailableAt);
+        const pollingStart = new Date(job.pollingStartAt);
+        const courseStart = new Date(job.courseStartTime);
+        const statusClass = job.status === 'running' ? 'running' : '';
+        const statusText = job.status === 'running' ? '🔄 Läuft...' : '⏳ Geplant';
+        
+        html += `
+          <div class="scheduled-job-card ${statusClass}">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+              <div>
+                <strong>${job.courseDescription || `Booking ${job.bookingId}`}</strong>
+                <span style="margin-left: 10px; color: ${job.status === 'running' ? '#ffaa00' : '#91C736'};">${statusText}</span>
+              </div>
+              ${job.status === 'pending' ? `<button class="btn btn-danger" onclick="cancelScheduledJob('${job.id}')">✕ Abbrechen</button>` : ''}
+            </div>
+            <div class="schedule-info">
+              <div class="schedule-info-item">
+                <span class="schedule-info-label">Kurs</span>
+                <span>${days[courseStart.getDay()]}, ${courseStart.toLocaleDateString('de-DE')} ${courseStart.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr</span>
+              </div>
+              <div class="schedule-info-item">
+                <span class="schedule-info-label">Buchung verfügbar</span>
+                <span class="schedule-time-highlight">${days[bookingAvailable.getDay()]}, ${bookingAvailable.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr</span>
+              </div>
+              <div class="schedule-info-item">
+                <span class="schedule-info-label">Polling startet</span>
+                <span>~${pollingStart.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })} Uhr</span>
+              </div>
+              <div class="schedule-info-item">
+                <span class="schedule-info-label">Booking ID</span>
+                <span>${job.bookingId}</span>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+      
+      container.innerHTML = html;
+    }
+
+    async function cancelScheduledJob(jobId) {
+      if (!confirm('Geplante Buchung wirklich abbrechen?')) return;
+      
+      try {
+        const res = await fetch(`/api/schedule/${encodeURIComponent(jobId)}`, {
+          method: 'DELETE'
+        });
+        
+        if (res.ok) {
+          addLog('info', 'Geplante Buchung abgebrochen');
+          loadScheduledJobs();
+        } else {
+          const data = await res.json();
+          addLog('error', data.error || 'Fehler beim Abbrechen');
+        }
+      } catch (error) {
+        addLog('error', error.message);
+      }
     }
 
     function startPollingFromModal() {
@@ -974,6 +1822,7 @@
     document.getElementById('importAuthBtn').addEventListener('click', async () => {
       const input = document.getElementById('authDataInput').value.trim();
       const resultDiv = document.getElementById('authResult');
+      const autoFix = document.getElementById('autoFixJson').checked;
 
       if (!input) {
         resultDiv.className = 'alert alert-error';
@@ -983,27 +1832,81 @@
       }
 
       try {
-        // Parse den Input (kann in Anführungszeichen sein)
         let authData;
-        if (input.startsWith('"') && input.endsWith('"')) {
-          authData = JSON.parse(JSON.parse(input));
-        } else {
-          authData = JSON.parse(input);
+        let cleanedInput = input;
+        
+        // Firefox "Copy Object" Format (Single Quotes)
+        if (cleanedInput.startsWith("'") && cleanedInput.endsWith("'")) {
+             // Entferne äußere Single-Quotes
+             cleanedInput = cleanedInput.slice(1, -1);
+             
+             // Firefox escapet Backslashes im String-Literal doppelt (z.B. userAgents)
+             // Wir müssen \\ zu \ machen, damit es valides JSON wird wie bei Chrome
+             cleanedInput = cleanedInput.replace(/\\\\/g, '\\');
+             
+             // Eventuell escapte Single-Quotes \' zu ' machen
+             cleanedInput = cleanedInput.replace(/\\'/g, "'");
+        } 
+        // Chrome "Copy String Contents" (manchmal mit " am Anfang/Ende wenn falsch kopiert)
+        else if (cleanedInput.startsWith('"') && cleanedInput.endsWith('"')) {
+             try {
+                // Versuche es als JSON-String zu parsen (unquoting)
+                cleanedInput = JSON.parse(cleanedInput);
+             } catch (e) {
+                // Fallback: Einfaches Entfernen der Quotes
+                cleanedInput = cleanedInput.slice(1, -1);
+             }
         }
 
-        // Korrigiere doppelt escapte Strings (z.B. userAgents-Feld)
-        const jsonStr = JSON.stringify(authData);
-        const fixedStr = jsonStr.replace(/\\\\/g, '\\').replace(/\\"\[/g, '[').replace(/\]\\"/g, ']');
+        // Versuche zu parsen
         try {
-          authData = JSON.parse(fixedStr);
-        } catch {
-          // Falls Korrektur fehlschlägt, nutze Original
+          authData = JSON.parse(cleanedInput);
+        } catch (parseError) {
+           console.error('Parsing failed:', parseError);
+           // Wenn das fehlschlägt, probieren wir den ursprünglichen Input nochmal direkt
+           // (vielleicht war es doch kein Firefox-Format oder wir haben zu viel entfernt)
+           if (input !== cleanedInput) {
+              try {
+                authData = JSON.parse(input);
+              } catch (e) {
+                throw new Error(`JSON Parsing fehlgeschlagen: ${parseError.message}`);
+              }
+           } else {
+              throw new Error(`JSON Parsing fehlgeschlagen: ${parseError.message}`);
+           }
+        }
+
+        if (autoFix) {
+            // Zusätzliche Sicherheits-Korrekturen für bekannte Probleme
+            // Falls userAgents immer noch kaputt ist (z.B. [\"... statt ["...)
+            const jsonStr = JSON.stringify(authData);
+            
+            // Fix für: userAgents":"[\"Android... (dies ist in Chrome korrekt, aber falls es doppelt escaped ist)
+            // Hier sind wir vorsichtig. 
+            // Der Server-Fix macht: replace(/\\\\/g, '\\') -> das haben wir oben schon für Firefox-Input gemacht.
+            
+            // Wir prüfen, ob userAgents ein String ist, den wir parsen können
+            if (authData.member && typeof authData.member.userAgents === 'string') {
+                try {
+                    JSON.parse(authData.member.userAgents);
+                } catch (e) {
+                    // Wenn userAgents nicht parsbar ist, ist es wahrscheinlich kaputt escaped
+                    // Versuche zu reparieren: [\" -> ["
+                    let ua = authData.member.userAgents;
+                    if (ua.includes('[\\"')) {
+                        authData.member.userAgents = ua.replace(/\\"/g, '"');
+                    }
+                }
+            }
         }
 
         const res = await fetch('/api/auth/import', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(authData)
+          body: JSON.stringify({
+            ...authData,
+            _skipServerFix: !autoFix // Signal an Server
+          })
         });
 
         const data = await res.json();
@@ -1024,6 +1927,7 @@
       } catch (error) {
         resultDiv.className = 'alert alert-error';
         resultDiv.textContent = `❌ Fehler: ${error.message}. Bitte prüfe das Format der Daten.`;
+        console.error(error);
       }
 
       resultDiv.classList.remove('hidden');
@@ -1035,9 +1939,12 @@
 
     connectWebSocket();
     loadStatus();
-
-    // Kurse initial laden
-    document.getElementById('searchBtn').click();
+    loadLocations();
+    loadSports(); // Lädt Sportarten und führt initiale Suche aus
+    loadScheduledJobs(); // Load scheduled jobs on page load
+    
+    // Kurse initial laden - Entfernt, da loadSports() das jetzt macht
+    // document.getElementById('searchBtn').click();
   </script>
 </body>
 </html>

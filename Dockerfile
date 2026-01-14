@@ -29,6 +29,7 @@ EXPOSE 3000 5173
 
 # Create a startup script
 RUN echo '#!/bin/sh' > /app/start.sh && \
+    echo 'node fetch-locations.js' >> /app/start.sh && \
     echo 'node server.js &' >> /app/start.sh && \
     echo 'exec npx vite --host' >> /app/start.sh && \
     chmod +x /app/start.sh

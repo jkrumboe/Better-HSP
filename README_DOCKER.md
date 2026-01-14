@@ -26,8 +26,7 @@ docker run -d \
   --name hsp-bot \
   -p 3000:3000 \
   -p 5173:5173 \
-  -v ${PWD}/auth-data.json:/app/auth-data.json \
-  -v ${PWD}/token-store.json:/app/token-store.json \
+  -v ${PWD}/data:/app/data \
   hsp-bot
 ```
 
@@ -62,9 +61,8 @@ docker-compose restart
 
 ## Volumes
 
-The following files are mounted as volumes to persist data:
-- `auth-data.json`: Authentication data
-- `token-store.json`: Token storage
+The following directory is mounted as a volume to persist data:
+- `data/`: Contains `auth-data.json` and `token-store.json`
 
 ## Environment Variables
 

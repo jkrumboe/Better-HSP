@@ -7,7 +7,13 @@ import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const API_BASE = 'https://backbone-web-api.production.munster.delcom.nl';
-const TOKEN_STORE_FILE = path.join(__dirname, 'token-store.json');
+const DATA_DIR = path.join(__dirname, 'data');
+const TOKEN_STORE_FILE = path.join(DATA_DIR, 'token-store.json');
+
+// Ensure data directory exists
+if (!fs.existsSync(DATA_DIR)) {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+}
 
 // Default-Struktur für persistierte Daten
 const EMPTY_STORE = {

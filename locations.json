@@ -1,0 +1,1272 @@
+{
+  "2": {
+    "id": 2,
+    "siteId": 0,
+    "description": "Universitätssporthalle",
+    "latitude": 51.97116,
+    "longitude": 7.59991,
+    "zipCode": "48149",
+    "street": "Horstmarer Landweg ",
+    "streetNumber": "51"
+  },
+  "6": {
+    "id": 6,
+    "siteId": 0,
+    "description": "Sportzentrum",
+    "latitude": 51.972507,
+    "longitude": 7.596987,
+    "zipCode": "48149",
+    "street": "Horstmarer Landweg",
+    "streetNumber": "86b"
+  },
+  "9": {
+    "id": 9,
+    "siteId": 0,
+    "description": "Scharnhorststraße",
+    "latitude": 51.95008,
+    "longitude": 7.60674,
+    "zipCode": "48151",
+    "street": "Scharnhorststraße",
+    "streetNumber": "118"
+  },
+  "10": {
+    "id": 10,
+    "siteId": 0,
+    "description": "Ballsporthalle",
+    "latitude": 51.972453,
+    "longitude": 7.597832,
+    "zipCode": "48149",
+    "street": "Horstmarer Landweg",
+    "streetNumber": "68B"
+  },
+  "11": {
+    "id": 11,
+    "siteId": 0,
+    "description": "Sportplatz 1",
+    "latitude": 51.971039,
+    "longitude": 7.599757,
+    "zipCode": "48149",
+    "street": "Horstmarer Landweg",
+    "streetNumber": "50"
+  },
+  "12": {
+    "id": 12,
+    "siteId": 0,
+    "description": "Campus Cage",
+    "latitude": 51.971039,
+    "longitude": 7.599757,
+    "zipCode": "48149",
+    "street": "Horstmarer Landweg",
+    "streetNumber": "50"
+  },
+  "13": {
+    "id": 13,
+    "siteId": 0,
+    "description": "Verwaltungsgebäude (Leonardo-Campus)",
+    "latitude": 51.973306,
+    "longitude": 7.603285,
+    "zipCode": "48149",
+    "street": "Leonardo-Campus",
+    "streetNumber": "11"
+  },
+  "14": {
+    "id": 14,
+    "siteId": 0,
+    "description": "Leichtathletikhalle",
+    "latitude": 51.969946,
+    "longitude": 7.600586,
+    "zipCode": "48149",
+    "street": "Horstmarer Landweg",
+    "streetNumber": null
+  },
+  "15": {
+    "id": 15,
+    "siteId": 0,
+    "description": "Horstmarer Landweg 50",
+    "latitude": 51.971039,
+    "longitude": 7.599757,
+    "zipCode": "48149",
+    "street": "Horstmarer Landweg",
+    "streetNumber": "50"
+  },
+  "16": {
+    "id": 16,
+    "siteId": 0,
+    "description": "Leonardo-Campus 17",
+    "latitude": 51.973007,
+    "longitude": 7.60019,
+    "zipCode": "48149",
+    "street": "Leonardo-Campus",
+    "streetNumber": null
+  },
+  "17": {
+    "id": 17,
+    "siteId": 0,
+    "description": "Sportplatz 2",
+    "latitude": 51.972453,
+    "longitude": 7.597832,
+    "zipCode": "48149",
+    "street": "Horstmarer Landweg",
+    "streetNumber": null
+  },
+  "18": {
+    "id": 18,
+    "siteId": 0,
+    "description": "Wurfplatz",
+    "latitude": 51.971175,
+    "longitude": 7.598934,
+    "zipCode": "48149",
+    "street": "Horstmarer Landweg",
+    "streetNumber": null
+  },
+  "19": {
+    "id": 19,
+    "siteId": 0,
+    "description": "Mehrzweckplatz",
+    "latitude": 51.971039,
+    "longitude": 7.599757,
+    "zipCode": "48149",
+    "street": "Horstmarer Landweg",
+    "streetNumber": null
+  },
+  "20": {
+    "id": 20,
+    "siteId": 0,
+    "description": "Campus Thenics",
+    "latitude": 51.971039,
+    "longitude": 7.599757,
+    "zipCode": "48149",
+    "street": "Horstmarer Landweg",
+    "streetNumber": null
+  },
+  "21": {
+    "id": 21,
+    "siteId": 0,
+    "description": "Slackline-Anlage",
+    "latitude": 51.97137,
+    "longitude": 7.599931,
+    "zipCode": "48149",
+    "street": "Horstmarer Landweg",
+    "streetNumber": null
+  },
+  "22": {
+    "id": 22,
+    "siteId": 0,
+    "description": "Padel Tennis Platz",
+    "latitude": 51.971202,
+    "longitude": 7.601082,
+    "zipCode": "48149",
+    "street": "Horstmarer Landweg",
+    "streetNumber": null
+  },
+  "23": {
+    "id": 23,
+    "siteId": 0,
+    "description": "Tennisplätze Horstmarer Landweg",
+    "latitude": 51.971133,
+    "longitude": 7.60079,
+    "zipCode": "48149",
+    "street": "Horstmarer Landweg",
+    "streetNumber": "50"
+  },
+  "24": {
+    "id": 24,
+    "siteId": 0,
+    "description": "Beach Anlage",
+    "latitude": 51.972453,
+    "longitude": 7.597832,
+    "zipCode": "48149",
+    "street": "Horstmarer Landweg",
+    "streetNumber": null
+  },
+  "25": {
+    "id": 25,
+    "siteId": 0,
+    "description": "Tanzzelt",
+    "latitude": 51.972453,
+    "longitude": 7.597832,
+    "zipCode": "48149",
+    "street": "Horstmarer Landweg",
+    "streetNumber": null
+  },
+  "26": {
+    "id": 26,
+    "siteId": 0,
+    "description": "Fliednerstraße",
+    "latitude": 51.963015,
+    "longitude": 7.594594,
+    "zipCode": "48149",
+    "street": "Fliednerstraße",
+    "streetNumber": null
+  },
+  "27": {
+    "id": 27,
+    "siteId": 0,
+    "description": "Coburg",
+    "latitude": 51.97948,
+    "longitude": 7.6111,
+    "zipCode": "48159",
+    "street": "Grevener Straße 125",
+    "streetNumber": null
+  },
+  "28": {
+    "id": 28,
+    "siteId": 0,
+    "description": "Hiltrup",
+    "latitude": 51.90058,
+    "longitude": 7.640213,
+    "zipCode": "48165",
+    "street": "Westfalenstraße 201",
+    "streetNumber": null
+  },
+  "29": {
+    "id": 29,
+    "siteId": 0,
+    "description": "Kinderhaus",
+    "latitude": 51.995553,
+    "longitude": 7.60388,
+    "zipCode": "48159",
+    "street": "Idenbrockplatz 8",
+    "streetNumber": null
+  },
+  "30": {
+    "id": 30,
+    "siteId": 0,
+    "description": "Mitte",
+    "latitude": 51.959834,
+    "longitude": 7.615939,
+    "zipCode": "48149",
+    "street": "Badestraße 8",
+    "streetNumber": null
+  },
+  "31": {
+    "id": 31,
+    "siteId": 0,
+    "description": "Ost",
+    "latitude": 51.958759,
+    "longitude": 7.659016,
+    "zipCode": "48145",
+    "street": "Mauritz-Lindenweg ",
+    "streetNumber": "101"
+  },
+  "32": {
+    "id": 32,
+    "siteId": 0,
+    "description": "Roxel",
+    "latitude": 51.954898,
+    "longitude": 7.527523,
+    "zipCode": "48161",
+    "street": "Tilbecker Straße 36",
+    "streetNumber": null
+  },
+  "33": {
+    "id": 33,
+    "siteId": 0,
+    "description": "Adolph-Kolping-Berufskolleg",
+    "latitude": 51.963837,
+    "longitude": 7.646098,
+    "zipCode": "48145",
+    "street": "Kaiser-Wilhelm-Ring 1",
+    "streetNumber": null
+  },
+  "34": {
+    "id": 34,
+    "siteId": 0,
+    "description": "Aegidii-Ludgeri Grundschule",
+    "latitude": 51.958561,
+    "longitude": 7.624898,
+    "zipCode": "48143",
+    "street": "Breite Gasse 3",
+    "streetNumber": null
+  },
+  "35": {
+    "id": 35,
+    "siteId": 0,
+    "description": "Dreifaltigkeitsschule",
+    "latitude": 51.975272,
+    "longitude": 7.614437,
+    "zipCode": "48145",
+    "street": "Friesenring 25",
+    "streetNumber": null
+  },
+  "36": {
+    "id": 36,
+    "siteId": 0,
+    "description": "Erich-Kästner-Schule",
+    "latitude": 51.972635,
+    "longitude": 7.653812,
+    "zipCode": "48145",
+    "street": "Pötterhoek 49",
+    "streetNumber": null
+  },
+  "37": {
+    "id": 37,
+    "siteId": 0,
+    "description": "Erich-Klausener-Schule",
+    "latitude": 51.952181,
+    "longitude": 7.609341,
+    "zipCode": "48151",
+    "street": "Bismarckallee 53-55",
+    "streetNumber": null
+  },
+  "38": {
+    "id": 38,
+    "siteId": 0,
+    "description": "Erna-de-Vries Schule",
+    "latitude": 51.9356,
+    "longitude": 7.62183,
+    "zipCode": "48153",
+    "street": "Spichernstr. 17-19",
+    "streetNumber": null
+  },
+  "39": {
+    "id": 39,
+    "siteId": 0,
+    "description": "Frh.-vom-Stein-Gymnasium",
+    "latitude": 51.961245,
+    "longitude": 7.570953,
+    "zipCode": "48161",
+    "street": "Dieckmannstr. 141",
+    "streetNumber": null
+  },
+  "40": {
+    "id": 40,
+    "siteId": 0,
+    "description": "Gesamtschule Münster Mitte",
+    "latitude": 51.963949,
+    "longitude": 7.619168,
+    "zipCode": "48143",
+    "street": "Jüdefelderstr. 10",
+    "streetNumber": null
+  },
+  "41": {
+    "id": 41,
+    "siteId": 0,
+    "description": "Halle der Turngemeinde Münster",
+    "latitude": 51.96594,
+    "longitude": 7.632,
+    "zipCode": "48147",
+    "street": "Lotharingerstr. 17",
+    "streetNumber": null
+  },
+  "42": {
+    "id": 42,
+    "siteId": 0,
+    "description": "Johannisschule",
+    "latitude": 51.952518,
+    "longitude": 7.621872,
+    "zipCode": "48151",
+    "street": "Vogel-v.-Falkenstein-Str. 4",
+    "streetNumber": null
+  },
+  "43": {
+    "id": 43,
+    "siteId": 0,
+    "description": "Martin-Luther-Schule",
+    "latitude": 51.968702,
+    "longitude": 7.627805,
+    "zipCode": "48147",
+    "street": "Coerdestraße 8",
+    "streetNumber": null
+  },
+  "44": {
+    "id": 44,
+    "siteId": 0,
+    "description": "Matthias-Claudius-Schule",
+    "latitude": 51.938319,
+    "longitude": 7.611905,
+    "zipCode": "48151",
+    "street": "Gut Insel 36-40",
+    "streetNumber": null
+  },
+  "45": {
+    "id": 45,
+    "siteId": 0,
+    "description": "Mauritzschule",
+    "latitude": 51.96404,
+    "longitude": 7.64991,
+    "zipCode": "48145",
+    "street": "Stiftsstraße 6",
+    "streetNumber": null
+  },
+  "46": {
+    "id": 46,
+    "siteId": 0,
+    "description": "Pascal-Gymnasium",
+    "latitude": 51.97632,
+    "longitude": 7.62677,
+    "zipCode": "48147",
+    "street": "Uppenkampstiege 17",
+    "streetNumber": null
+  },
+  "47": {
+    "id": 47,
+    "siteId": 0,
+    "description": "Paul-Schneider-Schule",
+    "latitude": 51.998555,
+    "longitude": 7.61233,
+    "zipCode": "48159",
+    "street": "Pastorsesch 34",
+    "streetNumber": null
+  },
+  "48": {
+    "id": 48,
+    "siteId": 0,
+    "description": "Primusschule",
+    "latitude": 51.93956,
+    "longitude": 7.621786,
+    "zipCode": "48151",
+    "street": "Grevingstraße 24",
+    "streetNumber": null
+  },
+  "49": {
+    "id": 49,
+    "siteId": 0,
+    "description": "Realschule im Kreuzviertel",
+    "latitude": 51.973824,
+    "longitude": 7.62023,
+    "zipCode": "48147",
+    "street": "Finkenstr. 76",
+    "streetNumber": null
+  },
+  "50": {
+    "id": 50,
+    "siteId": 0,
+    "description": "Schillergymnasium",
+    "latitude": 51.968999,
+    "longitude": 7.620713,
+    "zipCode": "48149",
+    "street": "Gertrudenstr. 5",
+    "streetNumber": null
+  },
+  "51": {
+    "id": 51,
+    "siteId": 0,
+    "description": "Schlaungymnasium",
+    "latitude": 51.963024,
+    "longitude": 7.63332,
+    "zipCode": "48143",
+    "street": "Sonnenstraße 18",
+    "streetNumber": null
+  },
+  "52": {
+    "id": 52,
+    "siteId": 0,
+    "description": "Schulzentrum Kinderhaus",
+    "latitude": 51.999236,
+    "longitude": 7.605382,
+    "zipCode": "48159",
+    "street": "Von-Humboldt-Str. 14",
+    "streetNumber": null
+  },
+  "53": {
+    "id": 53,
+    "siteId": 0,
+    "description": "Überwasserschule",
+    "latitude": 51.964253,
+    "longitude": 7.620327,
+    "zipCode": "48143",
+    "street": "Katthagen 7",
+    "streetNumber": null
+  },
+  "54": {
+    "id": 54,
+    "siteId": 0,
+    "description": "Waldschule Kinderhaus",
+    "latitude": 52.00114,
+    "longitude": 7.610628,
+    "zipCode": "48159",
+    "street": "Große Wiese 14",
+    "streetNumber": null
+  },
+  "55": {
+    "id": 55,
+    "siteId": 0,
+    "description": "Wilhelm-Hittorf-Gymnasium ",
+    "latitude": 51.94751,
+    "longitude": 7.620091,
+    "zipCode": "48151",
+    "street": "Am Wasserturm 2",
+    "streetNumber": null
+  },
+  "56": {
+    "id": 56,
+    "siteId": 0,
+    "description": "Sportcenter Borkstraße",
+    "latitude": 51.933589,
+    "longitude": 7.602153,
+    "zipCode": "48163",
+    "street": "Borkstraße 17b",
+    "streetNumber": null
+  },
+  "57": {
+    "id": 57,
+    "siteId": 0,
+    "description": "DJK Wacker Mecklenbeck",
+    "latitude": 51.936056,
+    "longitude": 7.573002,
+    "zipCode": "48163",
+    "street": "Egelshove 1",
+    "streetNumber": null
+  },
+  "58": {
+    "id": 58,
+    "siteId": 0,
+    "description": "Sportpark Sentruper Höhe",
+    "latitude": 51.95296,
+    "longitude": 7.599298,
+    "zipCode": "48149",
+    "street": "Sentruper Straße 155",
+    "streetNumber": null
+  },
+  "59": {
+    "id": 59,
+    "siteId": 0,
+    "description": "Bahnhof Zentrum Nord",
+    "latitude": 51.98412,
+    "longitude": 7.637858,
+    "zipCode": "48147",
+    "street": "Albrecht-Thaer-Str. 14a",
+    "streetNumber": null
+  },
+  "60": {
+    "id": 60,
+    "siteId": 0,
+    "description": "Golfanlage Haus Köbbing",
+    "latitude": 51.88767,
+    "longitude": 7.641892,
+    "zipCode": "48165",
+    "street": "Westfalenstraße 332",
+    "streetNumber": null
+  },
+  "61": {
+    "id": 61,
+    "siteId": 0,
+    "description": "Golfplatz Münster-Tinnen",
+    "latitude": 51.896688,
+    "longitude": 7.54647,
+    "zipCode": "48163",
+    "street": "Am Kattwinkel 244",
+    "streetNumber": null
+  },
+  "62": {
+    "id": 62,
+    "siteId": 0,
+    "description": "Golfübungsanlage ",
+    "latitude": 51.990549,
+    "longitude": 7.624726,
+    "zipCode": "48159",
+    "street": "Kanalstraße 294",
+    "streetNumber": null
+  },
+  "63": {
+    "id": 63,
+    "siteId": 0,
+    "description": "Hauptbahnhof Münster",
+    "latitude": 51.956903,
+    "longitude": 7.63486,
+    "zipCode": "48143",
+    "street": "Berliner Platz",
+    "streetNumber": "25"
+  },
+  "64": {
+    "id": 64,
+    "siteId": 0,
+    "description": "Kunstrasenplatz Gievenbeck",
+    "latitude": 51.965667,
+    "longitude": 7.572659,
+    "zipCode": "48161",
+    "street": "Arnheimweg 40",
+    "streetNumber": null
+  },
+  "65": {
+    "id": 65,
+    "siteId": 0,
+    "description": "Marathonplatz",
+    "latitude": 51.98001,
+    "longitude": 7.6217,
+    "zipCode": "48147",
+    "street": "Wienburgstr. 141",
+    "streetNumber": null
+  },
+  "66": {
+    "id": 66,
+    "siteId": 0,
+    "description": "Soccer-Halle Rummenigge",
+    "latitude": 51.92385,
+    "longitude": 7.630755,
+    "zipCode": "48153",
+    "street": "Trauttmansdorffstr. 111",
+    "streetNumber": null
+  },
+  "67": {
+    "id": 67,
+    "siteId": 0,
+    "description": "Sportanlage Hiltrup Süd",
+    "latitude": 51.897168,
+    "longitude": 7.641512,
+    "zipCode": "48159",
+    "street": "Wetsfalenstraße 240",
+    "streetNumber": null
+  },
+  "68": {
+    "id": 68,
+    "siteId": 0,
+    "description": "Sportanlage Wangeroogeweg",
+    "latitude": 51.997155,
+    "longitude": 7.617087,
+    "zipCode": "48159",
+    "street": "Wangeroogeweg 18",
+    "streetNumber": null
+  },
+  "69": {
+    "id": 69,
+    "siteId": 0,
+    "description": "Sportplatz Eintracht Münster",
+    "latitude": 51.963195,
+    "longitude": 7.685698,
+    "zipCode": "48157",
+    "street": "Pleistermühlenweg 119",
+    "streetNumber": null
+  },
+  "70": {
+    "id": 70,
+    "siteId": 0,
+    "description": "Südpark ABI",
+    "latitude": 51.949073,
+    "longitude": 7.626035,
+    "zipCode": "48153",
+    "street": "Dahlweg 3",
+    "streetNumber": null
+  },
+  "71": {
+    "id": 71,
+    "siteId": 0,
+    "description": "Tennis- und Hockey-Club Münster",
+    "latitude": 51.945892,
+    "longitude": 7.561748,
+    "zipCode": "48161",
+    "street": "Dingbängerweg 349",
+    "streetNumber": null
+  },
+  "72": {
+    "id": 72,
+    "siteId": 0,
+    "description": "TP Bahnhof Davensberg",
+    "latitude": 51.771996,
+    "longitude": 7.675517,
+    "zipCode": "59387",
+    "street": "Zum Bahnhof",
+    "streetNumber": null
+  },
+  "73": {
+    "id": 73,
+    "siteId": 0,
+    "description": "TP Bahnhof Havixbeck-Lasbeck",
+    "latitude": 51.967446,
+    "longitude": 7.407489,
+    "zipCode": "48329",
+    "street": "Lasbeck 38",
+    "streetNumber": null
+  },
+  "74": {
+    "id": 74,
+    "siteId": 0,
+    "description": "TP Bahnhof Sythen",
+    "latitude": 51.765503,
+    "longitude": 7.220678,
+    "zipCode": "45721",
+    "street": "Thiesstr. 28",
+    "streetNumber": null
+  },
+  "75": {
+    "id": 75,
+    "siteId": 0,
+    "description": " FlyFit-Studio (Hall of Sports)",
+    "latitude": 51.983658,
+    "longitude": 7.616497,
+    "zipCode": "48147",
+    "street": "Nienkamp 54",
+    "streetNumber": null
+  },
+  "76": {
+    "id": 76,
+    "siteId": 0,
+    "description": "Aasee",
+    "latitude": 51.956806,
+    "longitude": 7.612903,
+    "zipCode": "48151",
+    "street": "Annette-Allee 9",
+    "streetNumber": null
+  },
+  "77": {
+    "id": 77,
+    "siteId": 0,
+    "description": "Aikikai Münster",
+    "latitude": 51.964693,
+    "longitude": 7.621765,
+    "zipCode": "48143",
+    "street": "Katthagen 30",
+    "streetNumber": null
+  },
+  "78": {
+    "id": 78,
+    "siteId": 0,
+    "description": "Annette-Allee/Himmelreichallee",
+    "latitude": 51.958045,
+    "longitude": 7.613955,
+    "zipCode": "48149",
+    "street": "Annette-allee",
+    "streetNumber": null
+  },
+  "79": {
+    "id": 79,
+    "siteId": 0,
+    "description": "BG Münster",
+    "latitude": 52.001046,
+    "longitude": 7.607185,
+    "zipCode": "48159",
+    "street": "Bernd-Feldhaus-Platz 1",
+    "streetNumber": null
+  },
+  "80": {
+    "id": 80,
+    "siteId": 0,
+    "description": "DAV Münster",
+    "latitude": 51.97908,
+    "longitude": 7.60851,
+    "zipCode": "48159",
+    "street": "Grevenerstr.",
+    "streetNumber": "125b"
+  },
+  "81": {
+    "id": 81,
+    "siteId": 0,
+    "description": "Bootshaus Rheinstraße",
+    "latitude": 51.970434,
+    "longitude": 7.662717,
+    "zipCode": "48145",
+    "street": "Rheinstraße 40",
+    "streetNumber": null
+  },
+  "82": {
+    "id": 82,
+    "siteId": 0,
+    "description": "Boulderhalle Monolith",
+    "latitude": 51.938114,
+    "longitude": 7.641646,
+    "zipCode": "48155",
+    "street": "Eulerstr. 2",
+    "streetNumber": null
+  },
+  "83": {
+    "id": 83,
+    "siteId": 0,
+    "description": "Mensa am Ring",
+    "latitude": 51.965251,
+    "longitude": 7.600243,
+    "zipCode": "48149",
+    "street": "Domagkstraße 61",
+    "streetNumber": null
+  },
+  "84": {
+    "id": 84,
+    "siteId": 0,
+    "description": "Ninfly Trampolinhalle",
+    "latitude": 51.935375,
+    "longitude": 7.634994,
+    "zipCode": "48153",
+    "street": "Robert-Bosch-Straße 16",
+    "streetNumber": null
+  },
+  "85": {
+    "id": 85,
+    "siteId": 0,
+    "description": "Peterhafen, Do-Ems-Kanal",
+    "latitude": 51.944582,
+    "longitude": 7.642922,
+    "zipCode": "48155",
+    "street": "Albersloher Weg 88",
+    "streetNumber": null
+  },
+  "86": {
+    "id": 86,
+    "siteId": 0,
+    "description": "Reiterhof Stuft, Hippo-Fun",
+    "latitude": 51.938762,
+    "longitude": 7.562713,
+    "zipCode": "48161",
+    "street": "Altenroxeler Str. 52",
+    "streetNumber": null
+  },
+  "87": {
+    "id": 87,
+    "siteId": 0,
+    "description": "Uni-Kurs/Raum AE 209, 2. OG",
+    "latitude": 51.960148,
+    "longitude": 7.623981,
+    "zipCode": "48143",
+    "street": "Aegidiistraße 5",
+    "streetNumber": null
+  },
+  "88": {
+    "id": 88,
+    "siteId": 0,
+    "description": "Schlossgarten",
+    "latitude": 51.963705,
+    "longitude": 7.61241,
+    "zipCode": "48145",
+    "street": "Schlossgarten",
+    "streetNumber": null
+  },
+  "89": {
+    "id": 89,
+    "siteId": 0,
+    "description": "Sportraum im Haus der GWS",
+    "latitude": 51.938041,
+    "longitude": 7.653319,
+    "zipCode": "48155",
+    "street": "Willy-Brandt-Weg 1",
+    "streetNumber": null
+  },
+  "90": {
+    "id": 90,
+    "siteId": 0,
+    "description": "SZ Bürgerschützen Corps MS",
+    "latitude": 51.974327,
+    "longitude": 7.605876,
+    "zipCode": "48149",
+    "street": "Steinfurter Str. 104",
+    "streetNumber": null
+  },
+  "91": {
+    "id": 91,
+    "siteId": 0,
+    "description": "Vereinsheim Schovelkoten",
+    "latitude": 51.948986,
+    "longitude": 7.655132,
+    "zipCode": "48155",
+    "street": "Lütkenbecker Weg 25",
+    "streetNumber": null
+  },
+  "92": {
+    "id": 92,
+    "siteId": 0,
+    "description": "VI-Dance Münster",
+    "latitude": 51.949727,
+    "longitude": 7.634146,
+    "zipCode": "48153",
+    "street": "Hafenstraße 64",
+    "streetNumber": null
+  },
+  "93": {
+    "id": 93,
+    "siteId": 0,
+    "description": "WersePark Sudmühle",
+    "latitude": 51.999949,
+    "longitude": 7.699163,
+    "zipCode": "48157",
+    "street": "Dyckburgstraße 468",
+    "streetNumber": null
+  },
+  "94": {
+    "id": 94,
+    "siteId": 0,
+    "description": "Yachtschule Overschmidt",
+    "latitude": 51.957576,
+    "longitude": 7.61506,
+    "zipCode": "48149",
+    "street": "Annette Allee 1",
+    "streetNumber": null
+  },
+  "95": {
+    "id": 95,
+    "siteId": 0,
+    "description": "Georgskommende G 209",
+    "latitude": 51.960488,
+    "longitude": 7.618911,
+    "zipCode": "48143",
+    "street": "Georgskommende 14-18",
+    "streetNumber": null
+  },
+  "96": {
+    "id": 96,
+    "siteId": 0,
+    "description": "Fürstenberghaus",
+    "latitude": 51.962058,
+    "longitude": 7.623729,
+    "zipCode": "48143",
+    "street": "Domplatz 20-22",
+    "streetNumber": null
+  },
+  "97": {
+    "id": 97,
+    "siteId": 0,
+    "description": "FH Steinfurt",
+    "latitude": 52.142555,
+    "longitude": 7.321851,
+    "zipCode": "48565",
+    "street": "Stegerwaldstraße 27",
+    "streetNumber": null
+  },
+  "98": {
+    "id": 98,
+    "siteId": 0,
+    "description": "Prüfungsamt I",
+    "latitude": 51.9668,
+    "longitude": 7.620708,
+    "zipCode": "48143",
+    "street": "Münzstraße 10",
+    "streetNumber": null
+  },
+  "99": {
+    "id": 99,
+    "siteId": 0,
+    "description": "Schloss",
+    "latitude": 51.963619,
+    "longitude": 7.61315,
+    "zipCode": "48149",
+    "street": "Schlossplatz 2",
+    "streetNumber": null
+  },
+  "100": {
+    "id": 100,
+    "siteId": 0,
+    "description": "Süd",
+    "latitude": 51.939804,
+    "longitude": 7.613032,
+    "zipCode": "48151",
+    "street": "Inselbogen",
+    "streetNumber": null
+  },
+  "101": {
+    "id": 101,
+    "siteId": 0,
+    "description": "A.-v.-Droste-Hülshoff Gymn.",
+    "latitude": 51.957807,
+    "longitude": 7.623481,
+    "zipCode": "48143",
+    "street": "Grüne Gasse 38",
+    "streetNumber": null
+  },
+  "102": {
+    "id": 102,
+    "siteId": 0,
+    "description": "Bodelschwinghschule",
+    "latitude": 51.96018,
+    "longitude": 7.645207,
+    "zipCode": "48145",
+    "street": "Gutenbergstr. 14",
+    "streetNumber": null
+  },
+  "104": {
+    "id": 104,
+    "siteId": 0,
+    "description": "Golfclub Wilkinghege",
+    "latitude": 51.990537,
+    "longitude": 7.579935,
+    "zipCode": "48159",
+    "street": "Steinfurter Straße",
+    "streetNumber": "448"
+  },
+  "105": {
+    "id": 105,
+    "siteId": 0,
+    "description": "Sudmühle",
+    "latitude": null,
+    "longitude": null,
+    "zipCode": "48157",
+    "street": "Dyckburgstraße",
+    "streetNumber": "468"
+  },
+  "106": {
+    "id": 106,
+    "siteId": 0,
+    "description": "Philipps Muckibude",
+    "latitude": null,
+    "longitude": null,
+    "zipCode": "48149",
+    "street": null,
+    "streetNumber": null
+  },
+  "107": {
+    "id": 107,
+    "siteId": 0,
+    "description": "Philipps Test",
+    "latitude": 51.973306,
+    "longitude": 7.603285,
+    "zipCode": "48149",
+    "street": "Leonardo-Campus",
+    "streetNumber": "11"
+  },
+  "108": {
+    "id": 108,
+    "siteId": 0,
+    "description": "Sportplatz",
+    "latitude": null,
+    "longitude": null,
+    "zipCode": "48149",
+    "street": "Horstmarer Landweg",
+    "streetNumber": "86b"
+  },
+  "109": {
+    "id": 109,
+    "siteId": 0,
+    "description": "Wiese am Leonardo-Campus 11",
+    "latitude": 51.97359,
+    "longitude": 7.60273,
+    "zipCode": "48149",
+    "street": "Leonardo-Campus",
+    "streetNumber": "11"
+  },
+  "110": {
+    "id": 110,
+    "siteId": 0,
+    "description": "Chalet Les Sapins",
+    "latitude": null,
+    "longitude": null,
+    "zipCode": "1873",
+    "street": null,
+    "streetNumber": null
+  },
+  "111": {
+    "id": 111,
+    "siteId": 0,
+    "description": "Campingplatz El Rosal",
+    "latitude": null,
+    "longitude": null,
+    "zipCode": "39540",
+    "street": "Carretera de la playa",
+    "streetNumber": null
+  },
+  "112": {
+    "id": 112,
+    "siteId": 0,
+    "description": "Münster",
+    "latitude": null,
+    "longitude": null,
+    "zipCode": "48149",
+    "street": null,
+    "streetNumber": null
+  },
+  "113": {
+    "id": 113,
+    "siteId": 0,
+    "description": "Ferienunterkunft Hvide Sande",
+    "latitude": null,
+    "longitude": null,
+    "zipCode": "6960",
+    "street": "Nørregade ",
+    "streetNumber": "50"
+  },
+  "114": {
+    "id": 114,
+    "siteId": 0,
+    "description": "Dyckburgwald",
+    "latitude": null,
+    "longitude": null,
+    "zipCode": "48157",
+    "street": null,
+    "streetNumber": null
+  },
+  "115": {
+    "id": 115,
+    "siteId": 0,
+    "description": "Tauchsee Hemmoor",
+    "latitude": 53.470407,
+    "longitude": 9.91314,
+    "zipCode": "21149",
+    "street": "Cuxhavener Straße",
+    "streetNumber": "1"
+  },
+  "116": {
+    "id": 116,
+    "siteId": 0,
+    "description": "Horstmarer Landweg 62",
+    "latitude": 51.971175,
+    "longitude": 7.598934,
+    "zipCode": "48149",
+    "street": "Horstmarer Landweg",
+    "streetNumber": "62"
+  },
+  "117": {
+    "id": 117,
+    "siteId": 0,
+    "description": "Haltepunkt Zentrum Nord",
+    "latitude": null,
+    "longitude": null,
+    "zipCode": "48147",
+    "street": "Albrecht-Thaer-Str.",
+    "streetNumber": null
+  },
+  "118": {
+    "id": 118,
+    "siteId": 0,
+    "description": "Portes du Soleil",
+    "latitude": null,
+    "longitude": null,
+    "zipCode": null,
+    "street": null,
+    "streetNumber": null
+  },
+  "119": {
+    "id": 119,
+    "siteId": 0,
+    "description": "Beachcamp Venedig",
+    "latitude": null,
+    "longitude": null,
+    "zipCode": "30100",
+    "street": "Venedig",
+    "streetNumber": "1"
+  },
+  "120": {
+    "id": 120,
+    "siteId": 0,
+    "description": "Campingplatz Nachbagauer",
+    "latitude": null,
+    "longitude": null,
+    "zipCode": "8924 ",
+    "street": "Brunn ",
+    "streetNumber": "88"
+  },
+  "121": {
+    "id": 121,
+    "siteId": 0,
+    "description": "Hof Aussertal ",
+    "latitude": null,
+    "longitude": null,
+    "zipCode": "",
+    "street": "",
+    "streetNumber": ""
+  },
+  "122": {
+    "id": 122,
+    "siteId": 0,
+    "description": "Chalet Jolimont",
+    "latitude": null,
+    "longitude": null,
+    "zipCode": "1874  ",
+    "street": "Grand-Paradis",
+    "streetNumber": null
+  },
+  "123": {
+    "id": 123,
+    "siteId": 0,
+    "description": "Chalet Souvenir",
+    "latitude": null,
+    "longitude": null,
+    "zipCode": "1874  ",
+    "street": "Rue des Dents-Blanches ",
+    "streetNumber": "9"
+  },
+  "124": {
+    "id": 124,
+    "siteId": 0,
+    "description": "Hallenbad Süd",
+    "latitude": 51.939585,
+    "longitude": 7.613603,
+    "zipCode": "48151",
+    "street": "Inselbogen",
+    "streetNumber": "38"
+  },
+  "125": {
+    "id": 125,
+    "siteId": 0,
+    "description": "Ijsselmeer",
+    "latitude": null,
+    "longitude": null,
+    "zipCode": null,
+    "street": null,
+    "streetNumber": null
+  },
+  "126": {
+    "id": 126,
+    "siteId": 0,
+    "description": "Sportanlage Arnheimweg",
+    "latitude": 51.96535,
+    "longitude": 7.57378,
+    "zipCode": "48161",
+    "street": "Arnheimweg",
+    "streetNumber": "40"
+  },
+  "127": {
+    "id": 127,
+    "siteId": 0,
+    "description": "Kreuzschule",
+    "latitude": 51.96952,
+    "longitude": 7.62374,
+    "zipCode": "48147",
+    "street": "Kampstr.",
+    "streetNumber": "15"
+  },
+  "128": {
+    "id": 128,
+    "siteId": 0,
+    "description": "Hallenbad Hiltrup",
+    "latitude": 51.90063,
+    "longitude": 7.640135,
+    "zipCode": "48165",
+    "street": "Westfalenstraße",
+    "streetNumber": "201"
+  },
+  "129": {
+    "id": 129,
+    "siteId": 0,
+    "description": "Ratsgymnasium Münster",
+    "latitude": 51.96662,
+    "longitude": 7.638168,
+    "zipCode": "48147",
+    "street": "Bohlweg",
+    "streetNumber": "7"
+  },
+  "130": {
+    "id": 130,
+    "siteId": 0,
+    "description": "Kulturquartier",
+    "latitude": 51.989177,
+    "longitude": 7.66828,
+    "zipCode": "48157",
+    "street": "Rudolf-Diesel-Straße",
+    "streetNumber": "41"
+  },
+  "131": {
+    "id": 131,
+    "siteId": 0,
+    "description": "Sporthalle Münster Ost",
+    "latitude": 51.958394,
+    "longitude": 7.658514,
+    "zipCode": "48145",
+    "street": "Manfred-von-Richthofen-Straße",
+    "streetNumber": "60"
+  },
+  "132": {
+    "id": 132,
+    "siteId": 0,
+    "description": "Leonardo Campus",
+    "latitude": 51.973975,
+    "longitude": 7.600573,
+    "zipCode": "48149",
+    "street": "Leonardo-Campus",
+    "streetNumber": ""
+  },
+  "133": {
+    "id": 133,
+    "siteId": 0,
+    "description": "Rathaus",
+    "latitude": null,
+    "longitude": null,
+    "zipCode": null,
+    "street": null,
+    "streetNumber": null
+  },
+  "134": {
+    "id": 134,
+    "siteId": 0,
+    "description": "Wolbeck (Hallenbad)",
+    "latitude": 51.915637,
+    "longitude": 7.714013,
+    "zipCode": "48167",
+    "street": "Brandhoveweg",
+    "streetNumber": "101"
+  }
+}

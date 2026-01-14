@@ -8,9 +8,15 @@
     "start": "node index.js",
     "server": "node server.js",
     "search": "node searchCourses.js",
+    "fetch-products": "node fetch-products.js",
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "docker:up": "docker-compose up -d",
+    "docker:up-build": "docker-compose up -d --build",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f",
+    "docker:restart": "docker-compose restart"
   },
   "repository": {
     "type": "git",
@@ -25,6 +31,8 @@
   "homepage": "https://github.com/jkrumboe/HSP-Bot#readme",
   "dependencies": {
     "express": "^4.18.2",
+    "node-fetch": "^3.3.2",
+    "node-schedule": "^2.1.1",
     "vite": "^7.2.7",
     "ws": "^8.14.2"
   }

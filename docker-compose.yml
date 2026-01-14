@@ -3,14 +3,13 @@ services:
     build: .
     container_name: hsp-bot
     ports:
-      - "3000:3000"  # Backend server
+      - "3003:3003"  # Backend server
       - "5173:5173"  # Vite dev server
     volumes:
-      - ./auth-data.json:/app/auth-data.json
-      - ./token-store.json:/app/token-store.json
+      - ./data:/app/data
     environment:
       - NODE_ENV=production
-      - PORT=3000
+      - PORT=3003
     restart: unless-stopped
     networks:
       - hsp-network
