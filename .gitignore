@@ -1,6 +1,7 @@
 # Token und Auth-Daten
 token-store.json
 auth-data.json
+scheduled-jobs.json
 
 # Dependencies
 node_modules/
