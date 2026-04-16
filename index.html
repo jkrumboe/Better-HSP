@@ -763,6 +763,14 @@
           <label>Min. freie Plätze</label>
           <input type="number" id="filterAvailable" value="0" min="0">
         </div>
+        <div class="form-group">
+          <label>Datum</label>
+          <input type="date" id="filterDate">
+        </div>
+        <div class="form-group">
+          <label>Trainer</label>
+          <input type="text" id="filterTrainer" placeholder="Name...">
+        </div>
         <div class="form-group" style="display: flex; align-items: flex-end;">
           <button class="btn btn-primary" id="searchBtn">Suchen</button>
           </div>
@@ -1288,7 +1296,7 @@
     }
 
     // Enter-Taste für Suche
-    ['filterSport', 'filterDays', 'filterLevel', 'filterAvailable'].forEach(id => {
+    ['filterSport', 'filterDays', 'filterLevel', 'filterAvailable', 'filterDate', 'filterTrainer'].forEach(id => {
       const element = document.getElementById(id);
       if (element) {
         element.addEventListener('keydown', (e) => {
@@ -1298,6 +1306,16 @@
           }
         });
       }
+    });
+
+    // Date and trainer filters re-trigger search on change
+    document.getElementById('filterDate').addEventListener('change', () => {
+      document.getElementById('searchBtn').click();
+    });
+    let trainerDebounce = null;
+    document.getElementById('filterTrainer').addEventListener('input', () => {
+      clearTimeout(trainerDebounce);
+      trainerDebounce = setTimeout(() => document.getElementById('searchBtn').click(), 400);
     });
 
     // Kurse suchen
@@ -1389,6 +1407,28 @@
 
     function renderCourses(courses, silent = false) {
       const container = document.getElementById('coursesList');
+
+      // Client-side date filter
+      const filterDate = document.getElementById('filterDate').value;
+      if (filterDate) {
+        const fd = new Date(filterDate);
+        courses = courses.filter(c => {
+          const cd = new Date(c.startDate);
+          return cd.getUTCFullYear() === fd.getFullYear()
+            && cd.getUTCMonth() === fd.getMonth()
+            && cd.getUTCDate() === fd.getDate();
+        });
+      }
+
+      // Client-side trainer name filter
+      const filterTrainer = document.getElementById('filterTrainer').value.trim().toLowerCase();
+      if (filterTrainer) {
+        courses = courses.filter(c =>
+          c.supervisors && c.supervisors.some(s =>
+            `${s.firstName} ${s.lastName}`.toLowerCase().includes(filterTrainer)
+          )
+        );
+      }
       
       if (courses.length === 0 && !silent) {
         container.innerHTML = '<p style="text-align: center; color: #888; padding: 40px;">Keine Kurse gefunden</p>';
