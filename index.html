@@ -308,6 +308,20 @@
       gap: 5px;
     }
 
+    .course-meta .copy-id {
+      cursor: pointer;
+      user-select: none;
+      border-radius: 4px;
+      padding: 0 4px;
+      border: 1px solid #91C736 ;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .course-meta .copy-id:hover {
+      background: #91C736;
+      color: #fff;
+    }
+
     .availability {
       padding: 2px 8px;
       border-radius: 8px;
@@ -956,6 +970,17 @@
       }
     }
 
+    // Copy course ID to clipboard
+    function copyId(event, id) {
+      event.stopPropagation();
+      navigator.clipboard.writeText(String(id)).then(() => {
+        const el = event.currentTarget;
+        const original = el.textContent;
+        el.textContent = '✓ Kopiert!';
+        setTimeout(() => { el.textContent = original; }, 1200);
+      });
+    }
+
     // Open location in map service
     function openLocation(locationId, locationName) {
       // Look up location by ID
@@ -1502,7 +1527,7 @@
                 <span>${dayName}, ${dateStr}</span>
                 <span>${time} Uhr</span>
                 <span>${course.location} ${locationButton}</span>
-                <span>ID: ${course.id}</span>
+                <span class="copy-id" title="Klicken zum Kopieren" onclick="copyId(event, ${course.id})">ID: ${course.id}</span>
                 ${supervisors}
               </div>
             </div>
