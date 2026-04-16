@@ -1036,6 +1036,8 @@
       ws.onopen = () => {
         document.getElementById('wsStatus').classList.add('connected');
         document.getElementById('wsStatusText').textContent = 'Verbunden';
+        // Restore active jobs from server on (re)connect
+        restoreActiveJobs();
       };
 
       ws.onclose = () => {
@@ -1175,6 +1177,41 @@
     function stopJob(jobId) {
       if (ws && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({ type: 'stopPolling', jobId }));
+      }
+    }
+
+    /**
+     * Restore active polling jobs from server on (re)connect.
+     * Populates activeJobs map and replays buffered logs.
+     */
+    async function restoreActiveJobs() {
+      try {
+        const res = await fetch('/api/jobs');
+        const data = await res.json();
+
+        if (data.jobs && data.jobs.length > 0) {
+          data.jobs.forEach(job => {
+            activeJobs.set(job.id, {
+              bookingId: job.bookingId,
+              attempts: job.attempts,
+              intervalSeconds: job.intervalSeconds,
+              maxAttempts: job.maxAttempts
+            });
+
+            // Replay buffered log messages
+            if (job.log && job.log.length > 0) {
+              job.log.forEach(entry => {
+                handleWebSocketMessage(entry);
+              });
+            }
+          });
+
+          isPolling = activeJobs.size > 0;
+          renderActiveJobs();
+          addLog('info', `${data.jobs.length} laufende(r) Job(s) vom Server wiederhergestellt`);
+        }
+      } catch (error) {
+        console.error('Fehler beim Wiederherstellen der Jobs:', error);
       }
     }
 

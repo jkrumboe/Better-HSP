@@ -34,6 +34,79 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Aktive Polling-Jobs speichern
 const activePollingJobs = new Map();
 
+// WebSocket connections for polling broadcasts
+const pollingWsConnections = new Set();
+
+// Max log entries to buffer per job (for reconnecting clients)
+const MAX_JOB_LOG_ENTRIES = 50;
+
+// Polling jobs persistence file
+const POLLING_JOBS_FILE = path.join(__dirname, 'data', 'polling-jobs.json');
+
+// ============ POLLING PERSISTENCE ============
+
+function loadPollingJobs() {
+  try {
+    if (fs.existsSync(POLLING_JOBS_FILE)) {
+      return JSON.parse(fs.readFileSync(POLLING_JOBS_FILE, 'utf8'));
+    }
+  } catch (error) {
+    console.error('Error loading polling jobs:', error);
+  }
+  return [];
+}
+
+function savePollingJobs() {
+  try {
+    const dataDir = path.dirname(POLLING_JOBS_FILE);
+    if (!fs.existsSync(dataDir)) {
+      fs.mkdirSync(dataDir, { recursive: true });
+    }
+    const jobs = [];
+    activePollingJobs.forEach((job, id) => {
+      jobs.push({
+        id,
+        bookingId: job.bookingId,
+        intervalSeconds: job.intervalSeconds,
+        maxAttempts: job.maxAttempts,
+        attempts: job.attempts,
+        startedAt: job.startedAt,
+        lastAttempt: job.lastAttempt,
+        memberId: job.memberId
+      });
+    });
+    fs.writeFileSync(POLLING_JOBS_FILE, JSON.stringify(jobs, null, 2));
+  } catch (error) {
+    console.error('Error saving polling jobs:', error);
+  }
+}
+
+/**
+ * Broadcast a message to all connected WebSocket clients (polling-specific)
+ */
+function broadcastPolling(message) {
+  const messageStr = JSON.stringify(message);
+  pollingWsConnections.forEach(ws => {
+    if (ws.readyState === 1) { // WebSocket.OPEN
+      ws.send(messageStr);
+    }
+  });
+}
+
+/**
+ * Send a polling message: broadcast to all WS clients + buffer in job log
+ */
+function sendJobMessage(jobId, job, message) {
+  // Buffer the message in the job's log
+  if (!job.log) job.log = [];
+  job.log.push({ ...message, timestamp: new Date().toISOString() });
+  if (job.log.length > MAX_JOB_LOG_ENTRIES) {
+    job.log = job.log.slice(-MAX_JOB_LOG_ENTRIES);
+  }
+  // Broadcast to all connected clients
+  broadcastPolling(message);
+}
+
 // ============ API ENDPOINTS ============
 
 // Status-Check
@@ -464,7 +537,7 @@ app.post('/api/register/stop', (req, res) => {
   }
 });
 
-// Aktive Jobs abrufen
+// Aktive Jobs abrufen (inkl. gepufferter Logs für reconnect)
 app.get('/api/jobs', (req, res) => {
   const jobs = [];
   activePollingJobs.forEach((job, id) => {
@@ -475,7 +548,8 @@ app.get('/api/jobs', (req, res) => {
       maxAttempts: job.maxAttempts,
       intervalSeconds: job.intervalSeconds,
       startedAt: job.startedAt,
-      lastAttempt: job.lastAttempt
+      lastAttempt: job.lastAttempt,
+      log: job.log || []
     });
   });
   res.json({ jobs });
@@ -548,6 +622,9 @@ wss.on('connection', (ws) => {
   // Register WebSocket for scheduler broadcasts
   registerWebSocket(ws);
 
+  // Register for polling broadcasts
+  pollingWsConnections.add(ws);
+
   ws.on('message', async (message) => {
     try {
       const data = JSON.parse(message);
@@ -564,6 +641,7 @@ wss.on('connection', (ws) => {
 
   ws.on('close', () => {
     console.log('🔌 WebSocket Client getrennt');
+    pollingWsConnections.delete(ws);
   });
 });
 
@@ -583,6 +661,13 @@ async function handlePollingStart(ws, data) {
     return;
   }
 
+  startPollingJob(jobId, bookingId, intervalSeconds, maxAttempts, memberInfo.memberId);
+}
+
+/**
+ * Start a polling job (decoupled from WebSocket — works even without connected clients)
+ */
+function startPollingJob(jobId, bookingId, intervalSeconds, maxAttempts, memberId) {
   const job = {
     bookingId,
     intervalSeconds,
@@ -590,42 +675,47 @@ async function handlePollingStart(ws, data) {
     attempts: 0,
     startedAt: new Date().toISOString(),
     lastAttempt: null,
-    ws,
+    memberId,
+    log: [],
     interval: null
   };
 
-  ws.send(JSON.stringify({
+  activePollingJobs.set(jobId, job);
+  savePollingJobs();
+
+  const startMsg = {
     type: 'jobStarted',
     jobId,
     bookingId,
     intervalSeconds,
     maxAttempts: maxAttempts || 'unbegrenzt'
-  }));
+  };
+  sendJobMessage(jobId, job, startMsg);
 
   // Ersten Versuch sofort starten
-  await attemptRegistration(jobId, job, memberInfo.memberId);
+  attemptRegistration(jobId, job, memberId);
 
   // Polling Interval
   job.interval = setInterval(async () => {
-    await attemptRegistration(jobId, job, memberInfo.memberId);
+    await attemptRegistration(jobId, job, memberId);
   }, intervalSeconds);
-
-  activePollingJobs.set(jobId, job);
 }
 
 async function attemptRegistration(jobId, job, memberId) {
   job.attempts++;
   job.lastAttempt = new Date().toISOString();
+  // Persist updated attempt count every 10 attempts
+  if (job.attempts % 10 === 0) savePollingJobs();
 
   const token = await getValidToken();
   if (!token) {
-    job.ws.send(JSON.stringify({
+    sendJobMessage(jobId, job, {
       type: 'attempt',
       jobId,
       attempt: job.attempts,
       success: false,
       message: 'Token abgelaufen'
-    }));
+    });
     return;
   }
 
@@ -659,7 +749,7 @@ async function attemptRegistration(jobId, job, memberId) {
       // status: 1 = Angemeldet, status: 3 = Warteliste
       const isWaitlist = responseData.status === 3;
 
-      job.ws.send(JSON.stringify({
+      sendJobMessage(jobId, job, {
         type: 'success',
         jobId,
         attempt: job.attempts,
@@ -668,61 +758,61 @@ async function attemptRegistration(jobId, job, memberId) {
         participationStatus: responseData.status,
         data: responseData,
         fullResponse: responseData
-      }));
+      });
       
       // Job nur bei echter Anmeldung beenden, bei Warteliste weiter versuchen
       if (!isWaitlist) {
         clearInterval(job.interval);
-        activePollingJobs.delete(jobId);
-        
-        job.ws.send(JSON.stringify({
+        sendJobMessage(jobId, job, {
           type: 'jobCompleted',
           jobId,
           success: true,
           totalAttempts: job.attempts
-        }));
+        });
+        activePollingJobs.delete(jobId);
+        savePollingJobs();
       }
     } else if (response.status === 429) {
-      job.ws.send(JSON.stringify({
+      sendJobMessage(jobId, job, {
         type: 'attempt',
         jobId,
         attempt: job.attempts,
         success: false,
         rateLimited: true,
         message: 'Rate-Limit erreicht, warte...'
-      }));
+      });
     } else {
-      job.ws.send(JSON.stringify({
+      sendJobMessage(jobId, job, {
         type: 'attempt',
         jobId,
         attempt: job.attempts,
         success: false,
         status: response.status,
         message: responseData.message || 'Anmeldung fehlgeschlagen'
-      }));
+      });
     }
 
     // Max Attempts Check
     if (job.maxAttempts && job.attempts >= job.maxAttempts) {
       clearInterval(job.interval);
-      activePollingJobs.delete(jobId);
-      
-      job.ws.send(JSON.stringify({
+      sendJobMessage(jobId, job, {
         type: 'jobCompleted',
         jobId,
         success: false,
         message: `Max. Versuche (${job.maxAttempts}) erreicht`,
         totalAttempts: job.attempts
-      }));
+      });
+      activePollingJobs.delete(jobId);
+      savePollingJobs();
     }
   } catch (error) {
-    job.ws.send(JSON.stringify({
+    sendJobMessage(jobId, job, {
       type: 'attempt',
       jobId,
       attempt: job.attempts,
       success: false,
       message: error.message
-    }));
+    });
   }
 }
 
@@ -730,18 +820,37 @@ function handlePollingStop(ws, jobId) {
   if (activePollingJobs.has(jobId)) {
     const job = activePollingJobs.get(jobId);
     clearInterval(job.interval);
-    activePollingJobs.delete(jobId);
-    
-    ws.send(JSON.stringify({
+    sendJobMessage(jobId, job, {
       type: 'jobStopped',
       jobId,
       totalAttempts: job.attempts
-    }));
+    });
+    activePollingJobs.delete(jobId);
+    savePollingJobs();
   } else {
     ws.send(JSON.stringify({
       type: 'error',
       message: 'Job nicht gefunden'
     }));
+  }
+}
+
+/**
+ * Restore polling jobs from disk after server restart
+ */
+function restorePollingJobs() {
+  const savedJobs = loadPollingJobs();
+  if (savedJobs.length === 0) return;
+
+  console.log(`🔄 Stelle ${savedJobs.length} Polling-Job(s) wieder her...`);
+  for (const saved of savedJobs) {
+    startPollingJob(saved.id, saved.bookingId, saved.intervalSeconds, saved.maxAttempts, saved.memberId);
+    // Restore attempt count from saved state
+    const job = activePollingJobs.get(saved.id);
+    if (job) {
+      job.attempts = saved.attempts || 0;
+      job.startedAt = saved.startedAt;
+    }
   }
 }
 
@@ -752,5 +861,8 @@ server.listen(PORT, () => {
   
   // Initialize the scheduler and restore pending jobs
   initializeScheduler();
+
+  // Restore polling jobs from disk
+  restorePollingJobs();
   console.log('');
 });
