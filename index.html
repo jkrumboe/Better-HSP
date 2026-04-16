@@ -281,10 +281,18 @@
       background: #fff9e6;
     }
 
+    .course-info-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+
     .course-info h3 {
       color: #333;
-      margin-bottom: 8px;
       font-size: 1.1em;
+      margin: 0;
     }
 
     .course-meta {
@@ -301,8 +309,8 @@
     }
 
     .availability {
-      padding: 8px 16px;
-      border-radius: 20px;
+      padding: 2px 8px;
+      border-radius: 8px;
       font-weight: bold;
       font-size: 0.9em;
     }
@@ -319,14 +327,16 @@
 
     .course-actions {
       display: flex;
-      flex-direction: column;
+      flex-direction: row;
+      justify-content: space-around;
       gap: 8px;
     }
 
     .course-actions .btn {
       justify-content: center;
-      padding: 8px 16px;
+      padding: 8px 4px;
       font-size: 0.9em;
+      max-width: 30%;
     }
 
     .btn-link {
@@ -654,6 +664,7 @@
       .course-actions {
         flex-direction: row;
         width: 100%;
+        max-width: 100%;
       }
 
       .course-actions .btn {
@@ -662,7 +673,7 @@
 
       .course-meta {
         font-size: 0.85em;
-        gap: 10px;
+        gap: 4px;
       }
 
       .tabs {
@@ -1403,7 +1414,12 @@
         html += `
           <div class="course-card ${cardClass}" data-course-id="${course.id}">
             <div class="course-info">
-              <h3>${course.description} ${statusBadge}</h3>
+              <div class="course-info-header">
+                <h3>${course.description} ${statusBadge}</h3>
+                <span class="availability ${isFull ? 'full' : 'available'}" data-available="${course.available}">
+                  ${isFull ? 'Voll' : `${course.available} frei`}
+                </span>
+              </div>
               <div class="course-meta">
                 ${course.level ? `<strong>${course.level}</strong>` : ''}
                 <span>${dayName}, ${dateStr}</span>
@@ -1414,9 +1430,6 @@
               </div>
             </div>
             <div style="display: flex; align-items: center; gap: 15px;">
-              <span class="availability ${isFull ? 'full' : 'available'}" data-available="${course.available}">
-                ${isFull ? 'Voll' : `${course.available} frei`}
-              </span>
               <div class="course-actions">
                 <button class="btn btn-primary" onclick="quickRegister(${course.id})" ${isBooked || isWaiting ? 'disabled' : ''}>
                   ${isBooked ? 'Angemeldet' : (isWaiting ? 'Warteliste' : (isFull ? 'Warteliste' : 'Anmelden'))}
