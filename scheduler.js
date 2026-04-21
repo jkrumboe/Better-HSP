@@ -35,11 +35,8 @@ function calculateBookingAvailableTime(courseStartTime) {
  */
 function calculatePollingStartTime(bookingAvailableTime) {
   const bookingTime = new Date(bookingAvailableTime);
-  // Start 25-30 seconds before booking is available
-  const startWindow = new Date(bookingTime.getTime() - 30 * 1000); // 30 seconds before
-  // Add random 0-5 second offset
-  const randomOffset = Math.floor(Math.random() * 5) * 1000;
-  return new Date(startWindow.getTime() + randomOffset);
+  // Start 5 seconds before booking is available
+  return new Date(bookingTime.getTime() - 5 * 1000);
 }
 
 /**
@@ -180,7 +177,7 @@ async function executeScheduledJob(jobData) {
 
   const bookingTime = new Date(bookingAvailableAt);
   const stopTime = calculatePollingStopTime(bookingTime);
-  const pollInterval = 100; // 100ms polling interval for aggressive booking
+  const pollInterval = 500; // 500ms polling interval (2 per second)
   let attempts = 0;
   let success = false;
 
