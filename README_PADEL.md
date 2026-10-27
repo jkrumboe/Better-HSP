@@ -1,0 +1,64 @@
+# 🎾 Padel – gemeinsam buchen
+
+Im Tab **Padel** können Freunde Sessions für den Padel-Platz (Horstmarer Landweg) anlegen und beitreten.
+Sobald **mindestens 2 Spieler** dabei sind, bucht der Bot den Platz automatisch und lädt die anderen per E-Mail in der HSP-Buchung ein.
+
+## Ablauf
+
+1. **Anmelden** – jeder Spieler fügt einmal seine eigenen `delcom_auth`-Daten ein (wie im Auth-Tab). Das ist gleichzeitig der Login.
+2. **Session anlegen** – Datum wählen, freien Slot antippen. Belegte Slots (von anderen in HSP gebucht) sind durchgestrichen.
+3. **Beitreten** – die anderen tippen auf „Beitreten“ (max. 4 Spieler).
+4. **Automatische Buchung** – ab 2 Spielern plant der Bot die Buchung:
+   - Slots werden **7 Tage vorher um 14:00 Uhr** freigeschaltet. Der Bot startet 5 s vorher und versucht es bis 60 s danach (alle 500 ms).
+   - Ist das Fenster schon offen, bucht er sofort.
+   - Wer nach der Buchung beitritt, wird mit seinem eigenen Account zur bestehenden HSP-Buchung hinzugefügt.
+
+Die Regeln werden beim Serverstart aus HSP gelesen:
+- Freischaltung (7 Tage vorher, 14:00) aus der Platzmiete `129`
+- Öffnungszeiten (`weekCalendar`, z. B. Mo–Fr 8–19 Uhr, Sa/So 10–17 Uhr) aus dem Platz `108`
+- Belegt ist ein Slot, wenn auf dem Platz `108` irgendetwas liegt – auch Kurse, nicht nur Mietbuchungen
+
+## Wer bucht? („bester Booker“)
+
+HSP erlaubt pro Person **1 Buchung pro Tag** und **2 in 7 Tagen** (Platz `108` sagt 2, Platzmiete `129` sagt 3 – der Bot nimmt das strengere Limit). Der Bot sortiert die Teilnehmer so:
+
+1. Gültiger HSP-Token (abgelaufene Tokens ohne Refresh werden übersprungen)
+2. Freies Kontingent laut eigenen Padel-Buchungen in HSP
+3. Wer in den letzten 30 Tagen am wenigsten über den Bot gebucht hat
+4. Wer am längsten nicht gebucht hat, dann wer zuerst beigetreten ist
+
+Lehnt HSP die Buchung ab (z. B. Kontingent), probiert der Bot automatisch den Nächsten in der Liste.
+Der Verlauf jeder Session zeigt die Reihenfolge und alle Fehlermeldungen. Fehlgeschlagene Sessions können per „Erneut versuchen“ neu gestartet werden.
+
+## Kalender
+
+- **Kalender abonnieren** (webcal) – einmal auf dem Handy hinzufügen. Alle eigenen Sessions erscheinen automatisch: geplant = vorläufig, gebucht = bestätigt (mit Erinnerung 1 h vorher), abgesagt = storniert.
+- **Android / Google Kalender**: „Link kopieren“ → calendar.google.com → *Weitere Kalender* → *Per URL*.
+- **📅 Zum Kalender** an jeder Session lädt eine einzelne `.ics`-Datei.
+
+Der Kalender-Link enthält einen geheimen Token – nicht weitergeben. Damit Handys den Feed abrufen können, muss der Server von außen erreichbar sein.
+
+## Daten
+
+| Datei | Inhalt |
+|---|---|
+| `data/users.json` | Spieler inkl. HSP-Tokens, Login-Key und Kalender-Token |
+| `data/padel-sessions.json` | Sessions, Teilnehmer, Verlauf |
+
+Beide liegen im (git-ignorierten) `data/`-Ordner, der im Docker-Setup als Volume gemountet ist.
+
+## API
+
+| Methode | Pfad | Beschreibung |
+|---|---|---|
+| `POST` | `/api/padel/login` | `delcom_auth`-JSON → `userKey` |
+| `GET` | `/api/padel/me` | Eigenes Profil, Kalender-Token, Regeln |
+| `GET` | `/api/padel/slots?date=YYYY-MM-DD` | Slots eines Tages (frei/belegt/Session) |
+| `GET` | `/api/padel/sessions` | Alle aktuellen Sessions |
+| `POST` | `/api/padel/sessions` | Session anlegen `{ startDate }` |
+| `POST` | `/api/padel/sessions/:id/join` · `/leave` · `/retry` | Beitreten / Absagen / Neu versuchen |
+| `DELETE` | `/api/padel/sessions/:id` | Session absagen (nur Ersteller, vor der Buchung) |
+| `GET` | `/api/padel/calendar/:calendarToken.ics` | Kalender-Abo |
+| `GET` | `/api/padel/calendar/:calendarToken/:sessionId.ics` | Einzelner Termin |
+
+Alle Endpunkte außer Login und Kalender erwarten den Header `x-user-key`.

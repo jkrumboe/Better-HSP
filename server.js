@@ -9,14 +9,29 @@ import { fileURLToPath } from 'url';
 
 // Importiere die bestehenden Module
 import { getValidToken, getStoredMemberInfo, loadTokens, saveTokens, getTokenInfo, decodeToken } from './token-manager.js';
-import { 
-  initializeScheduler, 
-  scheduleBooking, 
-  cancelScheduledJob, 
-  getScheduledJobs, 
+import {
+  initializeScheduler,
+  scheduleBooking,
+  cancelScheduledJob,
+  getScheduledJobs,
   registerWebSocket,
-  getBookingInfo 
+  getBookingInfo
 } from './scheduler.js';
+import { upsertUserFromAuth, getUserByKey, getUserByCalendarToken, publicUser } from './user-store.js';
+import {
+  initializePadel,
+  registerPadelWebSocket,
+  getPadelRules,
+  getDaySlots,
+  listSessions,
+  createSession,
+  joinSession,
+  leaveSession,
+  cancelSession,
+  retrySession,
+  getCalendarFeed,
+  getSessionIcs
+} from './padel.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -148,25 +163,32 @@ app.get('/api/locations', (req, res) => {
   }
 });
 
+/**
+ * Bereinigt importierte delcom_auth-Daten (doppelt escapte Strings, internes Flag)
+ */
+function normalizeAuthData(body) {
+  let authData = body;
+
+  if (!authData._skipServerFix) {
+    // Korrigiere doppelt escapte Strings (z.B. im userAgents-Feld)
+    const jsonStr = JSON.stringify(authData);
+    const fixedStr = jsonStr.replace(/\\\\/g, '\\').replace(/\\"\[/g, '[').replace(/\]\\"(,|})/g, ']$1');
+    try {
+      authData = JSON.parse(fixedStr);
+    } catch {
+      // Falls Korrektur fehlschlägt, nutze Original
+    }
+  }
+
+  // Bereinige das interne Flag
+  if (authData._skipServerFix !== undefined) delete authData._skipServerFix;
+  return authData;
+}
+
 // Auth-Daten importieren
 app.post('/api/auth/import', async (req, res) => {
   try {
-    let authData = req.body;
-    const skipServerFix = authData._skipServerFix;
-
-    if (!skipServerFix) {
-      // Korrigiere doppelt escapte Strings (z.B. im userAgents-Feld)
-      const jsonStr = JSON.stringify(authData);
-      const fixedStr = jsonStr.replace(/\\\\/g, '\\').replace(/\\"\[/g, '[').replace(/\]\\"(,|})/g, ']$1');
-      try {
-        authData = JSON.parse(fixedStr);
-      } catch {
-        // Falls Korrektur fehlschlägt, nutze Original
-      }
-    }
-    
-    // Bereinige das interne Flag
-    if (authData._skipServerFix !== undefined) delete authData._skipServerFix;
+    const authData = normalizeAuthData(req.body);
 
     if (!authData || !authData.tokenResponse || !authData.member) {
       return res.status(400).json({ error: 'Ungültige Auth-Daten. Bitte kompletten JSON-Inhalt einfügen.' });
@@ -342,92 +364,144 @@ app.get('/api/courses', async (req, res) => {
       }
     }
 
-    // Fetch supervisor names
-    let supervisorNames = {};
-    if (courses.length > 0) {
-      try {
-        const bookingIds = courses.map(c => c.id).join(',');
-        const supervisorUrl = `${API_URL}/bookings/query/supervisorNamesByBookingId?bookingIds=${bookingIds}`;
-        const supervisorRes = await fetch(supervisorUrl, {
-          method: 'GET',
-          headers: { 'Accept': 'application/json' }
-        });
-        if (supervisorRes.ok) {
-          supervisorNames = await supervisorRes.json();
-        }
-      } catch (error) {
-        console.error('Fehler beim Laden der Supervisor-Namen:', error);
-      }
-    }
-
-    // Fetch location names from products
-    let locationNames = {};
-    let productLocationIds = {};
-    if (courses.length > 0) {
-      try {
-        const productIds = [...new Set(courses.map(c => c.productId).filter(id => id))];
-        if (productIds.length > 0) {
-          const filter = { id: { "$in": productIds } };
-          const encoded = encodeURIComponent(JSON.stringify(filter));
-          const productsUrl = `${API_URL}/products?s=${encoded}`;
-          const productsRes = await fetch(productsUrl, {
-            method: 'GET',
-            headers: { 'Accept': 'application/json' }
-          });
-          if (productsRes.ok) {
-            const productsData = await productsRes.json();
-            productsData.data?.forEach(product => {
-              locationNames[product.id] = product.description;
-              if (product.locationId) {
-                productLocationIds[product.id] = product.locationId;
-              }
-            });
-          }
-        }
-      } catch (error) {
-        console.error('Fehler beim Laden der Locations:', error);
-      }
-    }
-
-    // Load course titles from products.json using linkedProductId
-    let courseTitles = {};
-    try {
-      const productsPath = path.join(__dirname, 'products.json');
-      if (fs.existsSync(productsPath)) {
-        const productsData = JSON.parse(fs.readFileSync(productsPath, 'utf8'));
-        courseTitles = Object.keys(productsData).reduce((acc, key) => {
-          acc[key] = productsData[key].description;
-          return acc;
-        }, {});
-      } else {
-        console.warn('products.json not found. Run fetch-products.js to create it.');
-      }
-    } catch (error) {
-      console.error('Fehler beim Laden von products.json:', error);
-    }
-
-    // Format für Frontend
-    const formatted = courses.map(c => ({
-      id: c.id,
-      description: courseTitles[c.linkedProductId] || c.description,
-      level: c.description,
-      startDate: c.startDate,
-      endDate: c.endDate,
-      location: locationNames[c.productId] || c.location || 'Unbekannt',
-      locationId: productLocationIds[c.productId] || null,
-      available: c.availableParticipantCount,
-      maxParticipants: c.maxParticipantCount,
-      status: c.status,
-      supervisors: supervisorNames[c.id] || [],
-      userParticipation: userBookings[c.id] || null // null, { participationStatus: 1 } (booked), or { participationStatus: 3 } (waiting)
-    }));
-
+    const formatted = await formatCourses(courses, userBookings);
     res.json({ courses: formatted, total: formatted.length });
   } catch (error) {
     console.error('Kurse laden Fehler:', error);
     res.status(500).json({ error: error.message });
   }
 });
+
+// Eigene Buchungen (kommende + letzte 30 Tage)
+app.get('/api/my-bookings', async (req, res) => {
+  try {
+    const token = await getValidToken();
+    const memberInfo = getStoredMemberInfo();
+    if (!token || !memberInfo.memberId) {
+      return res.status(401).json({ error: 'Nicht authentifiziert. Bitte Token importieren.' });
+    }
+
+    const from = new Date();
+    from.setDate(from.getDate() - 30);
+    from.setHours(0, 0, 0, 0);
+
+    const filter = {
+      'participations.memberId': memberInfo.memberId,
+      startDate: { '$gte': from.toISOString() }
+    };
+    const encoded = encodeURIComponent(JSON.stringify(filter));
+    const response = await fetch(`${API_URL}/bookings?s=${encoded}&join=participations&limit=100&page=1&sort=startDate,ASC`, {
+      headers: { 'Accept': 'application/json', 'Authorization': `Bearer ${token}` }
+    });
+    if (!response.ok) {
+      throw new Error(`API Fehler: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const bookings = data.data || [];
+    const userBookings = {};
+    bookings.forEach(booking => {
+      const participation = booking.participations?.find(p => p.memberId === memberInfo.memberId);
+      if (participation) {
+        userBookings[booking.id] = {
+          participationStatus: participation.status, // 1 = booked, 3 = waiting list
+          participationId: participation.id
+        };
+      }
+    });
+
+    const formatted = await formatCourses(bookings.filter(b => userBookings[b.id]), userBookings);
+    res.json({ bookings: formatted, total: formatted.length });
+  } catch (error) {
+    console.error('Eigene Buchungen laden Fehler:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * Ergänzt rohe HSP-Bookings um Trainer, Ort und Kurstitel und bringt sie ins Frontend-Format
+ */
+async function formatCourses(courses, userBookings = {}) {
+  // Fetch supervisor names
+  let supervisorNames = {};
+  if (courses.length > 0) {
+    try {
+      const bookingIds = courses.map(c => c.id).join(',');
+      const supervisorUrl = `${API_URL}/bookings/query/supervisorNamesByBookingId?bookingIds=${bookingIds}`;
+      const supervisorRes = await fetch(supervisorUrl, {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' }
+      });
+      if (supervisorRes.ok) {
+        supervisorNames = await supervisorRes.json();
+      }
+    } catch (error) {
+      console.error('Fehler beim Laden der Supervisor-Namen:', error);
+    }
+  }
+
+  // Fetch location names from products
+  let locationNames = {};
+  let productLocationIds = {};
+  if (courses.length > 0) {
+    try {
+      const productIds = [...new Set(courses.map(c => c.productId).filter(id => id))];
+      if (productIds.length > 0) {
+        const filter = { id: { "$in": productIds } };
+        const encoded = encodeURIComponent(JSON.stringify(filter));
+        const productsUrl = `${API_URL}/products?s=${encoded}`;
+        const productsRes = await fetch(productsUrl, {
+          method: 'GET',
+          headers: { 'Accept': 'application/json' }
+        });
+        if (productsRes.ok) {
+          const productsData = await productsRes.json();
+          productsData.data?.forEach(product => {
+            locationNames[product.id] = product.description;
+            if (product.locationId) {
+              productLocationIds[product.id] = product.locationId;
+            }
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Fehler beim Laden der Locations:', error);
+    }
+  }
+
+  // Load course titles from products.json using linkedProductId
+  let courseTitles = {};
+  try {
+    const productsPath = path.join(__dirname, 'products.json');
+    if (fs.existsSync(productsPath)) {
+      const productsData = JSON.parse(fs.readFileSync(productsPath, 'utf8'));
+      courseTitles = Object.keys(productsData).reduce((acc, key) => {
+        acc[key] = productsData[key].description;
+        return acc;
+      }, {});
+    } else {
+      console.warn('products.json not found. Run fetch-products.js to create it.');
+    }
+  } catch (error) {
+    console.error('Fehler beim Laden von products.json:', error);
+  }
+
+  // Format für Frontend
+  return courses.map(c => ({
+    id: c.id,
+    description: courseTitles[c.linkedProductId] || c.description,
+    level: c.description,
+    startDate: c.startDate,
+    endDate: c.endDate,
+    location: locationNames[c.productId] || c.location || 'Unbekannt',
+    locationId: productLocationIds[c.productId] || null,
+    available: c.availableParticipantCount,
+    maxParticipants: c.maxParticipantCount,
+    status: c.status,
+    supervisors: supervisorNames[c.id] || [],
+    userParticipation: userBookings[c.id] || null // null, { participationStatus: 1 } (booked), or { participationStatus: 3 } (waiting)
+  }));
+}
 
 // Einmalige Anmeldung
 app.post('/api/register', async (req, res) => {
@@ -614,6 +688,107 @@ app.delete('/api/schedule/:jobId', (req, res) => {
   }
 });
 
+// ============ PADEL ENDPOINTS ============
+
+// Each player logs in with their own delcom_auth; the returned userKey identifies them on later requests
+function requireUser(req, res, next) {
+  const user = getUserByKey(req.get('x-user-key'));
+  if (!user) {
+    return res.status(401).json({ error: 'Bitte zuerst mit deinen HSP-Auth-Daten anmelden' });
+  }
+  req.user = user;
+  next();
+}
+
+function sendPadelResult(res, result) {
+  if (result.error) {
+    return res.status(400).json(result);
+  }
+  res.json(result);
+}
+
+app.post('/api/padel/login', (req, res) => {
+  const authData = normalizeAuthData(req.body);
+  if (!authData?.tokenResponse?.accessToken || !authData.member?.id) {
+    return res.status(400).json({ error: 'Ungültige Auth-Daten. Bitte kompletten JSON-Inhalt einfügen.' });
+  }
+
+  const user = upsertUserFromAuth(authData);
+  res.json({ userKey: user.userKey, user: publicUser(user), calendarToken: user.calendarToken });
+});
+
+// Reuses the account already imported in the Auth tab, so it doesn't have to be pasted twice
+app.post('/api/padel/login-main', (req, res) => {
+  const tokens = loadTokens();
+  const memberInfo = getStoredMemberInfo();
+  if (!tokens.accessToken || !memberInfo.memberId) {
+    return res.status(400).json({ error: 'Kein Account im Auth-Tab hinterlegt' });
+  }
+
+  const user = upsertUserFromAuth({
+    tokenResponse: { accessToken: tokens.accessToken, refreshToken: tokens.refreshToken, idToken: tokens.idToken },
+    member: { id: memberInfo.memberId, email: memberInfo.memberEmail, firstName: memberInfo.memberName }
+  });
+  res.json({ userKey: user.userKey, user: publicUser(user), calendarToken: user.calendarToken });
+});
+
+app.get('/api/padel/me', requireUser, (req, res) => {
+  res.json({ user: publicUser(req.user), calendarToken: req.user.calendarToken, rules: getPadelRules() });
+});
+
+app.get('/api/padel/slots', requireUser, async (req, res) => {
+  try {
+    res.json({ slots: await getDaySlots(String(req.query.date || '')) });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/padel/sessions', requireUser, (req, res) => {
+  res.json({ sessions: listSessions() });
+});
+
+app.post('/api/padel/sessions', requireUser, (req, res) => {
+  sendPadelResult(res, createSession(req.user, req.body.startDate));
+});
+
+app.post('/api/padel/sessions/:id/join', requireUser, (req, res) => {
+  sendPadelResult(res, joinSession(req.user, req.params.id));
+});
+
+app.post('/api/padel/sessions/:id/leave', requireUser, (req, res) => {
+  sendPadelResult(res, leaveSession(req.user, req.params.id));
+});
+
+app.post('/api/padel/sessions/:id/retry', requireUser, (req, res) => {
+  sendPadelResult(res, retrySession(req.user, req.params.id));
+});
+
+app.delete('/api/padel/sessions/:id', requireUser, (req, res) => {
+  sendPadelResult(res, cancelSession(req.user, req.params.id));
+});
+
+// Calendar endpoints are authenticated by the secret calendar token in the URL,
+// because calendar apps (webcal subscriptions, .ics links on phones) can't send headers
+app.get('/api/padel/calendar/:calendarToken.ics', (req, res) => {
+  const user = getUserByCalendarToken(req.params.calendarToken);
+  if (!user) return res.status(404).send('Kalender nicht gefunden');
+
+  res.set('Content-Type', 'text/calendar; charset=utf-8');
+  res.set('Content-Disposition', 'inline; filename="padel.ics"');
+  res.send(getCalendarFeed(user));
+});
+
+app.get('/api/padel/calendar/:calendarToken/:sessionId.ics', (req, res) => {
+  const user = getUserByCalendarToken(req.params.calendarToken);
+  const ics = user && getSessionIcs(user, req.params.sessionId);
+  if (!ics) return res.status(404).send('Termin nicht gefunden');
+
+  res.set('Content-Type', 'text/calendar; charset=utf-8');
+  res.set('Content-Disposition', 'attachment; filename="padel.ics"');
+  res.send(ics);
+});
+
 // ============ WEBSOCKET ============
 
 wss.on('connection', (ws) => {
@@ -621,6 +796,7 @@ wss.on('connection', (ws) => {
   
   // Register WebSocket for scheduler broadcasts
   registerWebSocket(ws);
+  registerPadelWebSocket(ws);
 
   // Register for polling broadcasts
   pollingWsConnections.add(ws);
@@ -855,7 +1031,7 @@ function restorePollingJobs() {
 }
 
 // Server starten
-server.listen(PORT, () => {
+server.listen(PORT, async () => {
   console.log(`\n🚀 HSP-Bot Backend Server läuft auf http://localhost:${PORT}`);
   console.log(`📡 WebSocket bereit für Live-Updates`);
   
@@ -864,5 +1040,8 @@ server.listen(PORT, () => {
 
   // Restore polling jobs from disk
   restorePollingJobs();
+
+  // Restore padel sessions and their scheduled bookings
+  await initializePadel();
   console.log('');
 });

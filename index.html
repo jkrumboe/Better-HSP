@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#91C736">
   <title>🏐 Better-HSP - Kursanmeldung</title>
   <style>
     * {
@@ -80,6 +81,56 @@
       box-shadow: 0 0 10px #91C736;
     }
 
+    .account-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      background: #f5f5f5;
+      border: 1px solid #e5e5e5;
+      border-radius: 999px;
+      color: #333;
+      font-size: 1em;
+      cursor: pointer;
+      min-width: 0;
+      transition: background 0.2s;
+    }
+
+    .account-btn:hover {
+      background: #eee;
+    }
+
+    .account-btn #userStatus {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .account-btn.logged-out {
+      background: #91C736;
+      border-color: #91C736;
+      color: #fff;
+      font-weight: bold;
+    }
+
+    .token-chip {
+      font-size: 0.8em;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: rgba(145,199,54,0.15);
+      color: #5a8a12;
+      white-space: nowrap;
+    }
+
+    .token-chip:empty {
+      display: none;
+    }
+
+    .token-chip.expired {
+      background: rgba(255,68,68,0.12);
+      color: #c62828;
+    }
+
     .tabs {
       display: flex;
       gap: 10px;
@@ -153,6 +204,26 @@
       outline: none;
       border-color: #91C736;
       background: #fff;
+      box-shadow: 0 0 0 3px rgba(145,199,54,0.2);
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+      min-width: 0;
+    }
+
+    button {
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .btn:focus-visible,
+    .tab:focus-visible,
+    .account-btn:focus-visible,
+    .btn-link:focus-visible,
+    .modal-close:focus-visible {
+      outline: 2px solid #91C736;
+      outline-offset: 2px;
     }
 
     textarea {
@@ -224,11 +295,35 @@
     }
 
     .filter-row {
-      display: flex;
-      flex-wrap: wrap;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      align-items: end;
+      width: 100%;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .filter-row .form-group {
+      margin-bottom: 0;
+    }
+
+    .filter-row label {
+      font-size: 0.85em;
+      margin-bottom: 4px;
+    }
+
+    .filter-row input,
+    .filter-row select {
+      padding: 8px 12px;
+    }
+
+    .filter-row .btn {
+      padding: 9px 16px;
+    }
+
+    .filter-row .btn {
       width: 100%;
       justify-content: center;
-      gap: 8px;
     }
 
     .header-filter {
@@ -254,11 +349,21 @@
       padding: 20px;
       margin-bottom: 15px;
       display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 15px;
-      align-items: center;
+      grid-template-columns: auto 1fr auto;
+      grid-template-areas:
+        "map head actions"
+        "map meta actions";
+      column-gap: 18px;
+      row-gap: 6px;
+      align-items: start;
       transition: all 0.3s;
       box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+
+    .course-card:not(:has(.course-map)) {
+      grid-template-areas:
+        "head head actions"
+        "meta meta actions";
     }
 
     .course-card:hover {
@@ -281,44 +386,102 @@
       background: #fff9e6;
     }
 
-    .course-info-header {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 8px;
-      flex-wrap: wrap;
+    .course-map {
+      grid-area: map;
+      align-self: center;
     }
 
-    .course-info h3 {
+    .course-card.past {
+      opacity: 0.6;
+    }
+
+    .my-bookings-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .my-bookings-header h2 {
+      margin: 0;
+    }
+
+    .my-bookings-header .btn {
+      width: auto;
+    }
+
+    .my-bookings-past {
+      margin-top: 10px;
+    }
+
+    .my-bookings-past summary {
+      cursor: pointer;
+      color: #666;
+      padding: 8px 0;
+    }
+
+    .course-head {
+      grid-area: head;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      min-width: 0;
+    }
+
+    .course-head h3 {
       color: #333;
       font-size: 1.1em;
       margin: 0;
     }
 
+    .status-badge {
+      padding: 2px 8px;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 0.85em;
+      background: rgba(145, 199, 54, 0.15);
+      color: #6f9c22;
+    }
+
+    .status-badge.waiting {
+      background: rgba(255, 170, 0, 0.15);
+      color: #cc8800;
+    }
+
     .course-meta {
+      grid-area: meta;
       display: flex;
-      flex-wrap: wrap;
-      gap: 15px;
+      flex-direction: column;
+      gap: 3px;
+      min-width: 0;
       color: #666;
       font-size: 0.9em;
     }
 
-    .course-meta span {
-      display: flex;
-      gap: 5px;
+    .course-meta .meta-level {
+      color: #444;
+      font-weight: 600;
     }
 
-    .course-meta .copy-id {
+    .copy-id {
+      margin-left: auto;
       cursor: pointer;
+      -webkit-user-select: none;
       user-select: none;
-      border-radius: 4px;
-      padding: 0 4px;
-      border: 1px solid #91C736 ;
-      transition: background 0.2s, color 0.2s;
+      border-radius: 8px;
+      padding: 2px 8px;
+      border: 1px solid #ddd;
+      color: #999;
+      font-size: 0.8em;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      transition: background 0.2s, color 0.2s, border-color 0.2s;
     }
 
-    .course-meta .copy-id:hover {
+    .copy-id:hover {
       background: #91C736;
+      border-color: #91C736;
       color: #fff;
     }
 
@@ -340,17 +503,18 @@
     }
 
     .course-actions {
+      grid-area: actions;
+      align-self: center;
       display: flex;
       flex-direction: row;
-      justify-content: space-around;
       gap: 8px;
     }
 
     .course-actions .btn {
       justify-content: center;
-      padding: 8px 4px;
+      padding: 8px 14px;
       font-size: 0.9em;
-      max-width: 30%;
+      white-space: nowrap;
     }
 
     .btn-link {
@@ -367,6 +531,48 @@
     .btn-link:hover {
       color: #7fb32a;
       text-decoration: underline;
+    }
+
+    .map-thumb {
+      position: relative;
+      display: block;
+      width: 112px;
+      height: 84px;
+      padding: 0;
+      overflow: hidden;
+      border: 2px solid #b5dc78;
+      border-radius: 8px;
+      background: #e8eee0;
+      cursor: pointer;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+
+    .map-thumb:hover {
+      border-color: #91C736;
+      transform: scale(1.04);
+    }
+
+    .map-thumb:focus-visible {
+      outline: 2px solid #91C736;
+      outline-offset: 2px;
+    }
+
+    .map-thumb img {
+      position: absolute;
+      width: 256px;
+      height: 256px;
+      max-width: none;
+      pointer-events: none;
+    }
+
+    .map-thumb-pin {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -100%);
+      font-size: 1.1rem;
+      line-height: 1;
+      pointer-events: none;
     }
 
     .instructions {
@@ -421,6 +627,12 @@
     .log-entry .time {
       color: #999;
       min-width: 80px;
+      flex-shrink: 0;
+    }
+
+    .log-entry span:last-child {
+      min-width: 0;
+      overflow-wrap: anywhere;
     }
 
     .log-entry.success {
@@ -452,16 +664,25 @@
       box-shadow: 0 2px 6px rgba(0,0,0,0.08);
     }
 
-    .job-header {
+    .job-header,
+    .scheduled-job-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
       margin-bottom: 15px;
+    }
+
+    .scheduled-job-header {
+      align-items: flex-start;
+      margin-bottom: 0;
     }
 
     .job-stats {
       display: flex;
-      gap: 20px;
+      flex-wrap: wrap;
+      gap: 8px 20px;
       color: #666;
       font-size: 0.9em;
     }
@@ -501,6 +722,7 @@
       z-index: 1000;
       align-items: center;
       justify-content: center;
+      padding: 16px;
     }
 
     .modal.active {
@@ -512,8 +734,14 @@
       border-radius: 16px;
       padding: 30px;
       max-width: 500px;
-      width: 90%;
+      width: 100%;
+      max-height: calc(100vh - 32px);
+      overflow-y: auto;
       box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    }
+
+    #mapServiceButtons .btn {
+      justify-content: center;
     }
 
     .modal-header {
@@ -616,17 +844,236 @@
       font-weight: bold;
     }
 
+    /* Padel */
+    .padel-user-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .padel-calendar p {
+      margin-bottom: 12px;
+    }
+
+    .padel-calendar-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .padel-calendar-actions .btn {
+      text-decoration: none;
+    }
+
+    .padel-hint {
+      font-size: 0.85em;
+      color: #666;
+      margin-bottom: 12px;
+    }
+
+    .padel-slots {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 8px;
+    }
+
+    .padel-slot {
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+      background: #fff;
+      color: #333;
+      font-size: 0.95em;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      transition: all 0.2s;
+    }
+
+    .padel-slot small {
+      font-size: 0.8em;
+      color: #999;
+    }
+
+    .padel-slot.free:hover {
+      border-color: #91C736;
+      background: #f0f8e8;
+    }
+
+    .padel-slot.has-session {
+      border: 2px solid #91C736;
+      background: #f0f8e8;
+    }
+
+    .padel-slot.has-session small {
+      color: #5a8c1f;
+    }
+
+    .padel-slot:disabled {
+      cursor: not-allowed;
+      background: #f5f5f5;
+      color: #bbb;
+      text-decoration: line-through;
+    }
+
+    .padel-session-card {
+      background: #f9f9f9;
+      border-radius: 12px;
+      padding: 15px 20px;
+      margin-bottom: 15px;
+      border-left: 4px solid #2196F3;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+
+    .padel-session-card.status-scheduled,
+    .padel-session-card.status-booking {
+      border-left-color: #ffaa00;
+      background: #fff9e6;
+    }
+
+    .padel-session-card.status-booked {
+      border-left-color: #91C736;
+      background: #f0f8e8;
+    }
+
+    .padel-session-card.status-failed,
+    .padel-session-card.status-cancelled,
+    .padel-session-card.status-expired {
+      border-left-color: #ff4444;
+      background: #fff5f5;
+      opacity: 0.8;
+    }
+
+    .padel-session-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .padel-status {
+      font-size: 0.8em;
+      font-weight: bold;
+      padding: 2px 8px;
+      border-radius: 8px;
+      background: rgba(0,0,0,0.06);
+      margin-left: 8px;
+    }
+
+    .padel-session-details {
+      margin: 4px 0 0;
+    }
+
+    .padel-players {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin: 10px 0;
+    }
+
+    .padel-player {
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      padding: 2px 10px;
+      font-size: 0.85em;
+    }
+
+    .padel-player.booker {
+      border-color: #91C736;
+      color: #5a8c1f;
+      font-weight: bold;
+    }
+
+    .padel-player.empty {
+      border-style: dashed;
+      color: #bbb;
+    }
+
+    .padel-session-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .padel-session-actions .btn {
+      padding: 8px 14px;
+      font-size: 0.9em;
+      text-decoration: none;
+    }
+
+    .padel-session-card details {
+      margin-top: 10px;
+      font-size: 0.85em;
+      color: #666;
+    }
+
+    .padel-session-card summary {
+      cursor: pointer;
+    }
+
+    .padel-session-card details ul {
+      list-style: none;
+      margin-top: 6px;
+      font-family: monospace;
+    }
+
+    @media (max-width: 768px) {
+      .padel-session-actions .btn {
+        width: auto;
+        flex: 1;
+      }
+
+      .padel-slots {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    /* Touch devices: avoid sticky hover lift after tap */
+    @media (hover: none) {
+      .course-card:hover,
+      .btn-primary:hover,
+      .btn-secondary:hover {
+        transform: none;
+      }
+    }
+
    @media (max-width: 768px) {
       .container {
-        padding: 15px;
+        padding: 12px;
+      }
+
+      header {
+        padding: 12px 0 16px;
       }
 
       header h1 {
         font-size: 1.8em;
+        gap: 10px;
+      }
+
+      header h1 img {
+        height: 36px;
       }
 
       header p {
         font-size: 0.9em;
+      }
+
+      h2 {
+        font-size: 1.3em;
+        margin-bottom: 14px;
+      }
+
+      .panel {
+        padding: 16px;
       }
 
       .header-filter {
@@ -638,28 +1085,56 @@
       }
 
       .tabs {
-        justify-content: center;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: #f5f5f5;
+        padding: 8px 0;
+        margin-bottom: 12px;
+      }
+
+      .tab {
+        flex: 1;
       }
 
       .filter-row {
-        flex-direction: column;
-        gap: 12px;
-        width: 100%;
+        grid-template-columns: 1fr;
+        gap: 10px;
       }
 
-      .filter-row .form-group {
-        width: 100%;
+      /* Course filters: sport full width, then 3 + 2 columns, search button full width */
+      #panel-courses .filter-row {
+        grid-template-columns: repeat(6, 1fr);
+        gap: 8px;
+      }
+
+      #panel-courses .filter-row .form-group {
+        grid-column: span 2;
+      }
+
+      #panel-courses .filter-row .form-group:nth-child(5),
+      #panel-courses .filter-row .form-group:nth-child(6) {
+        grid-column: span 3;
+      }
+
+      #panel-courses .filter-row .form-group:first-child,
+      #panel-courses .filter-row .form-group:last-child {
+        grid-column: 1 / -1;
       }
 
       .filter-row input,
       .filter-row select {
-        padding: 10px 12px;
+        padding: 8px 10px;
         font-size: 16px; /* Prevents zoom on iOS */
       }
 
       .filter-row label {
-        font-size: 0.9em;
-        margin-bottom: 6px;
+        font-size: 0.8em;
+        margin-bottom: 3px;
+      }
+
+      #panel-courses .filter-row .btn {
+        padding: 10px 16px;
       }
 
       .btn {
@@ -670,11 +1145,27 @@
       }
 
       .course-card {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr auto;
+        grid-template-areas:
+          "head head"
+          "meta map"
+          "actions actions";
         padding: 15px;
-        gap: 12px;
+        column-gap: 12px;
+        row-gap: 10px;
       }
-      
+
+      .course-card:not(:has(.course-map)) {
+        grid-template-areas:
+          "head head"
+          "meta meta"
+          "actions actions";
+      }
+
+      .course-map {
+        align-self: start;
+      }
+
       .course-actions {
         flex-direction: row;
         width: 100%;
@@ -683,11 +1174,12 @@
 
       .course-actions .btn {
         flex: 1;
+        padding: 10px 6px;
       }
 
       .course-meta {
         font-size: 0.85em;
-        gap: 4px;
+        gap: 4px 12px;
       }
 
       .tabs {
@@ -695,24 +1187,55 @@
       }
 
       .tab {
-        padding: 10px 12px;
+        padding: 10px 6px;
         font-size: 0.9em;
+      }
+
+      /* Modals as bottom sheets */
+      .modal {
+        align-items: flex-end;
+        padding: 0;
       }
 
       .modal-content {
-        width: 90%;
-        max-width: 90%;
-        padding: 20px;
+        max-width: 100%;
+        max-height: 90vh;
+        border-radius: 16px 16px 0 0;
+        padding: 20px 20px calc(20px + env(safe-area-inset-bottom));
       }
 
       .status-bar {
-        flex-direction: column;
-        gap: 8px;
-        padding: 12px;
+        justify-content: space-between;
+        flex-wrap: nowrap;
+        gap: 6px 12px;
+        padding: 10px 12px;
+        margin-bottom: 12px;
       }
 
       .status-item {
-        font-size: 0.9em;
+        font-size: 0.85em;
+      }
+
+      .log-container {
+        padding: 12px;
+        max-height: 300px;
+      }
+
+      .log-entry {
+        font-size: 0.8em;
+        gap: 8px;
+      }
+
+      .log-entry .time {
+        min-width: 0;
+      }
+
+      .instructions {
+        padding: 16px;
+      }
+
+      .instructions code {
+        word-break: break-all;
       }
 
       input, select, textarea {
@@ -733,20 +1256,18 @@
         <div class="status-dot" id="wsStatus"></div>
         <span id="wsStatusText">Verbinde...</span>
       </div>
-      <div class="status-item">
+      <button class="account-btn logged-out" id="accountBtn" title="Account & Auth-Daten">
         <span>👤</span>
-        <span id="userStatus">Nicht angemeldet</span>
-      </div>
-      <div class="status-item">
-        <span>🔑</span>
-        <span id="tokenStatus">-</span>
-      </div>
+        <span id="userStatus">Anmelden</span>
+        <span class="token-chip" id="tokenStatus"></span>
+      </button>
     </div>
 
     <div class="tabs">
-      <button class="tab active" data-tab="courses"> Kurse suchen</button>
-      <button class="tab" data-tab="register"> Anmeldung</button>
-      <button class="tab" data-tab="auth"> Auth-Daten</button>
+      <button class="tab active" data-tab="courses">Kurse</button>
+      <button class="tab" data-tab="mybookings">Buchungen</button>
+      <button class="tab" data-tab="register">Jobs</button>
+      <button class="tab" data-tab="padel">Padel</button>
     </div>
 
     <!-- Kurse suchen Panel -->
@@ -755,17 +1276,17 @@
       <div class="header-filter">
       <div class="filter-row">
         <div class="form-group">
-          <label>Sportart</label>
+          <label for="filterSport">Sportart</label>
           <input list="sportsList" id="filterSport" placeholder="Tippen zum Suchen..." autocomplete="off">
           <datalist id="sportsList"></datalist>
           <input type="hidden" id="filterSportId">
         </div>
         <div class="form-group">
-          <label>Zeitraum (Tage)</label>
+          <label for="filterDays">Tage</label>
           <input type="number" id="filterDays" value="8" min="1" max="30">
         </div>
         <div class="form-group">
-          <label>Level</label>
+          <label for="filterLevel">Level</label>
           <select id="filterLevel">
             <option value="">Alle</option>
             <option value="1">Level 1</option>
@@ -774,18 +1295,18 @@
           </select>
         </div>
         <div class="form-group">
-          <label>Min. freie Plätze</label>
+          <label for="filterAvailable">Min. frei</label>
           <input type="number" id="filterAvailable" value="0" min="0">
         </div>
         <div class="form-group">
-          <label>Datum</label>
+          <label for="filterDate">Datum</label>
           <input type="date" id="filterDate">
         </div>
         <div class="form-group">
-          <label>Trainer</label>
+          <label for="filterTrainer">Trainer</label>
           <input type="text" id="filterTrainer" placeholder="Name...">
         </div>
-        <div class="form-group" style="display: flex; align-items: flex-end;">
+        <div class="form-group">
           <button class="btn btn-primary" id="searchBtn">Suchen</button>
           </div>
         </div>
@@ -798,29 +1319,49 @@
       <div class="courses-list" id="coursesList"></div>
     </div>
 
+    <!-- Meine Buchungen Panel -->
+    <div class="panel" id="panel-mybookings">
+      <div class="my-bookings-header">
+        <h2>Meine Buchungen</h2>
+        <button class="btn btn-secondary" id="myBookingsRefreshBtn">Aktualisieren</button>
+      </div>
+
+      <div id="myBookingsLoading" class="hidden">
+        <span class="spinner"></span> Lade Buchungen...
+      </div>
+      <div id="myBookingsError" class="hidden"></div>
+
+      <div class="courses-list" id="myBookingsUpcoming"></div>
+
+      <details id="myBookingsPastSection" class="my-bookings-past hidden">
+        <summary>Vergangene Buchungen (letzte 30 Tage)</summary>
+        <div class="courses-list" id="myBookingsPast"></div>
+      </details>
+    </div>
+
     <!-- Anmeldung Panel -->
     <div class="panel" id="panel-register">
       <h2>Kurs-Anmeldung</h2>
       
       <div class="form-group">
-        <label>Booking ID</label>
+        <label for="bookingId">Booking ID</label>
         <input type="number" id="bookingId" placeholder="z.B. 36432">
       </div>
 
       <div class="filter-row">
         <div class="form-group">
-          <label>Modus</label>
+          <label for="registerMode">Modus</label>
           <select id="registerMode">
             <option value="single">Einmalige Anmeldung</option>
             <option value="polling">Wiederholend (Polling)</option>
           </select>
         </div>
         <div class="form-group" id="intervalGroup">
-          <label>Intervall (Millisekunden)</label>
+          <label for="intervalSeconds">Intervall (Millisekunden)</label>
           <input type="number" id="intervalSeconds" value="1000" min="100" step="100">
         </div>
         <div class="form-group" id="maxAttemptsGroup">
-          <label>Max. Versuche (leer = unbegrenzt)</label>
+          <label for="maxAttempts">Max. Versuche (leer = unbegrenzt)</label>
           <input type="number" id="maxAttempts" placeholder="z.B. 20" min="1">
         </div>
       </div>
@@ -842,14 +1383,92 @@
       </div>
     </div>
 
-    <!-- Auth-Daten Panel -->
-    <div class="panel" id="panel-auth">
-      <h2>Authentifizierungsdaten importieren</h2>
+    <!-- Padel Panel -->
+    <div class="panel" id="panel-padel">
+      <h2>Padel – gemeinsam buchen</h2>
 
+      <!-- Login: jeder Spieler meldet sich mit seinen eigenen HSP-Auth-Daten an -->
+      <div id="padelLogin" class="hidden">
+        <div id="padelMainLogin" class="hidden">
+          <p style="margin-bottom: 10px;">Du bist bereits als <strong id="padelMainLoginName"></strong> angemeldet.</p>
+          <button class="btn btn-primary" id="padelMainLoginBtn">Weiter als <span id="padelMainLoginBtnName"></span></button>
+          <div id="padelMainLoginResult" class="hidden"></div>
+        </div>
+        <details id="padelManualLogin" open>
+        <summary id="padelManualLoginSummary" class="padel-hint hidden" style="margin-top: 16px; cursor: pointer;">Anderer Mitspieler? Mit eigenen Auth-Daten anmelden</summary>
+        <div class="instructions">
+          <h3>Mit deinem HSP-Account anmelden</h3>
+          <p style="margin-bottom: 10px;">Jeder Mitspieler meldet sich einmal mit seinen eigenen Auth-Daten an. Damit kann der Bot den Platz auch über deinen Account buchen und dich per E-Mail einladen.</p>
+          <ol>
+            <li>Öffne die <a href="https://hochschulsportmuenster.de/home" target="_blank" rel="noopener" style="color: #91C736;">HSP-Website</a> und melde dich an</li>
+            <li>Drücke <code>F12</code> → Tab <code>Console</code> → <code>localStorage.getItem("delcom_auth")</code></li>
+            <li>Kopiere die komplette Ausgabe und füge sie unten ein</li>
+          </ol>
+        </div>
+        <div class="form-group">
+          <label for="padelAuthInput">Auth-Daten (JSON)</label>
+          <textarea id="padelAuthInput" placeholder='Hier den kopierten Text einfügen...'></textarea>
+        </div>
+        <button class="btn btn-primary" id="padelLoginBtn">Anmelden</button>
+        <div id="padelLoginResult" class="hidden"></div>
+        </details>
+      </div>
+
+      <div id="padelMain" class="hidden">
+        <div class="padel-user-bar">
+          <span>👤 <strong id="padelUserName"></strong> <span id="padelUserEmail" style="color: #999;"></span></span>
+          <button class="btn-link" id="padelLogoutBtn" style="font-size: 0.95rem;">Abmelden</button>
+        </div>
+
+        <div class="instructions padel-calendar">
+          <h3>📅 Kalender aufs Handy</h3>
+          <p>Einmal abonnieren – alle Sessions, bei denen du dabei bist, erscheinen automatisch und werden aktualisiert.</p>
+          <div class="padel-calendar-actions">
+            <a class="btn btn-primary" id="padelWebcalLink" href="#">Kalender abonnieren</a>
+            <button class="btn btn-secondary" id="padelCopyCalBtn">Link kopieren</button>
+          </div>
+          <p class="padel-hint">Android / Google Kalender: Link kopieren → calendar.google.com → „Weitere Kalender“ → „Per URL“.</p>
+        </div>
+
+        <h3 style="margin-bottom: 10px;">Neue Session</h3>
+        <p class="padel-hint" id="padelRulesHint"></p>
+        <div class="filter-row">
+          <div class="form-group">
+            <label for="padelDate">Datum</label>
+            <input type="date" id="padelDate">
+          </div>
+        </div>
+        <div id="padelSlots" class="padel-slots"></div>
+
+        <h3 style="margin: 25px 0 15px;">Sessions</h3>
+        <div id="padelSessions"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Account / Auth-Daten Modal -->
+  <div class="modal" id="authModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Account</h3>
+        <button class="modal-close" onclick="closeAuthModal()">×</button>
+      </div>
+
+      <div id="authLoggedIn" class="hidden">
+        <div class="alert alert-success">
+          ✅ Angemeldet als <strong id="authLoggedInName"></strong><br>
+          <span id="authLoggedInEmail"></span><br>
+          Token: <span id="authLoggedInToken"></span>
+        </div>
+        <button class="btn btn-secondary" id="showAuthImportBtn">Neue Auth-Daten importieren</button>
+      </div>
+
+      <div id="authImportForm">
       <div class="instructions">
         <h3>Anleitung zum Abrufen der Auth-Daten</h3>
         <ol>
-          <li>Öffne die <a href="https://buchung.hssp-muenster.de/" target="_blank" style="color: #91C736;">HSP-Website</a> und melde dich an</li>
+          <li>Öffne die <a href="https://hochschulsportmuenster.de/home" target="_blank" rel="noopener" style="color: #91C736;">HSP-Website</a> und melde dich an</li>
           <li>Drücke <code>F12</code> um die Entwickler-Tools zu öffnen</li>
           <li>Wechsle zum Tab <code>Console</code></li>
           <li>Gib folgenden Befehl ein und drücke Enter:
@@ -861,7 +1480,7 @@
       </div>
 
       <div class="form-group">
-        <label>Auth-Daten (JSON)</label>
+        <label for="authDataInput">Auth-Daten (JSON)</label>
         <textarea id="authDataInput" placeholder='Hier den kopierten Text einfügen...'></textarea>
       </div>
 
@@ -873,6 +1492,7 @@
       </div>
 
       <button class="btn btn-primary" id="importAuthBtn">Importieren</button>
+      </div>
 
       <div id="authResult" class="hidden"></div>
     </div>
@@ -887,11 +1507,11 @@
       </div>
       <p>Wähle die Einstellungen für die wiederholte Anmeldung:</p>
       <div class="form-group">
-        <label>Intervall (Millisekunden)</label>
+        <label for="modalInterval">Intervall (Millisekunden)</label>
         <input type="number" id="modalInterval" value="1000" min="100" step="100">
       </div>
       <div class="form-group">
-        <label>Max. Versuche (leer = unbegrenzt)</label>
+        <label for="modalMaxAttempts">Max. Versuche (leer = unbegrenzt)</label>
         <input type="number" id="modalMaxAttempts" placeholder="z.B. 20">
       </div>
       <input type="hidden" id="modalBookingId">
@@ -973,12 +1593,31 @@
     // Copy course ID to clipboard
     function copyId(event, id) {
       event.stopPropagation();
+      // currentTarget is reset once dispatch ends, so grab it before the async write
+      const el = event.currentTarget;
       navigator.clipboard.writeText(String(id)).then(() => {
-        const el = event.currentTarget;
         const original = el.textContent;
         el.textContent = '✓ Kopiert!';
         setTimeout(() => { el.textContent = original; }, 1200);
       });
+    }
+
+    // Build a small static OpenStreetMap preview centered on lat/lng
+    function mapThumbnail(lat, lng, width = 120, height = 64, zoom = 16) {
+      const scale = 256 * Math.pow(2, zoom);
+      const latRad = lat * Math.PI / 180;
+      const px = (lng + 180) / 360 * scale;
+      const py = (1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2 * scale;
+      const left = px - width / 2;
+      const top = py - height / 2;
+
+      let tiles = '';
+      for (let tx = Math.floor(left / 256); tx <= Math.floor((left + width) / 256); tx++) {
+        for (let ty = Math.floor(top / 256); ty <= Math.floor((top + height) / 256); ty++) {
+          tiles += `<img src="https://tile.openstreetmap.org/${zoom}/${tx}/${ty}.png" alt="" loading="lazy" style="left:${Math.round(tx * 256 - left)}px;top:${Math.round(ty * 256 - top)}px">`;
+        }
+      }
+      return `${tiles}<span class="map-thumb-pin">📍</span>`;
     }
 
     // Open location in map service
@@ -1054,11 +1693,11 @@
       cancelBtn.onclick = closeMapModal;
       buttonsContainer.appendChild(cancelBtn);
       
-      modal.style.display = 'flex';
+      modal.classList.add('active');
     }
 
     function closeMapModal() {
-      document.getElementById('mapModal').style.display = 'none';
+      document.getElementById('mapModal').classList.remove('active');
     }
 
     function connectWebSocket() {
@@ -1163,6 +1802,10 @@
           renderActiveJobs();
           break;
 
+        case 'padelUpdate':
+          schedulePadelReload();
+          break;
+
         case 'error':
           addLog('error', data.message);
           break;
@@ -1255,24 +1898,40 @@
         document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
         tab.classList.add('active');
         document.getElementById(`panel-${tab.dataset.tab}`).classList.add('active');
+        if (tab.dataset.tab === 'mybookings') {
+          loadMyBookings();
+        }
       });
     });
 
     // Status laden
+    let mainAccount = null;
     async function loadStatus() {
       try {
         const res = await fetch('/api/status');
         const data = await res.json();
 
-        if (data.authenticated && data.member) {
-          document.getElementById('userStatus').textContent = 
-            data.member.memberName || data.member.memberEmail || `ID: ${data.member.memberId}`;
-        }
+        const loggedIn = data.authenticated && data.member;
+        document.getElementById('userStatus').textContent = loggedIn
+          ? data.member.memberName || data.member.memberEmail || `ID: ${data.member.memberId}`
+          : 'Anmelden';
+        document.getElementById('accountBtn').classList.toggle('logged-out', !loggedIn);
 
-        if (data.tokenInfo) {
-          document.getElementById('tokenStatus').textContent = 
-            data.tokenInfo.isValid ? `Gültig (${data.tokenInfo.remainingText})` : 'Abgelaufen';
-        }
+        const tokenStatus = document.getElementById('tokenStatus');
+        tokenStatus.textContent = loggedIn && data.tokenInfo
+          ? (data.tokenInfo.isValid ? `🔑 ${data.tokenInfo.remainingText}` : '🔑 Abgelaufen')
+          : '';
+        tokenStatus.classList.toggle('expired', !!data.tokenInfo && !data.tokenInfo.isValid);
+
+        mainAccount = data.authenticated && data.member?.memberId ? {
+          name: data.member.memberName || data.member.memberEmail || `ID: ${data.member.memberId}`,
+          email: data.member.memberEmail || '',
+          tokenText: data.tokenInfo
+            ? (data.tokenInfo.isValid ? `Gültig (${data.tokenInfo.remainingText})` : 'Abgelaufen')
+            : 'Unbekannt'
+        } : null;
+        renderAuthPanel();
+        renderPadelLoginOptions();
       } catch (error) {
         console.error('Status laden fehlgeschlagen:', error);
       }
@@ -1490,7 +2149,7 @@
         const dateStr = date.toLocaleDateString('de-DE');
         const isFull = course.available <= 0;
         const supervisors = course.supervisors && course.supervisors.length > 0 
-          ? `<span>👤 ${course.supervisors.map(s => `${s.firstName} ${s.lastName}`).join(', ')}</span>` 
+          ? `<span>👤 ${course.supervisors.map(s => `${s.firstName} ${s.lastName}`).join(', ')}</span>`
           : '';
         
         // Check user participation status
@@ -1500,49 +2159,48 @@
         const cardClass = isBooked ? 'booked' : (isWaiting ? 'waiting' : (isFull ? 'full' : ''));
         let statusBadge = '';
         if (isBooked) {
-          statusBadge = '<span style="color: #91C736; font-weight: bold;">Angemeldet</span>';
+          statusBadge = '<span class="status-badge">✓ Angemeldet</span>';
         } else if (isWaiting) {
-          statusBadge = '<span style="color: #ffaa00; font-weight: bold;">⚠️ Warteliste</span>';
+          statusBadge = '<span class="status-badge waiting">⏳ Warteliste</span>';
         } else if (isScheduled) {
           const scheduledJob = scheduledJobsMap.get(course.id);
           const statusIcon = scheduledJob.status === 'running' ? '🔄' : '📅';
-          statusBadge = `<span style="color: #91C736; font-weight: bold;">${statusIcon} Geplant</span>`;
+          statusBadge = `<span class="status-badge">${statusIcon} Geplant</span>`;
         }
 
-        const locationButton = course.locationId 
-          ? `<button class="btn-link" onclick="openLocation(${course.locationId}, '${course.location.replace(/'/g, "\\'")}')">🗺️</button>`
+        const loc = course.locationId ? locationsData[course.locationId] : null;
+        const hasCoords = loc?.latitude && loc?.longitude;
+        const locationButton = course.locationId
+          ? `<div class="course-map"><button class="${hasCoords ? 'map-thumb' : 'btn-link'}" title="Karte öffnen" onclick="openLocation(${course.locationId}, '${course.location.replace(/'/g, "\\'")}')">${hasCoords ? mapThumbnail(loc.latitude, loc.longitude, 112, 84) : '🗺️'}</button></div>`
           : '';
 
         html += `
           <div class="course-card ${cardClass}" data-course-id="${course.id}">
-            <div class="course-info">
-              <div class="course-info-header">
-                <h3>${course.description} ${statusBadge}</h3>
-                <span class="availability ${isFull ? 'full' : 'available'}" data-available="${course.available}">
-                  ${isFull ? 'Voll' : `${course.available} frei`}
-                </span>
-              </div>
-              <div class="course-meta">
-                ${course.level ? `<strong>${course.level}</strong>` : ''}
-                <span>${dayName}, ${dateStr}</span>
-                <span>${time} Uhr</span>
-                <span>${course.location} ${locationButton}</span>
-                <span class="copy-id" title="Klicken zum Kopieren" onclick="copyId(event, ${course.id})">ID: ${course.id}</span>
-                ${supervisors}
-              </div>
+            <div class="course-head">
+              <h3>${course.description}</h3>
+              <span class="availability ${isFull ? 'full' : 'available'}" data-available="${course.available}">
+                ${isFull ? 'Voll' : `${course.available} frei`}
+              </span>
+              <span class="status-slot">${statusBadge}</span>
+              <span class="copy-id" title="Klicken zum Kopieren" onclick="copyId(event, ${course.id})">#${course.id}</span>
             </div>
-            <div style="display: flex; align-items: center; gap: 15px;">
-              <div class="course-actions">
-                <button class="btn btn-primary" onclick="quickRegister(${course.id})" ${isBooked || isWaiting ? 'disabled' : ''}>
-                  ${isBooked ? 'Angemeldet' : (isWaiting ? 'Warteliste' : (isFull ? 'Warteliste' : 'Anmelden'))}
-                </button>
-                <button class="btn btn-secondary" onclick="openPollingModal(${course.id})" ${isBooked || isWaiting ? 'disabled' : ''}>
-                  Polling
-                </button>
-                <button class="btn btn-secondary" onclick="openScheduleModal(${course.id}, '${course.startDate}', '${course.description.replace(/'/g, "\\'")}')" ${isBooked || isWaiting || isScheduled ? 'disabled' : ''}>
-                  ${isScheduled ? 'Geplant' : 'Planen'}
-                </button>
-              </div>
+            <div class="course-meta">
+              ${course.level ? `<span class="meta-level">${course.level}</span>` : ''}
+              <span>📅 ${dayName}, ${dateStr} · ${time} Uhr</span>
+              <span>📍 ${course.location}</span>
+              ${supervisors}
+            </div>
+            ${locationButton}
+            <div class="course-actions">
+              <button class="btn btn-primary" onclick="quickRegister(${course.id})" ${isBooked || isWaiting ? 'disabled' : ''}>
+                ${isBooked ? 'Angemeldet' : (isWaiting ? 'Warteliste' : (isFull ? 'Warteliste' : 'Anmelden'))}
+              </button>
+              <button class="btn btn-secondary" onclick="openPollingModal(${course.id})" ${isBooked || isWaiting ? 'disabled' : ''}>
+                Polling
+              </button>
+              <button class="btn btn-secondary" onclick="openScheduleModal(${course.id}, '${course.startDate}', '${course.description.replace(/'/g, "\\'")}')" ${isBooked || isWaiting || isScheduled ? 'disabled' : ''}>
+                ${isScheduled ? 'Geplant' : 'Planen'}
+              </button>
             </div>
           </div>
         `;
@@ -1550,6 +2208,77 @@
 
       container.innerHTML = html;
     }
+
+    // ============ MEINE BUCHUNGEN ============
+    async function loadMyBookings() {
+      const loading = document.getElementById('myBookingsLoading');
+      const errorDiv = document.getElementById('myBookingsError');
+      loading.classList.remove('hidden');
+      errorDiv.classList.add('hidden');
+
+      try {
+        const res = await fetch('/api/my-bookings');
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || `Fehler ${res.status}`);
+        renderMyBookings(data.bookings);
+      } catch (error) {
+        errorDiv.className = 'alert alert-error';
+        errorDiv.textContent = `❌ ${error.message}`;
+      } finally {
+        loading.classList.add('hidden');
+      }
+    }
+
+    function renderMyBookings(bookings) {
+      const now = new Date();
+      const upcoming = bookings.filter(b => new Date(b.endDate || b.startDate) >= now);
+      const past = bookings.filter(b => new Date(b.endDate || b.startDate) < now).reverse();
+
+      document.getElementById('myBookingsUpcoming').innerHTML = upcoming.length
+        ? upcoming.map(b => myBookingCard(b, false)).join('')
+        : '<p style="text-align: center; color: #888; padding: 40px;">Keine kommenden Buchungen</p>';
+
+      document.getElementById('myBookingsPastSection').classList.toggle('hidden', past.length === 0);
+      document.getElementById('myBookingsPast').innerHTML = past.map(b => myBookingCard(b, true)).join('');
+    }
+
+    function myBookingCard(booking, isPast) {
+      const days = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
+      const start = new Date(booking.startDate);
+      const end = booking.endDate ? new Date(booking.endDate) : null;
+      const timeOpts = { hour: '2-digit', minute: '2-digit' };
+      const time = start.toLocaleTimeString('de-DE', timeOpts) + (end ? `–${end.toLocaleTimeString('de-DE', timeOpts)}` : '');
+      const isWaiting = booking.userParticipation?.participationStatus === 3;
+      const title = booking.description || booking.level || booking.location || 'Buchung';
+      const supervisors = booking.supervisors?.length
+        ? `<span>👤 ${escapeHtml(booking.supervisors.map(s => `${s.firstName} ${s.lastName}`).join(', '))}</span>`
+        : '';
+
+      const loc = booking.locationId ? locationsData[booking.locationId] : null;
+      const hasCoords = loc?.latitude && loc?.longitude;
+      const locationButton = booking.locationId
+        ? `<div class="course-map"><button class="${hasCoords ? 'map-thumb' : 'btn-link'}" title="Karte öffnen" onclick="openLocation(${booking.locationId}, '${escapeHtml(booking.location).replace(/'/g, "\\'")}')">${hasCoords ? mapThumbnail(loc.latitude, loc.longitude, 112, 84) : '🗺️'}</button></div>`
+        : '';
+
+      return `
+        <div class="course-card ${isWaiting ? 'waiting' : 'booked'} ${isPast ? 'past' : ''}">
+          <div class="course-head">
+            <h3>${escapeHtml(title)}</h3>
+            <span class="status-slot">${isWaiting ? '<span class="status-badge waiting">⏳ Warteliste</span>' : '<span class="status-badge">✓ Angemeldet</span>'}</span>
+            <span class="copy-id" title="Klicken zum Kopieren" onclick="copyId(event, ${booking.id})">#${booking.id}</span>
+          </div>
+          <div class="course-meta">
+            ${booking.level && booking.level !== title ? `<span class="meta-level">${escapeHtml(booking.level)}</span>` : ''}
+            <span>📅 ${days[start.getDay()]}, ${start.toLocaleDateString('de-DE')} · ${time} Uhr</span>
+            <span>📍 ${escapeHtml(booking.location)}</span>
+            ${supervisors}
+          </div>
+          ${locationButton}
+        </div>
+      `;
+    }
+
+    document.getElementById('myBookingsRefreshBtn').addEventListener('click', loadMyBookings);
 
     // Update existing course card without full re-render
     function updateCourseCard(card, course) {
@@ -1583,31 +2312,22 @@
       
       // Update if status changed in any direction
       if (wasInAnyStatus !== isInAnyStatus || (isInAnyStatus && (wasBooked !== isBooked || wasWaiting !== isWaiting))) {
-        const buttons = card.querySelectorAll('button');
+        const buttons = card.querySelectorAll('.course-actions button');
         const primaryBtn = card.querySelector('.btn-primary');
-        const titleEl = card.querySelector('h3');
-        
+        const statusSlot = card.querySelector('.status-slot');
+
         if (isBooked) {
           // Booked
           card.className = 'course-card booked';
           buttons.forEach(btn => btn.disabled = true);
           if (primaryBtn) primaryBtn.textContent = 'Angemeldet';
-          // Update title badge
-          if (titleEl) {
-            const titleText = titleEl.textContent.split('<span')[0].trim();
-            const courseName = course.description;
-            titleEl.innerHTML = `${courseName} <span style="color: #91C736; font-weight: bold;">✓ Angemeldet</span>`;
-          }
+          if (statusSlot) statusSlot.innerHTML = '<span class="status-badge">✓ Angemeldet</span>';
         } else if (isWaiting) {
           // Waiting list
           card.className = 'course-card waiting';
           buttons.forEach(btn => btn.disabled = true);
           if (primaryBtn) primaryBtn.textContent = '⏳ Warteliste';
-          // Update title badge
-          if (titleEl) {
-            const courseName = course.description;
-            titleEl.innerHTML = `${courseName} <span style="color: #ffaa00; font-weight: bold;">Warteliste</span>`;
-          }
+          if (statusSlot) statusSlot.innerHTML = '<span class="status-badge waiting">⏳ Warteliste</span>';
         } else {
           // No longer booked/waiting (cancelled)
           card.className = `course-card ${isFull ? 'full' : ''}`;
@@ -1615,11 +2335,7 @@
           if (primaryBtn) {
             primaryBtn.textContent = isFull ? 'Warteliste' : 'Anmelden';
           }
-          // Remove badge from title
-          if (titleEl) {
-            const courseName = course.description;
-            titleEl.textContent = courseName;
-          }
+          if (statusSlot) statusSlot.innerHTML = '';
         }
         
         // Add flash animation for any status change
@@ -1823,7 +2539,7 @@
         
         html += `
           <div class="scheduled-job-card ${statusClass}">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div class="scheduled-job-header">
               <div>
                 <strong>${job.courseDescription || `Booking ${job.bookingId}`}</strong>
                 <span style="margin-left: 10px; color: ${job.status === 'running' ? '#ffaa00' : '#91C736'};">${statusText}</span>
@@ -1933,20 +2649,10 @@
       }
     });
 
-    // Auth Import
-    document.getElementById('importAuthBtn').addEventListener('click', async () => {
-      const input = document.getElementById('authDataInput').value.trim();
-      const resultDiv = document.getElementById('authResult');
-      const autoFix = document.getElementById('autoFixJson').checked;
-
-      if (!input) {
-        resultDiv.className = 'alert alert-error';
-        resultDiv.textContent = 'Bitte Auth-Daten einfügen';
-        resultDiv.classList.remove('hidden');
-        return;
-      }
-
-      try {
+    /**
+     * Parst den kopierten delcom_auth-Inhalt (Chrome- und Firefox-Format)
+     */
+    function parseAuthInput(input, autoFix) {
         let authData;
         let cleanedInput = input;
         
@@ -2015,6 +2721,57 @@
             }
         }
 
+        return authData;
+    }
+
+    // Account-Modal: bei bestehender Anmeldung Status statt Import-Formular zeigen
+    let authImportRequested = false;
+
+    function openAuthModal() {
+      authImportRequested = false;
+      document.getElementById('authResult').classList.add('hidden');
+      renderAuthPanel();
+      document.getElementById('authModal').classList.add('active');
+    }
+
+    function closeAuthModal() {
+      document.getElementById('authModal').classList.remove('active');
+    }
+
+    document.getElementById('accountBtn').addEventListener('click', openAuthModal);
+    function renderAuthPanel() {
+      const showForm = !mainAccount || authImportRequested;
+      document.getElementById('authLoggedIn').classList.toggle('hidden', !mainAccount);
+      document.getElementById('showAuthImportBtn').classList.toggle('hidden', showForm);
+      document.getElementById('authImportForm').classList.toggle('hidden', !showForm);
+      if (mainAccount) {
+        document.getElementById('authLoggedInName').textContent = mainAccount.name;
+        document.getElementById('authLoggedInEmail').textContent = mainAccount.email;
+        document.getElementById('authLoggedInToken').textContent = mainAccount.tokenText;
+      }
+    }
+
+    document.getElementById('showAuthImportBtn').addEventListener('click', () => {
+      authImportRequested = true;
+      renderAuthPanel();
+    });
+
+    // Auth Import
+    document.getElementById('importAuthBtn').addEventListener('click', async () => {
+      const input = document.getElementById('authDataInput').value.trim();
+      const resultDiv = document.getElementById('authResult');
+      const autoFix = document.getElementById('autoFixJson').checked;
+
+      if (!input) {
+        resultDiv.className = 'alert alert-error';
+        resultDiv.textContent = 'Bitte Auth-Daten einfügen';
+        resultDiv.classList.remove('hidden');
+        return;
+      }
+
+      try {
+        const authData = parseAuthInput(input, autoFix);
+
         const res = await fetch('/api/auth/import', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -2034,6 +2791,8 @@
             Email: ${data.member.email}<br>
             ID: ${data.member.id}
           `;
+          document.getElementById('authDataInput').value = '';
+          authImportRequested = false;
           loadStatus();
         } else {
           resultDiv.className = 'alert alert-error';
@@ -2048,15 +2807,343 @@
       resultDiv.classList.remove('hidden');
     });
 
+    // ============ PADEL ============
+    // Jeder Spieler hat seinen eigenen Login (userKey vom Server), unabhängig vom Haupt-Token im Account-Modal
+    const PADEL_KEY_STORAGE = 'padelUserKey';
+    const PADEL_ACTIVE_STATUSES = ['open', 'scheduled', 'booking', 'booked'];
+    let padelUserKey = null;
+    let padelMe = null;
+    let padelSessions = [];
+    let padelReloadTimer = null;
+
+    try {
+      padelUserKey = localStorage.getItem(PADEL_KEY_STORAGE);
+    } catch {
+      // Ohne localStorage muss man sich pro Besuch neu anmelden
+    }
+
+    function escapeHtml(text) {
+      return String(text ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    function formatPadelDate(date) {
+      return new Date(date).toLocaleString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+    }
+
+    function toDateInputValue(date) {
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    }
+
+    async function padelFetch(path, options = {}) {
+      const res = await fetch(path, {
+        ...options,
+        headers: { 'Content-Type': 'application/json', 'x-user-key': padelUserKey || '' }
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.status === 401) {
+        padelLogout();
+      }
+      if (!res.ok) {
+        throw new Error(data.error || `Fehler ${res.status}`);
+      }
+      return data;
+    }
+
+    async function initPadel() {
+      if (!padelUserKey) {
+        showPadelLogin();
+        return;
+      }
+      try {
+        padelMe = await padelFetch('/api/padel/me');
+        showPadelMain();
+      } catch (error) {
+        console.error('Padel-Login fehlgeschlagen:', error);
+      }
+    }
+
+    function showPadelLogin() {
+      document.getElementById('padelLogin').classList.remove('hidden');
+      document.getElementById('padelMain').classList.add('hidden');
+      renderPadelLoginOptions();
+    }
+
+    // Ist im Account-Modal schon ein Account hinterlegt, reicht ein Klick statt erneutem Einfügen
+    function renderPadelLoginOptions() {
+      document.getElementById('padelMainLogin').classList.toggle('hidden', !mainAccount);
+      document.getElementById('padelManualLoginSummary').classList.toggle('hidden', !mainAccount);
+      document.getElementById('padelManualLogin').open = !mainAccount;
+      if (mainAccount) {
+        document.getElementById('padelMainLoginName').textContent = mainAccount.name;
+        document.getElementById('padelMainLoginBtnName').textContent = mainAccount.name;
+      }
+    }
+
+    function setPadelUserKey(userKey) {
+      padelUserKey = userKey;
+      try {
+        localStorage.setItem(PADEL_KEY_STORAGE, padelUserKey);
+      } catch {
+        // Ohne localStorage gilt der Login nur für diesen Besuch
+      }
+    }
+
+    function showPadelMain() {
+      const { user, calendarToken, rules } = padelMe;
+      document.getElementById('padelLogin').classList.add('hidden');
+      document.getElementById('padelMain').classList.remove('hidden');
+      document.getElementById('padelUserName').textContent = user.name;
+      document.getElementById('padelUserEmail').textContent = user.email;
+
+      const feedPath = `${location.host}/api/padel/calendar/${calendarToken}.ics`;
+      document.getElementById('padelWebcalLink').href = `webcal://${feedPath}`;
+      document.getElementById('padelCopyCalBtn').dataset.url = `${location.protocol}//${feedPath}`;
+
+      document.getElementById('padelRulesHint').textContent =
+        `Ab ${rules.minPlayers} Spielern bucht der Bot automatisch, sobald der Slot freigeschaltet wird (${rules.daysAhead} Tage vorher um ${rules.openTime} Uhr). ` +
+        `HSP erlaubt pro Person ${rules.maxPerDay} Buchung/Tag und ${rules.maxPerPeriod} in ${rules.periodDays} Tagen – deshalb bucht immer, wer noch Kontingent hat und am längsten nicht dran war.`;
+
+      const dateInput = document.getElementById('padelDate');
+      if (!dateInput.value) {
+        const date = new Date();
+        date.setDate(date.getDate() + rules.daysAhead);
+        dateInput.value = toDateInputValue(date);
+      }
+      loadPadelSessions().then(loadPadelSlots);
+    }
+
+    function padelLogout() {
+      padelUserKey = null;
+      padelMe = null;
+      try {
+        localStorage.removeItem(PADEL_KEY_STORAGE);
+      } catch {
+        // ignorieren
+      }
+      showPadelLogin();
+    }
+
+    async function loadPadelSlots() {
+      const container = document.getElementById('padelSlots');
+      const date = document.getElementById('padelDate').value;
+      if (!date || !padelUserKey) return;
+
+      container.innerHTML = '<span class="spinner"></span>';
+      try {
+        const { slots } = await padelFetch(`/api/padel/slots?date=${date}`);
+        container.innerHTML = slots.map(slot => {
+          const time = new Date(slot.startDate).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+          if (slot.sessionId) {
+            const session = padelSessions.find(s => s.id === slot.sessionId);
+            const count = session ? `${session.participants.length}/${session.maxPlayers} Spieler` : 'Session';
+            return `<button class="padel-slot has-session" onclick="scrollToPadelSession('${slot.sessionId}')">${time}<small>${count}</small></button>`;
+          }
+          if (slot.taken || slot.isPast) {
+            return `<button class="padel-slot" disabled>${time}<small>${slot.isPast ? 'vorbei' : 'belegt'}</small></button>`;
+          }
+          // Noch nicht in HSP buchbar: Session anlegen geht trotzdem, der Bot bucht zur Freischaltung
+          const opensAt = new Date(slot.bookingOpensAt);
+          const label = opensAt > new Date()
+            ? `ab ${opensAt.toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}`
+            : 'frei';
+          return `<button class="padel-slot free" onclick="createPadelSession('${slot.startDate}')">${time}<small>${label}</small></button>`;
+        }).join('');
+      } catch (error) {
+        container.innerHTML = `<div class="alert alert-error">${escapeHtml(error.message)}</div>`;
+      }
+    }
+
+    async function loadPadelSessions() {
+      if (!padelUserKey) return;
+      try {
+        const data = await padelFetch('/api/padel/sessions');
+        padelSessions = data.sessions;
+        renderPadelSessions();
+      } catch (error) {
+        console.error('Fehler beim Laden der Padel-Sessions:', error);
+      }
+    }
+
+    function renderPadelSessions() {
+      const container = document.getElementById('padelSessions');
+      if (padelSessions.length === 0) {
+        container.innerHTML = '<p class="padel-hint">Noch keine Sessions – wähle oben einen freien Slot.</p>';
+        return;
+      }
+
+      const myId = padelMe.user.memberId;
+      container.innerHTML = padelSessions.map(s => {
+        const isIn = s.participants.some(p => p.memberId === myId);
+        const isActive = PADEL_ACTIVE_STATUSES.includes(s.status);
+
+        const players = s.participants.map(p => {
+          const isBooker = p.memberId === s.bookedBy;
+          return `<span class="padel-player ${isBooker ? 'booker' : ''}" title="${escapeHtml(p.email)}">${isBooker ? '🎫 ' : ''}${escapeHtml(p.name)}</span>`;
+        }).join('');
+        const freeSpots = isActive ? '<span class="padel-player empty">frei</span>'.repeat(Math.max(0, s.maxPlayers - s.participants.length)) : '';
+
+        const actions = [];
+        if (isActive && !isIn && s.participants.length < s.maxPlayers) {
+          actions.push(`<button class="btn btn-primary" onclick="joinPadelSession('${s.id}')">Beitreten</button>`);
+        }
+        if (s.status === 'failed' && isIn) {
+          actions.push(`<button class="btn btn-primary" onclick="retryPadelSession('${s.id}')">Erneut versuchen</button>`);
+        }
+        if (isIn) {
+          actions.push(`<a class="btn btn-secondary" href="/api/padel/calendar/${padelMe.calendarToken}/${s.id}.ics">📅 Zum Kalender</a>`);
+        }
+        if (isActive && isIn && s.status !== 'booking') {
+          actions.push(`<button class="btn btn-secondary" onclick="leavePadelSession('${s.id}')">Ich kann nicht</button>`);
+        }
+        if (s.createdBy === myId && ['open', 'scheduled'].includes(s.status)) {
+          actions.push(`<button class="btn btn-danger" onclick="cancelPadelSession('${s.id}')">Session absagen</button>`);
+        }
+
+        const details = [escapeHtml(s.statusMessage || '')];
+        if (['open', 'scheduled'].includes(s.status)) {
+          details.push(`Buchungsfenster: ${formatPadelDate(s.bookingOpensAt)} Uhr`);
+        }
+        if (s.hspBookingId) {
+          details.push(`HSP-Buchung #${s.hspBookingId}`);
+        }
+
+        const log = s.log.slice().reverse().map(entry =>
+          `<li>${new Date(entry.at).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })} ${escapeHtml(entry.message)}</li>`
+        ).join('');
+
+        return `
+          <div class="padel-session-card status-${s.status}" id="padel-session-${s.id}">
+            <div class="padel-session-header">
+              <div>
+                <strong>${formatPadelDate(s.startDate)} Uhr</strong>
+                <span class="padel-status">${escapeHtml(s.statusLabel)}</span>
+                <div class="padel-hint padel-session-details">${details.join(' · ')}</div>
+              </div>
+            </div>
+            <div class="padel-players">${players}${freeSpots}</div>
+            <div class="padel-session-actions">${actions.join('')}</div>
+            <details>
+              <summary>Verlauf</summary>
+              <ul>${log}</ul>
+            </details>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function scrollToPadelSession(sessionId) {
+      document.getElementById(`padel-session-${sessionId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    async function padelAction(request) {
+      try {
+        await request();
+      } catch (error) {
+        alert(error.message);
+      }
+      await loadPadelSessions();
+      loadPadelSlots();
+    }
+
+    function createPadelSession(startDate) {
+      if (!confirm(`Session am ${formatPadelDate(startDate)} Uhr erstellen? Du wirst automatisch eingetragen.`)) return;
+      padelAction(() => padelFetch('/api/padel/sessions', { method: 'POST', body: JSON.stringify({ startDate }) }));
+    }
+
+    function joinPadelSession(sessionId) {
+      padelAction(() => padelFetch(`/api/padel/sessions/${sessionId}/join`, { method: 'POST' }));
+    }
+
+    function leavePadelSession(sessionId) {
+      if (!confirm('Wirklich absagen?')) return;
+      padelAction(() => padelFetch(`/api/padel/sessions/${sessionId}/leave`, { method: 'POST' }));
+    }
+
+    function cancelPadelSession(sessionId) {
+      if (!confirm('Session für alle absagen?')) return;
+      padelAction(() => padelFetch(`/api/padel/sessions/${sessionId}`, { method: 'DELETE' }));
+    }
+
+    function retryPadelSession(sessionId) {
+      padelAction(() => padelFetch(`/api/padel/sessions/${sessionId}/retry`, { method: 'POST' }));
+    }
+
+    // Server schickt bei jeder Änderung nur die Session-ID – wir laden gebündelt neu
+    function schedulePadelReload() {
+      clearTimeout(padelReloadTimer);
+      padelReloadTimer = setTimeout(() => {
+        loadPadelSessions().then(loadPadelSlots);
+      }, 300);
+    }
+
+    document.getElementById('padelLoginBtn').addEventListener('click', async () => {
+      const input = document.getElementById('padelAuthInput').value.trim();
+      const resultDiv = document.getElementById('padelLoginResult');
+
+      try {
+        if (!input) throw new Error('Bitte Auth-Daten einfügen');
+        const authData = parseAuthInput(input, true);
+        const data = await padelFetch('/api/padel/login', {
+          method: 'POST',
+          body: JSON.stringify(authData)
+        });
+
+        setPadelUserKey(data.userKey);
+        document.getElementById('padelAuthInput').value = '';
+        resultDiv.classList.add('hidden');
+        await initPadel();
+      } catch (error) {
+        resultDiv.className = 'alert alert-error';
+        resultDiv.textContent = `❌ ${error.message}`;
+      }
+    });
+
+    document.getElementById('padelMainLoginBtn').addEventListener('click', async () => {
+      const resultDiv = document.getElementById('padelMainLoginResult');
+      try {
+        const data = await padelFetch('/api/padel/login-main', { method: 'POST' });
+        setPadelUserKey(data.userKey);
+        resultDiv.classList.add('hidden');
+        await initPadel();
+      } catch (error) {
+        resultDiv.className = 'alert alert-error';
+        resultDiv.textContent = `❌ ${error.message}`;
+      }
+    });
+
+    document.getElementById('padelLogoutBtn').addEventListener('click', padelLogout);
+    document.getElementById('padelDate').addEventListener('change', loadPadelSlots);
+
+    document.getElementById('padelCopyCalBtn').addEventListener('click', (event) => {
+      const button = event.currentTarget;
+      navigator.clipboard.writeText(button.dataset.url).then(() => {
+        const original = button.textContent;
+        button.textContent = '✓ Kopiert!';
+        setTimeout(() => { button.textContent = original; }, 1200);
+      });
+    });
+
+    // Modals schließen per Klick auf Hintergrund oder Escape
+    document.querySelectorAll('.modal').forEach(modal => {
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) modal.classList.remove('active');
+      });
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        document.querySelectorAll('.modal.active').forEach(m => m.classList.remove('active'));
+      }
+    });
+
     // Initial laden
     document.getElementById('intervalGroup').style.display = 'none';
     document.getElementById('maxAttemptsGroup').style.display = 'none';
 
     connectWebSocket();
     loadStatus();
-    loadLocations();
-    loadSports(); // Lädt Sportarten und führt initiale Suche aus
+    loadLocations().finally(loadSports); // Standorte zuerst, damit Karten-Vorschauen gerendert werden können
     loadScheduledJobs(); // Load scheduled jobs on page load
+    initPadel();
     
     // Kurse initial laden - Entfernt, da loadSports() das jetzt macht
     // document.getElementById('searchBtn').click();
