@@ -4,8 +4,12 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { encryptSecret, decryptSecret, isEncrypted } from './crypto-util.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// Felder, die im Store verschlüsselt ruhen (AES-256-GCM)
+const SECRET_FIELDS = ['accessToken', 'refreshToken', 'idToken'];
 const API_BASE = 'https://backbone-web-api.production.munster.delcom.nl';
 const DATA_DIR = path.join(__dirname, 'data');
 const TOKEN_STORE_FILE = path.join(DATA_DIR, 'token-store.json');
@@ -109,7 +113,22 @@ function loadTokens() {
   try {
     if (fs.existsSync(TOKEN_STORE_FILE)) {
       const data = fs.readFileSync(TOKEN_STORE_FILE, 'utf-8');
-      return { ...EMPTY_STORE, ...JSON.parse(data) };
+      const parsed = { ...EMPTY_STORE, ...JSON.parse(data) };
+
+      // Verschlüsselte Token-Felder entschlüsseln
+      let needsMigration = false;
+      for (const field of SECRET_FIELDS) {
+        if (parsed[field]) {
+          if (!isEncrypted(parsed[field])) needsMigration = true; // Altbestand im Klartext
+          parsed[field] = decryptSecret(parsed[field]);
+        }
+      }
+      // Einmalige Migration: Klartext-Tokens verschlüsselt neu schreiben
+      if (needsMigration) {
+        console.log('🔐 Migriere token-store.json auf verschlüsselte Speicherung...');
+        saveTokens(parsed);
+      }
+      return parsed;
     }
   } catch (error) {
     console.error('Fehler beim Laden der Tokens:', error.message);
@@ -118,13 +137,17 @@ function loadTokens() {
 }
 
 /**
- * Speichert die Tokens
+ * Speichert die Tokens (sensible Felder verschlüsselt)
  */
 function saveTokens(tokens) {
   try {
     const merged = { ...EMPTY_STORE, ...tokens };
-    fs.writeFileSync(TOKEN_STORE_FILE, JSON.stringify(merged, null, 2));
-    console.log('✅ Tokens gespeichert in:', TOKEN_STORE_FILE);
+    const toStore = { ...merged };
+    for (const field of SECRET_FIELDS) {
+      if (toStore[field]) toStore[field] = encryptSecret(toStore[field]);
+    }
+    fs.writeFileSync(TOKEN_STORE_FILE, JSON.stringify(toStore, null, 2));
+    console.log('✅ Tokens gespeichert (verschlüsselt) in:', TOKEN_STORE_FILE);
   } catch (error) {
     console.error('Fehler beim Speichern der Tokens:', error.message);
   }

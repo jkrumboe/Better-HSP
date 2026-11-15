@@ -7,14 +7,32 @@ import path from 'path';
 import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 import { isTokenValid, refreshAccessToken } from './token-manager.js';
+import { encryptSecret, decryptSecret, isEncrypted } from './crypto-util.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const USERS_FILE = path.join(__dirname, 'data', 'users.json');
 
+// HSP-Token-Felder, die verschlüsselt ruhen
+const SECRET_FIELDS = ['accessToken', 'refreshToken', 'idToken'];
+
 function loadUsers() {
   try {
     if (fs.existsSync(USERS_FILE)) {
-      return JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'));
+      const users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'));
+      let needsMigration = false;
+      for (const user of Object.values(users)) {
+        for (const field of SECRET_FIELDS) {
+          if (user[field]) {
+            if (!isEncrypted(user[field])) needsMigration = true;
+            user[field] = decryptSecret(user[field]);
+          }
+        }
+      }
+      if (needsMigration) {
+        console.log('🔐 Migriere users.json auf verschlüsselte Token-Speicherung...');
+        saveUsers(users); // schreibt verschlüsselt zurück
+      }
+      return users;
     }
   } catch (error) {
     console.error('Error loading users:', error);
@@ -28,7 +46,15 @@ function saveUsers(users) {
     if (!fs.existsSync(dataDir)) {
       fs.mkdirSync(dataDir, { recursive: true });
     }
-    fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
+    // Tiefe Kopie mit verschlüsselten Token-Feldern
+    const toStore = {};
+    for (const [key, user] of Object.entries(users)) {
+      toStore[key] = { ...user };
+      for (const field of SECRET_FIELDS) {
+        if (toStore[key][field]) toStore[key][field] = encryptSecret(toStore[key][field]);
+      }
+    }
+    fs.writeFileSync(USERS_FILE, JSON.stringify(toStore, null, 2));
   } catch (error) {
     console.error('Error saving users:', error);
   }

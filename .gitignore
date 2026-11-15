@@ -19,4 +19,12 @@ Thumbs.db
 # Logs
 *.log
 npm-debug.log*
+
+# Daten (Accounts, verschlüsselte HSP-Tokens, Secrets, Sessions)
 data/
+.env
+.env.local
+.secrets.json
+accounts.json
+users.json
+polling-jobs.json
