@@ -6,7 +6,7 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import { fileURLToPath } from 'url';
-import { isTokenValid, refreshAccessToken } from './token-manager.js';
+import { isTokenValid, refreshAccessToken, decodeToken } from './token-manager.js';
 import { encryptSecret, decryptSecret, isEncrypted } from './crypto-util.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -101,6 +101,53 @@ export function upsertUserFromAuth(authData) {
   users[member.id] = user;
   saveUsers(users);
   return user;
+}
+
+// delcom-Member-IDs sind numerisch; JWT-sub kann als String kommen
+const normalizeMemberId = (id) => (/^\d+$/.test(String(id)) ? Number(id) : id);
+
+/**
+ * Verifiziert eingereichte HSP-Tokens bei delcom und legt den User an.
+ *
+ * Eingereichte Tokens (SSO-Callback-URL, eingefügtes delcom_auth-JSON) sind nur Base64/JWT
+ * und können gefälscht sein. Deshalb wird der Refresh-Token bei delcom eingelöst: nur ein
+ * echter Token liefert einen neuen, von delcom ausgestellten Access-Token. Dessen `sub` ist
+ * die maßgebliche memberId – nie die vom Client mitgeschickte member.id.
+ */
+export async function verifyAndUpsertUser(tokenResponse) {
+  if (!tokenResponse?.refreshToken) {
+    throw new Error('Kein Refresh-Token übermittelt – Token kann nicht verifiziert werden.');
+  }
+
+  const refreshed = await refreshAccessToken(tokenResponse.refreshToken, {});
+  if (!refreshed?.accessToken) {
+    throw new Error('HSP-Token wurde von delcom nicht akzeptiert (ungültig oder abgelaufen). Bitte erneut anmelden.');
+  }
+
+  const payload = decodeToken(refreshed.accessToken);
+  if (!payload || payload.sub === undefined || payload.sub === null) {
+    throw new Error('Von delcom ausgestellter Token konnte nicht gelesen werden.');
+  }
+
+  // Eingereichter Access-Token muss zum selben Mitglied gehören
+  const claimed = tokenResponse.accessToken ? decodeToken(tokenResponse.accessToken) : null;
+  if (claimed?.sub !== undefined && claimed?.sub !== null && String(claimed.sub) !== String(payload.sub)) {
+    throw new Error('Access-Token und Refresh-Token gehören zu unterschiedlichen Accounts.');
+  }
+
+  return upsertUserFromAuth({
+    tokenResponse: {
+      accessToken: refreshed.accessToken,
+      refreshToken: refreshed.refreshToken,
+      idToken: refreshed.idToken || tokenResponse.idToken || null
+    },
+    member: {
+      id: normalizeMemberId(payload.sub),
+      email: payload.email || null,
+      firstName: payload.firstName || '',
+      lastName: payload.lastName || ''
+    }
+  });
 }
 
 export function getUser(memberId) {

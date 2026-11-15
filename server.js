@@ -8,7 +8,7 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 
 // Importiere die bestehenden Module
-import { getTokenInfo, decodeToken, loadTokens } from './token-manager.js';
+import { getTokenInfo, loadTokens } from './token-manager.js';
 import {
   initializeScheduler,
   setWaitlistHandler,
@@ -20,7 +20,7 @@ import {
   getBookingInfo
 } from './scheduler.js';
 import {
-  upsertUserFromAuth, getUser, getUserByKey, getUserByCalendarToken,
+  verifyAndUpsertUser, getUser, getUserByKey, getUserByCalendarToken,
   publicUser, getValidUserToken
 } from './user-store.js';
 import {
@@ -28,10 +28,11 @@ import {
   linkMember, bumpSessionVersion, publicAccount
 } from './auth-store.js';
 import {
-  signSession, verifySession, parseCookies, serializeCookie
+  signSession, verifySession, parseCookies, serializeCookie,
+  signState, verifyState, randomToken
 } from './crypto-util.js';
 import {
-  SSO_PROVIDERS, getProvider, buildSsoRedirect, parseTokenResponse, memberFromAccessToken
+  SSO_PROVIDERS, getProvider, buildSsoRedirect, parseTokenResponse
 } from './sso.js';
 import {
   initializePadel,
@@ -347,23 +348,31 @@ function publicBaseUrl(req) {
   return `${req.protocol}://${req.get('host')}`;
 }
 
-// Startet den SSO-Flow: leitet zum delcom-SAML-Discovery weiter
+// Startet den SSO-Flow: leitet zum delcom-SAML-Discovery weiter.
+// Ein signierter, an den App-Account gebundener state steckt im Pfad der Callback-URL
+// (delcom hängt nur ?tokenReponse= an). Ohne gültigen state wird kein Callback akzeptiert
+// -> schützt vor Login-CSRF (fremder Link verknüpft fremden HSP-Account mit deinem Account).
 app.get('/api/sso/start', (req, res) => {
   const provider = getProvider(String(req.query.provider || ''));
   if (!provider) return res.status(400).send('Unbekannter SSO-Anbieter');
-  const callbackUrl = `${publicBaseUrl(req)}/api/sso/callback`;
+  const state = signState({ acct: req.account.id, n: randomToken(8) }, 15 * 60);
+  const callbackUrl = `${publicBaseUrl(req)}/api/sso/callback/${encodeURIComponent(state)}`;
   res.redirect(buildSsoRedirect(provider.entityId, callbackUrl));
 });
 
 // Rückkehr vom SSO: delcom hängt ?tokenReponse=<base64> an
-app.get('/api/sso/callback', (req, res) => {
+app.get('/api/sso/callback/:state', async (req, res) => {
   try {
+    const st = verifyState(req.params.state);
+    if (!st || st.acct !== req.account.id) {
+      throw new Error('Ungültiger oder abgelaufener SSO-Vorgang. Bitte erneut starten.');
+    }
+
     const tokens = parseTokenResponse(req.query.tokenReponse);
     if (!tokens.accessToken) throw new Error('Kein Access-Token erhalten');
-    const member = memberFromAccessToken(decodeToken, tokens.accessToken);
-    if (!member) throw new Error('Token konnte nicht gelesen werden');
 
-    const user = upsertUserFromAuth({ tokenResponse: tokens, member });
+    // Tokens bei delcom verifizieren; memberId stammt aus dem frisch ausgestellten Token
+    const user = await verifyAndUpsertUser(tokens);
     linkMember(req.account.id, user.memberId);
     res.redirect('/?linked=1');
   } catch (error) {
@@ -443,8 +452,8 @@ app.post('/api/auth/import', async (req, res) => {
       return res.status(400).json({ error: 'Ungültige Auth-Daten. Bitte kompletten JSON-Inhalt einfügen.' });
     }
 
-    // Token verschlüsselt im user-store ablegen und mit dem App-Account verknüpfen
-    const user = upsertUserFromAuth(authData);
+    // Token bei delcom verifizieren, verschlüsselt ablegen und mit dem App-Account verknüpfen
+    const user = await verifyAndUpsertUser(authData.tokenResponse);
     linkMember(req.account.id, user.memberId);
 
     res.json({
@@ -456,8 +465,8 @@ app.post('/api/auth/import', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Auth-Import Fehler:', error);
-    res.status(500).json({ error: error.message });
+    console.error('Auth-Import Fehler:', error.message);
+    res.status(400).json({ error: error.message });
   }
 });
 
@@ -958,13 +967,18 @@ function sendPadelResult(res, result) {
   res.json(result);
 }
 
-app.post('/api/padel/login', (req, res) => {
+app.post('/api/padel/login', async (req, res) => {
   const authData = normalizeAuthData(req.body);
   if (!authData?.tokenResponse?.accessToken || !authData.member?.id) {
     return res.status(400).json({ error: 'Ungültige Auth-Daten. Bitte kompletten JSON-Inhalt einfügen.' });
   }
 
-  const user = upsertUserFromAuth(authData);
+  let user;
+  try {
+    user = await verifyAndUpsertUser(authData.tokenResponse);
+  } catch (error) {
+    return res.status(401).json({ error: error.message });
+  }
   linkMember(req.account.id, user.memberId); // zugleich mit dem App-Account verknüpfen
   res.json({ userKey: user.userKey, user: publicUser(user), calendarToken: user.calendarToken });
 });

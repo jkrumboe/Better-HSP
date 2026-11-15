@@ -49,18 +49,3 @@ export function parseTokenResponse(tokenReponseB64) {
     tokenType: json.token_type
   };
 }
-
-/**
- * Baut aus dem Access-Token (JWT) ein minimales member-Objekt.
- * Der Token enthält sub (=memberId), email, firstName, lastName.
- */
-export function memberFromAccessToken(decodeToken, accessToken) {
-  const payload = decodeToken(accessToken);
-  if (!payload || payload.sub === undefined || payload.sub === null) return null;
-  return {
-    id: payload.sub,
-    email: payload.email || null,
-    firstName: payload.firstName || '',
-    lastName: payload.lastName || ''
-  };
-}
