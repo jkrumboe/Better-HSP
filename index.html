@@ -2,102 +2,153 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#91C736">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#ffffff">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="HSP-Bot">
+  <link rel="apple-touch-icon" href="resources/logo.png">
+  <link rel="icon" href="resources/logo.png">
   <title>🏐 Better-HSP - Kursanmeldung</title>
   <style>
+    /* ============================================================
+       Mobile first: Basis-Styles gelten fürs Handy,
+       Desktop-Anpassungen stehen ganz unten (@media min-width: 768px)
+       ============================================================ */
+    :root {
+      --green: #91C736;
+      --green-dark: #7fb32a;
+      --green-text: #5a8a12;
+      --green-soft: #f0f8e8;
+      --bg: #f4f5f2;
+      --surface: #fff;
+      --text: #222;
+      --muted: #666;
+      --faint: #999;
+      --border: #e2e4de;
+      --red: #e53935;
+      --amber: #ffaa00;
+      --radius: 14px;
+      --nav-h: 60px;
+      --safe-b: env(safe-area-inset-bottom, 0px);
+      --shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
     }
 
+    html {
+      -webkit-text-size-adjust: 100%;
+    }
+
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #f5f5f5;
+      background: var(--bg);
       min-height: 100vh;
-      color: #333;
+      min-height: 100dvh;
+      color: var(--text);
+      line-height: 1.4;
+      /* Platz für die fixe Bottom-Navigation */
+      padding-bottom: calc(var(--nav-h) + var(--safe-b));
+      overscroll-behavior-y: contain;
     }
 
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 20px;
+    /* Hintergrund nicht mitscrollen, solange ein Sheet offen ist */
+    body:has(.modal.active) {
+      overflow: hidden;
     }
 
-    header {
-      text-align: center;
-      padding: 30px 0;
+    .hidden {
+      display: none !important;
     }
 
-    header h1 {
-      font-size: 2.5em;
-      color: #91C736;
-      margin-bottom: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 15px;
+    /* ---------- App-Leiste ---------- */
+    .app-bar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding-top: env(safe-area-inset-top, 0px);
     }
 
-    header h1 img {
-      height: 50px;
-      width: auto;
-    }
-
-    header p {
-      color: #666;
-      font-size: 1.1em;
-    }
-
-    .status-bar {
-      background: #fff;
-      border-radius: 12px;
-      padding: 15px 25px;
-      margin-bottom: 30px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 15px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-
-    .status-item {
+    .app-bar-inner {
       display: flex;
       align-items: center;
       gap: 10px;
+      height: 56px;
+      padding: 0 16px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-right: auto;
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--green-text);
+      white-space: nowrap;
+    }
+
+    .brand img {
+      height: 28px;
+      width: auto;
+    }
+
+    .brand small {
+      display: none;
+      font-size: 0.8rem;
+      font-weight: 400;
+      color: var(--muted);
+    }
+
+    .conn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.8rem;
+      color: var(--red);
+      white-space: nowrap;
     }
 
     .status-dot {
-      width: 12px;
-      height: 12px;
+      width: 10px;
+      height: 10px;
+      flex-shrink: 0;
       border-radius: 50%;
-      background: #ff4444;
+      background: var(--red);
     }
 
     .status-dot.connected {
-      background: #91C736;
-      box-shadow: 0 0 10px #91C736;
+      background: var(--green);
+      box-shadow: 0 0 6px var(--green);
+    }
+
+    /* Verbunden ist der Normalfall – auf dem Handy reicht der grüne Punkt */
+    .status-dot.connected + span {
+      display: none;
     }
 
     .account-btn {
       display: flex;
       align-items: center;
-      gap: 8px;
-      padding: 6px 12px;
-      background: #f5f5f5;
-      border: 1px solid #e5e5e5;
-      border-radius: 999px;
-      color: #333;
-      font-size: 1em;
-      cursor: pointer;
+      gap: 6px;
       min-width: 0;
-      transition: background 0.2s;
-    }
-
-    .account-btn:hover {
-      background: #eee;
+      min-height: 40px;
+      max-width: 60vw;
+      padding: 6px 12px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: var(--text);
+      font-size: 0.9rem;
+      cursor: pointer;
     }
 
     .account-btn #userStatus {
@@ -107,18 +158,18 @@
     }
 
     .account-btn.logged-out {
-      background: #91C736;
-      border-color: #91C736;
+      background: var(--green);
+      border-color: var(--green);
       color: #fff;
       font-weight: bold;
     }
 
     .token-chip {
-      font-size: 0.8em;
+      font-size: 0.75rem;
       padding: 2px 8px;
       border-radius: 999px;
       background: rgba(145,199,54,0.15);
-      color: #5a8a12;
+      color: var(--green-text);
       white-space: nowrap;
     }
 
@@ -127,46 +178,93 @@
     }
 
     .token-chip.expired {
-      background: rgba(255,68,68,0.12);
+      background: rgba(229,57,53,0.12);
       color: #c62828;
     }
 
+    /* ---------- Navigation: unten am Daumen ---------- */
     .tabs {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 30;
       display: flex;
-      gap: 10px;
-      margin-bottom: 20px;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      padding-bottom: var(--safe-b);
     }
 
     .tab {
-      padding: 12px 24px;
-      background: #fff;
+      position: relative;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      height: var(--nav-h);
+      background: none;
       border: none;
-      border-radius: 8px;
-      color: #666;
+      color: var(--faint);
+      font-size: 0.72rem;
+      font-weight: 600;
       cursor: pointer;
-      font-size: 1em;
-      transition: all 0.3s;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.08);
     }
 
-    .tab:hover {
-      background: #f9f9f9;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+    .tab svg {
+      width: 24px;
+      height: 24px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
     }
 
     .tab.active {
-      background: #91C736;
+      color: var(--green-text);
+    }
+
+    .tab.active::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 28%;
+      right: 28%;
+      height: 3px;
+      border-radius: 0 0 3px 3px;
+      background: var(--green);
+    }
+
+    .tab-badge {
+      position: absolute;
+      top: 6px;
+      left: calc(50% + 6px);
+      min-width: 18px;
+      height: 18px;
+      padding: 0 5px;
+      border-radius: 9px;
+      background: var(--amber);
       color: #fff;
-      font-weight: bold;
-      box-shadow: 0 2px 8px rgba(145,199,54,0.3);
+      font-size: 0.68rem;
+      line-height: 18px;
+      text-align: center;
+    }
+
+    .tab-badge:empty {
+      display: none;
+    }
+
+    /* ---------- Layout ---------- */
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 16px;
     }
 
     .panel {
       display: none;
-      background: #fff;
-      border-radius: 16px;
-      padding: 24px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
 
     .panel.active {
@@ -174,131 +272,60 @@
     }
 
     h2 {
-      color: #91C736;
-      margin-bottom: 20px;
-      font-size: 1.5em;
+      color: var(--green-text);
+      margin-bottom: 14px;
+      font-size: 1.35rem;
     }
 
+    /* ---------- Formulare ---------- */
     label {
       display: block;
-      margin-bottom: 8px;
-      color: #666;
-      font-size: 0.95em;
+      margin-bottom: 6px;
+      color: var(--muted);
+      font-size: 0.85rem;
     }
 
     input, select, textarea {
       width: 100%;
-      padding: 12px 15px;
-      background: #f9f9f9;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      color: #333;
-      font-size: 1em;
+      min-height: 48px;
+      padding: 10px 12px;
+      background: var(--surface);
+      border: 1px solid #d5d8d0;
+      border-radius: 10px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 16px; /* verhindert Auto-Zoom auf iOS */
     }
 
-    option {
-      color: #333;
+    input[type="checkbox"] {
+      width: 22px;
+      height: 22px;
+      min-height: 0;
+      flex-shrink: 0;
+      accent-color: var(--green);
     }
 
     input:focus, select:focus, textarea:focus {
       outline: none;
-      border-color: #91C736;
-      background: #fff;
-      box-shadow: 0 0 0 3px rgba(145,199,54,0.2);
-    }
-
-    .form-group {
-      margin-bottom: 16px;
-      min-width: 0;
-    }
-
-    button {
-      touch-action: manipulation;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    .btn:focus-visible,
-    .tab:focus-visible,
-    .account-btn:focus-visible,
-    .btn-link:focus-visible,
-    .modal-close:focus-visible {
-      outline: 2px solid #91C736;
-      outline-offset: 2px;
+      border-color: var(--green);
+      box-shadow: 0 0 0 3px rgba(145,199,54,0.25);
     }
 
     textarea {
-      min-height: 200px;
+      min-height: 120px;
       font-family: monospace;
-      font-size: 0.9em;
+      font-size: 16px;
     }
 
-    .btn {
-      padding: 12px 24px;
-      border: none;
-      border-radius: 8px;
-      font-size: 1em;
-      cursor: pointer;
-      transition: all 0.3s;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .btn-primary {
-      background: #91C736;
-      color: #fff;
-      font-weight: bold;
-      box-shadow: 0 2px 4px rgba(145,199,54,0.2);
-    }
-
-    .btn-primary:hover {
-      background: #7fb32a;
-      transform: translateY(-2px);
-      box-shadow: 0 4px 8px rgba(145,199,54,0.3);
-    }
-
-    .btn-primary:disabled,
-    .btn-secondary:disabled {
-      opacity: 0.5;
-      background-color: #ccc;
-      color: #666;
-      cursor: not-allowed;
-      transform: none !important;
-      box-shadow: none;
-    }
-
-    .btn-primary:disabled:hover,
-    .btn-secondary:disabled:hover {
-      background: #ccc;
-      transform: none;
-    }
-
-    .btn-danger {
-      background: #ff4444;
-      color: white;
-    }
-
-    .btn-danger:hover {
-      background: #ff2222;
-    }
-
-    .btn-secondary {
-      background: #fff;
-      color: #91C736;
-      border: 2px solid #91C736;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-
-    .btn-secondary:hover {
-      background: #f0f8e8;
-      transform: translateY(-1px);
+    .form-group {
+      margin-bottom: 14px;
+      min-width: 0;
     }
 
     .filter-row {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      grid-template-columns: 1fr;
       align-items: end;
-      width: 100%;
       gap: 10px;
       margin-bottom: 12px;
     }
@@ -307,254 +334,372 @@
       margin-bottom: 0;
     }
 
-    .filter-row label {
-      font-size: 0.85em;
-      margin-bottom: 4px;
+    /* ---------- Buttons ---------- */
+    button, .btn {
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      font-family: inherit;
     }
 
-    .filter-row input,
-    .filter-row select {
-      padding: 8px 12px;
-    }
-
-    .filter-row .btn {
-      padding: 9px 16px;
-    }
-
-    .filter-row .btn {
-      width: 100%;
-      justify-content: center;
-    }
-
-    .header-filter {
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
+    .btn {
+      display: inline-flex;
       align-items: center;
-      flex-wrap: wrap;
+      justify-content: center;
       gap: 8px;
+      min-height: 46px;
+      padding: 10px 18px;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      text-align: center;
+      text-decoration: none;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
     }
 
-    .header-filter h2 {
-      margin: 0;
+    .btn:active:not(:disabled) {
+      transform: scale(0.97);
     }
 
-    .courses-list {
-      margin-top: 20px;
+    .btn-block {
+      display: flex;
+      width: 100%;
     }
 
-    .course-card {
-      background: #fff;
-      border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 15px;
-      display: grid;
-      grid-template-columns: auto 1fr auto;
-      grid-template-areas:
-        "map head actions"
-        "map meta actions";
-      column-gap: 18px;
-      row-gap: 6px;
-      align-items: start;
-      transition: all 0.3s;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    .btn-primary {
+      background: var(--green);
+      color: #fff;
+      font-weight: bold;
     }
 
-    .course-card:not(:has(.course-map)) {
-      grid-template-areas:
-        "head head actions"
-        "meta meta actions";
+    .btn-secondary {
+      background: var(--surface);
+      color: var(--green-text);
+      border: 2px solid var(--green);
     }
 
-    .course-card:hover {
-      box-shadow: 0 4px 12px rgba(0,0,0,0.12);
-      transform: translateY(-2px);
+    .btn-danger {
+      background: var(--red);
+      color: #fff;
     }
 
-    .course-card.full {
-      border: 1px dashed #ff4444;
+    .btn:disabled {
+      opacity: 0.55;
+      background: #ccc;
+      border-color: #ccc;
+      color: #666;
+      cursor: not-allowed;
+    }
+
+    .btn.loading {
+      pointer-events: none;
       opacity: 0.7;
     }
 
+    .btn-link {
+      background: none;
+      border: none;
+      min-height: 44px;
+      padding: 0 4px;
+      color: var(--green-text);
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 1.2rem;
+      text-decoration: none;
+    }
+
+    .btn:focus-visible,
+    .tab:focus-visible,
+    .account-btn:focus-visible,
+    .btn-link:focus-visible,
+    .modal-close:focus-visible,
+    .map-thumb:focus-visible,
+    .padel-slot:focus-visible {
+      outline: 2px solid var(--green-text);
+      outline-offset: 2px;
+    }
+
+    /* ---------- Kurssuche ---------- */
+    .search-bar {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .search-bar .form-group {
+      flex: 1;
+      margin-bottom: 0;
+    }
+
+    .filter-toggle {
+      flex-shrink: 0;
+      min-height: 48px;
+      padding: 10px 14px;
+    }
+
+    .filter-toggle[aria-expanded="true"] {
+      background: var(--green-soft);
+    }
+
+    .filter-panel {
+      display: none;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .filter-panel.open {
+      display: grid;
+    }
+
+    .filter-panel .form-group {
+      grid-column: span 2;
+      margin-bottom: 0;
+    }
+
+    .filter-panel .form-group:nth-child(4),
+    .filter-panel .form-group:nth-child(5) {
+      grid-column: span 3;
+    }
+
+    .loading-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 24px 0;
+      color: var(--muted);
+    }
+
+    .courses-list {
+      margin-top: 16px;
+    }
+
+    /* ---------- Kurskarten ---------- */
+    .course-card {
+      background: var(--surface);
+      border: 1.5px solid transparent;
+      border-radius: 16px;
+      padding: 12px;
+      margin-bottom: 12px;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      grid-template-areas:
+        "date head side"
+        "body body body"
+        "actions actions actions";
+      gap: 10px 12px;
+      align-items: start;
+      box-shadow: var(--shadow);
+    }
+
     .course-card.booked {
-      border: 2px solid #91C736;
-      background: #f0f8e8;
+      border-color: var(--green);
+      background: #f6fbee;
     }
 
     .course-card.waiting {
-      border: 2px solid #ffaa00;
-      background: #fff9e6;
-    }
-
-    .course-map {
-      grid-area: map;
-      align-self: center;
+      border-color: var(--amber);
+      background: #fffaf0;
     }
 
     .course-card.past {
       opacity: 0.6;
     }
 
-    .my-bookings-header {
+    /* Wann? – das Wichtigste steht als Kachel ganz vorn */
+    .course-date {
+      grid-area: date;
+      width: 54px;
+      padding: 7px 4px;
+      border-radius: 12px;
+      background: var(--green-soft);
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
+      flex-direction: column;
+      text-align: center;
+      line-height: 1.15;
     }
 
-    .my-bookings-header h2 {
-      margin: 0;
+    .cd-day {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--green-text);
     }
 
-    .my-bookings-header .btn {
-      width: auto;
+    .cd-time {
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: var(--text);
+      font-variant-numeric: tabular-nums;
     }
 
-    .my-bookings-past {
-      margin-top: 10px;
+    .cd-date {
+      font-size: 0.75rem;
+      color: var(--muted);
     }
 
-    .my-bookings-past summary {
-      cursor: pointer;
-      color: #666;
-      padding: 8px 0;
+    .course-card.full .course-date {
+      background: #efefec;
+    }
+
+    .course-card.full .cd-day {
+      color: var(--muted);
+    }
+
+    .course-card.booked .course-date {
+      background: var(--green-text);
+    }
+
+    .course-card.booked .course-date span {
+      color: #fff;
+    }
+
+    .course-card.waiting .course-date {
+      background: #ffe9b3;
+    }
+
+    .course-card.waiting .cd-day {
+      color: #8a5a00;
     }
 
     .course-head {
       grid-area: head;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
+      align-self: center;
       min-width: 0;
     }
 
     .course-head h3 {
-      color: #333;
-      font-size: 1.1em;
+      color: var(--text);
+      font-size: 1.05rem;
+      line-height: 1.25;
       margin: 0;
+      overflow-wrap: anywhere;
     }
 
-    .status-badge {
-      padding: 2px 8px;
-      border-radius: 8px;
-      font-weight: bold;
-      font-size: 0.85em;
-      background: rgba(145, 199, 54, 0.15);
-      color: #6f9c22;
-    }
-
-    .status-badge.waiting {
-      background: rgba(255, 170, 0, 0.15);
-      color: #cc8800;
-    }
-
-    .course-meta {
-      grid-area: meta;
+    .course-sub {
       display: flex;
-      flex-direction: column;
-      gap: 3px;
-      min-width: 0;
-      color: #666;
-      font-size: 0.9em;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 4px 8px;
+      margin-top: 4px;
+      font-size: 0.85rem;
+      color: var(--muted);
     }
 
-    .course-meta .meta-level {
+    .meta-level {
       color: #444;
       font-weight: 600;
     }
 
+    .status-slot:empty {
+      display: none;
+    }
+
+    .course-side {
+      grid-area: side;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 2px;
+    }
+
+    .status-badge,
+    .availability {
+      padding: 3px 9px;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 0.85rem;
+      white-space: nowrap;
+    }
+
+    .status-badge,
+    .availability.available {
+      background: rgba(145, 199, 54, 0.18);
+      color: var(--green-text);
+    }
+
+    .status-badge.waiting {
+      background: rgba(255, 170, 0, 0.18);
+      color: #8a5a00;
+    }
+
+    .availability.full {
+      background: rgba(229, 57, 53, 0.12);
+      color: #c62828;
+    }
+
     .copy-id {
-      margin-left: auto;
       cursor: pointer;
       -webkit-user-select: none;
       user-select: none;
       border-radius: 8px;
-      padding: 2px 8px;
-      border: 1px solid #ddd;
-      color: #999;
-      font-size: 0.8em;
+      padding: 6px 4px 6px 8px;
+      color: var(--faint);
+      font-size: 0.75rem;
       font-variant-numeric: tabular-nums;
       white-space: nowrap;
-      transition: background 0.2s, color 0.2s, border-color 0.2s;
     }
 
-    .copy-id:hover {
-      background: #91C736;
-      border-color: #91C736;
+    .copy-id:active {
+      background: var(--green);
       color: #fff;
     }
 
-    .availability {
-      padding: 2px 8px;
-      border-radius: 8px;
-      font-weight: bold;
-      font-size: 0.9em;
-    }
-
-    .availability.available {
-      background: rgba(145, 199, 54, 0.15);
-      color: #91C736;
-    }
-
-    .availability.full {
-      background: rgba(255, 68, 68, 0.15);
-      color: #ff4444;
-    }
-
-    .course-actions {
-      grid-area: actions;
-      align-self: center;
+    .course-body {
+      grid-area: body;
       display: flex;
-      flex-direction: row;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .course-meta {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      color: #4a4a4a;
+      font-size: 0.9rem;
+      overflow-wrap: anywhere;
+    }
+
+    .meta-row {
+      display: flex;
+      align-items: flex-start;
       gap: 8px;
     }
 
-    .course-actions .btn {
-      justify-content: center;
-      padding: 8px 14px;
-      font-size: 0.9em;
-      white-space: nowrap;
+    .meta-row svg {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+      margin-top: 2px;
+      fill: none;
+      stroke: var(--faint);
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
     }
 
-    .btn-link {
-      background: none;
-      border: none;
-      color: #91C736;
-      cursor: pointer;
-      font-weight: 600;
-      font-size: 1.2rem ;
-      text-decoration: none;
-      transition: color 0.2s;
-    }
-
-    .btn-link:hover {
-      color: #7fb32a;
-      text-decoration: underline;
+    .course-map {
+      flex-shrink: 0;
     }
 
     .map-thumb {
       position: relative;
       display: block;
-      width: 112px;
-      height: 84px;
+      width: 96px;
+      height: 64px;
       padding: 0;
       overflow: hidden;
-      border: 2px solid #b5dc78;
-      border-radius: 8px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
       background: #e8eee0;
       cursor: pointer;
-      transition: border-color 0.2s, transform 0.2s;
-    }
-
-    .map-thumb:hover {
-      border-color: #91C736;
-      transform: scale(1.04);
-    }
-
-    .map-thumb:focus-visible {
-      outline: 2px solid #91C736;
-      outline-offset: 2px;
     }
 
     .map-thumb img {
@@ -575,16 +720,102 @@
       pointer-events: none;
     }
 
+    /* Hauptaktion breit und kräftig, Nebenaktionen ruhig daneben */
+    .course-actions {
+      grid-area: actions;
+      display: flex;
+      gap: 8px;
+    }
+
+    .course-actions .btn {
+      flex: 1;
+      min-width: 0;
+      min-height: 44px;
+      padding: 8px 6px;
+      font-size: 0.92rem;
+      white-space: nowrap;
+    }
+
+    .course-actions .btn-primary {
+      flex: 2;
+    }
+
+    .course-actions .btn-secondary:not(:disabled) {
+      border: none;
+      background: #eef0ea;
+      color: #3a4526;
+      font-weight: 600;
+    }
+
+    /* Voller Kurs: Warteliste ist eine andere Aktion als Anmelden – eigene Farbe */
+    .course-card.full .course-actions .btn-primary:not(:disabled) {
+      background: #ffe9b3;
+      color: #7a4f00;
+    }
+
+    /* Schon angemeldet / auf Warteliste: nichts mehr zu tun, Buttons weg */
+    .course-card.booked .course-actions,
+    .course-card.waiting .course-actions {
+      display: none;
+    }
+
+    /* ---------- Meine Buchungen ---------- */
+    .my-bookings-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 4px;
+    }
+
+    .my-bookings-header h2 {
+      margin: 0;
+    }
+
+    .my-bookings-header .btn {
+      min-height: 42px;
+      padding: 6px 14px;
+      font-size: 0.9rem;
+    }
+
+    .my-bookings-past {
+      margin-top: 10px;
+    }
+
+    summary {
+      cursor: pointer;
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+    }
+
+    summary::before {
+      content: '▸';
+      transition: transform 0.15s;
+    }
+
+    details[open] > summary::before {
+      transform: rotate(90deg);
+    }
+
+    summary::-webkit-details-marker {
+      display: none;
+    }
+
+    /* ---------- Hinweise / Anleitungen ---------- */
     .instructions {
-      background: #f0f8e8;
-      border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 20px;
+      background: var(--green-soft);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      margin-bottom: 16px;
     }
 
     .instructions h3 {
-      color: #91C736;
-      margin-bottom: 15px;
+      color: var(--green-text);
+      margin-bottom: 10px;
+      font-size: 1rem;
     }
 
     .instructions ol {
@@ -592,41 +823,73 @@
     }
 
     .instructions li {
-      margin-bottom: 10px;
-      line-height: 1.6;
+      margin-bottom: 8px;
+      line-height: 1.5;
     }
 
     .instructions code {
       background: rgba(145,199,54,0.2);
-      padding: 2px 8px;
+      padding: 2px 6px;
       border-radius: 4px;
       font-family: monospace;
-      color: #5a8c1f;
+      color: var(--green-text);
+      word-break: break-all;
     }
 
+    details.instructions > summary {
+      color: var(--green-text);
+      font-weight: 700;
+    }
+
+    .alert {
+      padding: 12px 16px;
+      border-radius: 10px;
+      margin-bottom: 16px;
+      overflow-wrap: anywhere;
+    }
+
+    .alert-success {
+      background: rgba(145, 199, 54, 0.15);
+      border: 1px solid var(--green);
+      color: var(--green-text);
+    }
+
+    .alert-error {
+      background: rgba(229, 57, 53, 0.1);
+      border: 1px solid var(--red);
+      color: #b71c1c;
+    }
+
+    .empty-state {
+      text-align: center;
+      color: #888;
+      padding: 36px 12px;
+    }
+
+    /* ---------- Jobs ---------- */
     .log-container {
-      background: #f9f9f9;
-      border-radius: 12px;
-      padding: 20px;
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 12px;
       margin-top: 20px;
-      max-height: 400px;
+      max-height: 300px;
       overflow-y: auto;
-      border: 1px solid #ddd;
+      -webkit-overflow-scrolling: touch;
+      border: 1px solid var(--border);
     }
 
     .log-entry {
       font-family: monospace;
-      font-size: 0.9em;
-      padding: 8px 0;
-      border-bottom: 1px solid #e0e0e0;
+      font-size: 0.8rem;
+      padding: 7px 0;
+      border-bottom: 1px solid #eee;
       display: flex;
-      gap: 10px;
-      color: #333;
+      gap: 8px;
+      color: var(--text);
     }
 
     .log-entry .time {
-      color: #999;
-      min-width: 80px;
+      color: var(--faint);
       flex-shrink: 0;
     }
 
@@ -635,21 +898,10 @@
       overflow-wrap: anywhere;
     }
 
-    .log-entry.success {
-      color: #91C736;
-    }
-
-    .log-entry.error {
-      color: #ff4444;
-    }
-
-    .log-entry.info {
-      color: #2196F3;
-    }
-
-    .log-entry.warning {
-      color: #ffaa00;
-    }
+    .log-entry.success { color: var(--green-text); }
+    .log-entry.error { color: var(--red); }
+    .log-entry.info { color: #1976d2; }
+    .log-entry.warning { color: #b87a00; }
 
     .active-jobs {
       margin-top: 20px;
@@ -657,11 +909,11 @@
 
     .job-card {
       background: #fff9e6;
-      border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 15px;
-      border-left: 4px solid #ffaa00;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      margin-bottom: 12px;
+      border-left: 4px solid var(--amber);
+      box-shadow: var(--shadow);
     }
 
     .job-header,
@@ -671,7 +923,7 @@
       align-items: center;
       flex-wrap: wrap;
       gap: 10px;
-      margin-bottom: 15px;
+      margin-bottom: 12px;
     }
 
     .scheduled-job-header {
@@ -679,21 +931,84 @@
       margin-bottom: 0;
     }
 
+    .job-header .btn,
+    .scheduled-job-header .btn {
+      min-height: 42px;
+      padding: 6px 14px;
+      font-size: 0.9rem;
+    }
+
     .job-stats {
       display: flex;
       flex-wrap: wrap;
-      gap: 8px 20px;
-      color: #666;
-      font-size: 0.9em;
+      gap: 6px 18px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .scheduled-jobs {
+      margin-top: 24px;
+      padding-top: 18px;
+      border-top: 1px solid var(--border);
+    }
+
+    .scheduled-job-card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      margin-bottom: 12px;
+      border-left: 4px solid var(--green);
+      box-shadow: var(--shadow);
+    }
+
+    .scheduled-job-card.running {
+      border-left-color: var(--amber);
+      background: #fff9e6;
+    }
+
+    .scheduled-job-card.completed {
+      opacity: 0.7;
+    }
+
+    .scheduled-job-card.failed {
+      border-left-color: var(--red);
+      background: #fff5f5;
+    }
+
+    .schedule-info {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 10px;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    .schedule-info-item {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+
+    .schedule-info-label {
+      font-size: 0.78rem;
+      color: var(--faint);
+    }
+
+    .schedule-time-highlight {
+      color: var(--green-text);
+      font-weight: bold;
     }
 
     .spinner {
       display: inline-block;
       width: 20px;
       height: 20px;
+      flex-shrink: 0;
       border: 3px solid #e0e0e0;
       border-radius: 50%;
-      border-top-color: #91C736;
+      border-top-color: var(--green);
       animation: spin 1s linear infinite;
     }
 
@@ -711,18 +1026,15 @@
       50% { opacity: 0.7; background: rgba(145, 199, 54, 0.1); }
     }
 
+    /* ---------- Modals: auf dem Handy als Bottom-Sheet ---------- */
     .modal {
       display: none;
       position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0,0,0,0.6);
+      inset: 0;
+      background: rgba(0,0,0,0.55);
       z-index: 1000;
-      align-items: center;
+      align-items: flex-end;
       justify-content: center;
-      padding: 16px;
     }
 
     .modal.active {
@@ -730,128 +1042,171 @@
     }
 
     .modal-content {
-      background: #fff;
-      border-radius: 16px;
-      padding: 30px;
-      max-width: 500px;
+      position: relative;
+      background: var(--surface);
+      border-radius: 20px 20px 0 0;
+      padding: 26px 16px calc(20px + var(--safe-b));
       width: 100%;
-      max-height: calc(100vh - 32px);
+      max-height: 90vh;
+      max-height: 90dvh;
       overflow-y: auto;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+      box-shadow: 0 -4px 24px rgba(0,0,0,0.2);
+      animation: sheet-up 0.22s ease-out;
     }
 
-    #mapServiceButtons .btn {
-      justify-content: center;
+    /* Griff-Andeutung */
+    .modal-content::before {
+      content: '';
+      position: absolute;
+      top: 8px;
+      left: 50%;
+      width: 40px;
+      height: 4px;
+      margin-left: -20px;
+      border-radius: 2px;
+      background: #d0d3cb;
+    }
+
+    @keyframes sheet-up {
+      from { transform: translateY(40px); opacity: 0; }
+      to { transform: none; opacity: 1; }
     }
 
     .modal-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 20px;
+      gap: 12px;
+      margin-bottom: 14px;
     }
 
     .modal-header h3 {
-      color: #333;
+      font-size: 1.2rem;
     }
 
     .modal-close {
+      width: 44px;
+      height: 44px;
+      margin: -6px -8px -6px 0;
+      flex-shrink: 0;
       background: none;
       border: none;
-      color: #999;
-      font-size: 1.5em;
+      border-radius: 50%;
+      color: var(--faint);
+      font-size: 1.8rem;
+      line-height: 1;
       cursor: pointer;
     }
 
-    .modal-close:hover {
-      color: #333;
+    .modal-close:active {
+      background: var(--bg);
     }
 
-    .alert {
-      padding: 15px 20px;
-      border-radius: 8px;
-      margin-bottom: 20px;
+    .modal-content > p {
+      margin-bottom: 14px;
     }
 
-    .alert-success {
-      background: rgba(145, 199, 54, 0.15);
-      border: 1px solid #91C736;
-      color: #5a8c1f;
-    }
-
-    .alert-error {
-      background: rgba(255, 68, 68, 0.15);
-      border: 1px solid #ff4444;
-      color: #cc0000;
-    }
-
-    .hidden {
-      display: none !important;
-    }
-
-    .scheduled-jobs {
-      margin-top: 30px;
-      padding-top: 20px;
-      border-top: 1px solid #e0e0e0;
-    }
-
-    .scheduled-job-card {
-      background: #f9f9f9;
+    .account-box {
+      background: var(--bg);
       border-radius: 12px;
-      padding: 15px 20px;
-      margin-bottom: 15px;
-      border-left: 4px solid #91C736;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+      padding: 14px;
+      margin-bottom: 16px;
+      font-size: 0.9rem;
+      color: #555;
+      overflow-wrap: anywhere;
     }
 
-    .scheduled-job-card.running {
-      border-left-color: #ffaa00;
-      background: #fff9e6;
-    }
-
-    .scheduled-job-card.completed {
-      border-left-color: #91C736;
-      opacity: 0.7;
-    }
-
-    .scheduled-job-card.failed {
-      border-left-color: #ff4444;
-      background: #fff5f5;
-    }
-
-    .schedule-info {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 10px;
+    .account-box-actions {
+      display: flex;
+      gap: 8px;
       margin-top: 10px;
-      font-size: 0.9em;
-      color: #666;
     }
 
-    .schedule-info-item {
+    .account-box-actions .btn {
+      flex: 1;
+      padding: 8px 10px;
+      font-size: 0.9rem;
+    }
+
+    .sheet-section {
+      margin-bottom: 16px;
+    }
+
+    .sheet-section h3 {
+      margin-bottom: 6px;
+      font-size: 1.05rem;
+    }
+
+    .hint {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .btn-stack {
       display: flex;
       flex-direction: column;
-      gap: 2px;
+      gap: 8px;
     }
 
-    .schedule-info-label {
-      font-size: 0.8em;
-      color: #999;
+    .check-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 44px;
+      cursor: pointer;
     }
 
-    .schedule-time-highlight {
-      color: #91C736;
-      font-weight: bold;
+    /* ---------- Toasts (statt blockierender alert-Dialoge) ---------- */
+    .toast-container {
+      position: fixed;
+      left: 12px;
+      right: 12px;
+      /* oben, damit weder Navigation noch Sheet-Buttons verdeckt werden */
+      top: calc(env(safe-area-inset-top, 0px) + 64px);
+      z-index: 2000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      pointer-events: none;
     }
 
-    /* Padel */
+    .toast {
+      pointer-events: auto;
+      width: 100%;
+      max-width: 480px;
+      padding: 12px 16px;
+      border-radius: 12px;
+      border-left: 5px solid var(--green);
+      background: #2b2f26;
+      color: #fff;
+      font-size: 0.95rem;
+      white-space: pre-line;
+      overflow-wrap: anywhere;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+      animation: sheet-up 0.2s ease-out;
+    }
+
+    .toast.error { border-left-color: var(--red); }
+    .toast.warning { border-left-color: var(--amber); }
+    .toast.info { border-left-color: #64b5f6; }
+
+    /* ---------- Padel ---------- */
     .padel-user-bar {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      flex-wrap: wrap;
       gap: 10px;
-      margin-bottom: 20px;
+      margin-bottom: 12px;
+      min-width: 0;
+    }
+
+    .padel-user-bar > span {
+      min-width: 0;
+      overflow-wrap: anywhere;
     }
 
     .padel-calendar p {
@@ -860,92 +1215,117 @@
 
     .padel-calendar-actions {
       display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
+      gap: 8px;
       margin-bottom: 12px;
     }
 
     .padel-calendar-actions .btn {
-      text-decoration: none;
+      flex: 1;
+      padding: 8px 10px;
+      font-size: 0.92rem;
     }
 
     .padel-hint {
-      font-size: 0.85em;
-      color: #666;
+      font-size: 0.85rem;
+      color: var(--muted);
       margin-bottom: 12px;
+    }
+
+    .date-nav {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .date-nav input {
+      flex: 1;
+      min-width: 0;
+      text-align: center;
+    }
+
+    .date-nav .btn {
+      width: 48px;
+      min-height: 48px;
+      padding: 0;
+      flex-shrink: 0;
+      font-size: 1.5rem;
+      line-height: 1;
     }
 
     .padel-slots {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      grid-template-columns: repeat(3, 1fr);
       gap: 8px;
     }
 
     .padel-slot {
-      padding: 10px;
-      border-radius: 8px;
-      border: 1px solid #ddd;
-      background: #fff;
-      color: #333;
-      font-size: 0.95em;
+      min-height: 56px;
+      padding: 8px 4px;
+      border-radius: 10px;
+      border: 1px solid #d5d8d0;
+      background: var(--surface);
+      color: var(--text);
+      font-size: 1rem;
+      font-weight: 600;
       cursor: pointer;
       display: flex;
       flex-direction: column;
       align-items: center;
+      justify-content: center;
       gap: 2px;
-      transition: all 0.2s;
     }
 
     .padel-slot small {
-      font-size: 0.8em;
-      color: #999;
+      font-size: 0.72rem;
+      font-weight: 400;
+      color: var(--faint);
     }
 
-    .padel-slot.free:hover {
-      border-color: #91C736;
-      background: #f0f8e8;
+    .padel-slot.free:active {
+      border-color: var(--green);
+      background: var(--green-soft);
     }
 
     .padel-slot.has-session {
-      border: 2px solid #91C736;
-      background: #f0f8e8;
+      border: 2px solid var(--green);
+      background: var(--green-soft);
     }
 
     .padel-slot.has-session small {
-      color: #5a8c1f;
+      color: var(--green-text);
     }
 
     .padel-slot:disabled {
       cursor: not-allowed;
-      background: #f5f5f5;
+      background: #eef0eb;
       color: #bbb;
       text-decoration: line-through;
     }
 
     .padel-session-card {
-      background: #f9f9f9;
-      border-radius: 12px;
-      padding: 15px 20px;
-      margin-bottom: 15px;
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      margin-bottom: 12px;
       border-left: 4px solid #2196F3;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+      box-shadow: var(--shadow);
     }
 
     .padel-session-card.status-scheduled,
     .padel-session-card.status-booking {
-      border-left-color: #ffaa00;
+      border-left-color: var(--amber);
       background: #fff9e6;
     }
 
     .padel-session-card.status-booked {
-      border-left-color: #91C736;
-      background: #f0f8e8;
+      border-left-color: var(--green);
+      background: var(--green-soft);
     }
 
     .padel-session-card.status-failed,
     .padel-session-card.status-cancelled,
     .padel-session-card.status-expired {
-      border-left-color: #ff4444;
+      border-left-color: var(--red);
       background: #fff5f5;
       opacity: 0.8;
     }
@@ -959,12 +1339,13 @@
     }
 
     .padel-status {
-      font-size: 0.8em;
+      font-size: 0.8rem;
       font-weight: bold;
       padding: 2px 8px;
       border-radius: 8px;
       background: rgba(0,0,0,0.06);
-      margin-left: 8px;
+      margin-left: 6px;
+      white-space: nowrap;
     }
 
     .padel-session-details {
@@ -979,16 +1360,16 @@
     }
 
     .padel-player {
-      background: #fff;
+      background: var(--surface);
       border: 1px solid #ddd;
       border-radius: 12px;
-      padding: 2px 10px;
-      font-size: 0.85em;
+      padding: 3px 10px;
+      font-size: 0.85rem;
     }
 
     .padel-player.booker {
-      border-color: #91C736;
-      color: #5a8c1f;
+      border-color: var(--green);
+      color: var(--green-text);
       font-weight: bold;
     }
 
@@ -1004,315 +1385,435 @@
     }
 
     .padel-session-actions .btn {
-      padding: 8px 14px;
-      font-size: 0.9em;
-      text-decoration: none;
+      flex: 1 1 140px;
+      padding: 8px 12px;
+      font-size: 0.9rem;
     }
 
     .padel-session-card details {
-      margin-top: 10px;
-      font-size: 0.85em;
-      color: #666;
-    }
-
-    .padel-session-card summary {
-      cursor: pointer;
+      margin-top: 6px;
+      font-size: 0.85rem;
+      color: var(--muted);
     }
 
     .padel-session-card details ul {
       list-style: none;
-      margin-top: 6px;
       font-family: monospace;
+      overflow-wrap: anywhere;
     }
 
-    @media (max-width: 768px) {
-      .padel-session-actions .btn {
-        width: auto;
-        flex: 1;
-      }
+    /* ---------- Login-Overlay ---------- */
+    .auth-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: var(--bg);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      padding-top: calc(16px + env(safe-area-inset-top, 0px));
+      overflow: auto;
+    }
 
-      .padel-slots {
-        grid-template-columns: repeat(3, 1fr);
+    .auth-card {
+      background: var(--surface);
+      border-radius: 18px;
+      box-shadow: 0 10px 40px rgba(0,0,0,.12);
+      max-width: 420px;
+      width: 100%;
+      padding: 24px 20px;
+    }
+
+    .auth-card-head {
+      text-align: center;
+      margin-bottom: 18px;
+    }
+
+    .auth-card-head img {
+      height: 48px;
+    }
+
+    .auth-card-head h2 {
+      margin: 8px 0 4px;
+    }
+
+    .auth-switch {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+
+    .auth-switch .btn {
+      flex: 1;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
       }
     }
 
-    /* Touch devices: avoid sticky hover lift after tap */
-    @media (hover: none) {
-      .course-card:hover,
-      .btn-primary:hover,
-      .btn-secondary:hover {
-        transform: none;
-      }
+    /* Hover-Effekte nur für Geräte mit echtem Hover (kein „klebendes" Hover nach Tap) */
+    @media (hover: hover) {
+      .btn-primary:hover:not(:disabled) { background: var(--green-dark); }
+      .btn-secondary:hover:not(:disabled) { background: var(--green-soft); }
+      .btn-danger:hover:not(:disabled) { background: #d32f2f; }
+      .btn-link:hover { text-decoration: underline; }
+      .account-btn:not(.logged-out):hover { background: #eaece6; }
+      .tab:hover { color: var(--green-text); }
+      .copy-id:hover { background: var(--green); border-color: var(--green); color: #fff; }
+      .map-thumb:hover { border-color: var(--green); }
+      .padel-slot.free:hover { border-color: var(--green); background: var(--green-soft); }
+      .modal-close:hover { color: var(--text); }
+      .course-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.12); }
     }
 
-   @media (max-width: 768px) {
-      .container {
-        padding: 12px;
+    /* ============================================================
+       Tablet / Desktop
+       ============================================================ */
+    @media (min-width: 768px) {
+      body {
+        padding-bottom: 0;
       }
 
-      header {
-        padding: 12px 0 16px;
+      .app-bar-inner {
+        height: 64px;
+        padding: 0 20px;
       }
 
-      header h1 {
-        font-size: 1.8em;
-        gap: 10px;
+      .brand {
+        font-size: 1.4rem;
       }
 
-      header h1 img {
+      .brand img {
         height: 36px;
       }
 
-      header p {
-        font-size: 0.9em;
+      .brand small {
+        display: inline;
+        margin-left: 6px;
       }
 
-      h2 {
-        font-size: 1.3em;
-        margin-bottom: 14px;
+      .conn {
+        color: var(--muted);
+      }
+
+      .status-dot.connected + span {
+        display: inline;
+      }
+
+      .account-btn {
+        max-width: 360px;
+        font-size: 1rem;
+      }
+
+      /* Navigation wandert nach oben */
+      .tabs {
+        position: static;
+        max-width: 1100px;
+        margin: 20px auto 0;
+        padding: 0 20px;
+        gap: 10px;
+        background: none;
+        border: none;
+      }
+
+      .tab {
+        flex: 0 0 auto;
+        flex-direction: row;
+        gap: 8px;
+        height: 46px;
+        padding: 0 20px;
+        border-radius: 10px;
+        background: var(--surface);
+        color: var(--muted);
+        font-size: 0.95rem;
+        box-shadow: var(--shadow);
+      }
+
+      .tab svg {
+        width: 20px;
+        height: 20px;
+      }
+
+      .tab.active {
+        background: var(--green);
+        color: #fff;
+      }
+
+      .tab.active::before {
+        display: none;
+      }
+
+      .tab-badge {
+        position: static;
+      }
+
+      .container {
+        padding: 20px;
       }
 
       .panel {
-        padding: 16px;
+        background: var(--surface);
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: var(--shadow);
       }
 
-      .header-filter {
-        gap: 15px;
-      }
-
-      .header-filter h2 {
-        font-size: 1.3em;
-      }
-
-      .tabs {
-        position: sticky;
-        top: 0;
-        z-index: 10;
-        background: #f5f5f5;
-        padding: 8px 0;
-        margin-bottom: 12px;
-      }
-
-      .tab {
-        flex: 1;
-      }
-
-      .filter-row {
-        grid-template-columns: 1fr;
-        gap: 10px;
-      }
-
-      /* Course filters: sport full width, then 3 + 2 columns, search button full width */
-      #panel-courses .filter-row {
-        grid-template-columns: repeat(6, 1fr);
-        gap: 8px;
-      }
-
-      #panel-courses .filter-row .form-group {
-        grid-column: span 2;
-      }
-
-      #panel-courses .filter-row .form-group:nth-child(5),
-      #panel-courses .filter-row .form-group:nth-child(6) {
-        grid-column: span 3;
-      }
-
-      #panel-courses .filter-row .form-group:first-child,
-      #panel-courses .filter-row .form-group:last-child {
-        grid-column: 1 / -1;
-      }
-
-      .filter-row input,
-      .filter-row select {
-        padding: 8px 10px;
-        font-size: 16px; /* Prevents zoom on iOS */
-      }
-
-      .filter-row label {
-        font-size: 0.8em;
-        margin-bottom: 3px;
-      }
-
-      #panel-courses .filter-row .btn {
-        padding: 10px 16px;
-      }
-
-      .btn {
-        width: 100%;
-        justify-content: center;
-        padding: 12px 20px;
-        font-size: 1em;
-      }
-
-      .course-card {
-        grid-template-columns: 1fr auto;
-        grid-template-areas:
-          "head head"
-          "meta map"
-          "actions actions";
-        padding: 15px;
-        column-gap: 12px;
-        row-gap: 10px;
-      }
-
-      .course-card:not(:has(.course-map)) {
-        grid-template-areas:
-          "head head"
-          "meta meta"
-          "actions actions";
-      }
-
-      .course-map {
-        align-self: start;
-      }
-
-      .course-actions {
-        flex-direction: row;
-        width: 100%;
-        max-width: 100%;
-      }
-
-      .course-actions .btn {
-        flex: 1;
-        padding: 10px 6px;
-      }
-
-      .course-meta {
-        font-size: 0.85em;
-        gap: 4px 12px;
-      }
-
-      .tabs {
-        gap: 5px;
-      }
-
-      .tab {
-        padding: 10px 6px;
-        font-size: 0.9em;
-      }
-
-      /* Modals as bottom sheets */
-      .modal {
-        align-items: flex-end;
-        padding: 0;
-      }
-
-      .modal-content {
-        max-width: 100%;
-        max-height: 90vh;
-        border-radius: 16px 16px 0 0;
-        padding: 20px 20px calc(20px + env(safe-area-inset-bottom));
-      }
-
-      .status-bar {
-        justify-content: space-between;
-        flex-wrap: nowrap;
-        gap: 6px 12px;
-        padding: 10px 12px;
-        margin-bottom: 12px;
-      }
-
-      .status-item {
-        font-size: 0.85em;
-      }
-
-      .log-container {
-        padding: 12px;
-        max-height: 300px;
-      }
-
-      .log-entry {
-        font-size: 0.8em;
-        gap: 8px;
-      }
-
-      .log-entry .time {
-        min-width: 0;
-      }
-
-      .instructions {
-        padding: 16px;
-      }
-
-      .instructions code {
-        word-break: break-all;
+      h2 {
+        font-size: 1.5rem;
+        margin-bottom: 18px;
       }
 
       input, select, textarea {
-        font-size: 16px; /* Prevents zoom on iOS */
+        background: #f9f9f9;
+      }
+
+      .filter-row {
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      }
+
+      /* Filter immer sichtbar, alles in einer Zeile */
+      .course-filters {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        gap: 10px;
+      }
+
+      .search-bar {
+        flex: 1 1 200px;
+        margin-bottom: 0;
+      }
+
+      .filter-toggle {
+        display: none;
+      }
+
+      .filter-panel,
+      .filter-panel.open {
+        display: grid;
+        flex: 4 1 520px;
+        grid-template-columns: 0.7fr 1fr 0.7fr 1.2fr 1.2fr;
+        margin-bottom: 0;
+      }
+
+      .filter-panel .form-group,
+      .filter-panel .form-group:nth-child(4),
+      .filter-panel .form-group:nth-child(5) {
+        grid-column: auto;
+      }
+
+      .course-filters > .btn-block {
+        width: auto;
+        min-height: 48px;
+        flex: 0 0 auto;
+      }
+
+      .panel > .btn-block {
+        display: inline-flex;
+        width: auto;
+        min-width: 220px;
+      }
+
+      .course-card,
+      .scheduled-job-card,
+      .padel-session-card,
+      .log-container {
+        border-color: var(--border);
+      }
+
+      .course-card {
+        padding: 16px 18px;
+        grid-template-columns: auto 1fr auto auto;
+        grid-template-areas:
+          "date head side actions"
+          "date body body actions";
+        column-gap: 18px;
+      }
+
+      .course-date {
+        width: 60px;
+      }
+
+      .course-actions {
+        align-self: center;
+      }
+
+      .course-actions .btn,
+      .course-actions .btn-primary {
+        flex: 0 0 auto;
+        padding: 8px 14px;
+      }
+
+      .schedule-info {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      }
+
+      .log-container {
+        max-height: 400px;
+        padding: 16px 20px;
+      }
+
+      .log-entry {
+        font-size: 0.9rem;
+      }
+
+      .padel-slots {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      }
+
+      .padel-calendar-actions .btn,
+      .padel-session-actions .btn {
+        flex: 0 0 auto;
+      }
+
+      .date-nav {
+        max-width: 340px;
+      }
+
+      /* Sheets werden zu zentrierten Dialogen */
+      .modal {
+        align-items: center;
+        padding: 16px;
+      }
+
+      .modal-content {
+        max-width: 500px;
+        max-height: calc(100vh - 32px);
+        border-radius: 16px;
+        padding: 28px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+      }
+
+      .modal-content::before {
+        display: none;
+      }
+
+      .toast-container {
+        top: 76px;
       }
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <header>
-      <h1><img src="resources/logo.png" alt="HSP Logo"> HSP-Bot</h1>
-      <p>Automatische Kursanmeldung für den Hochschulsport</p>
-    </header>
+  <!-- App-Login Overlay (Zugang zur Web-App) -->
+  <div id="appAuthOverlay" class="auth-overlay">
+    <div class="auth-card">
+      <div class="auth-card-head">
+        <img src="resources/logo.png" alt="HSP Logo">
+        <h2>Better-HSP</h2>
+        <p class="hint">Bitte melde dich an, um fortzufahren.</p>
+      </div>
 
-    <div class="status-bar">
-      <div class="status-item">
+      <div class="auth-switch">
+        <button class="btn btn-secondary" id="authTabLoginBtn">Anmelden</button>
+        <button class="btn btn-secondary" id="authTabRegisterBtn">Registrieren</button>
+      </div>
+
+      <div class="form-group">
+        <label for="appAuthEmail">E-Mail</label>
+        <input type="email" id="appAuthEmail" autocomplete="email" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="next" placeholder="name@uni-muenster.de">
+      </div>
+      <div class="form-group">
+        <label for="appAuthPassword">Passwort</label>
+        <input type="password" id="appAuthPassword" autocomplete="current-password" enterkeyhint="go" placeholder="Mindestens 8 Zeichen">
+      </div>
+      <div id="appAuthRegisterHint" class="hint hidden">
+        Dein Passwort wird nur als sicherer scrypt-Hash gespeichert – niemals im Klartext.
+      </div>
+
+      <button class="btn btn-primary btn-block" id="appAuthSubmitBtn">Anmelden</button>
+      <div id="appAuthResult" class="alert alert-error hidden" style="margin-top:14px;"></div>
+    </div>
+  </div>
+
+  <header class="app-bar">
+    <div class="app-bar-inner">
+      <div class="brand">
+        <img src="resources/logo.png" alt="">
+        <span>HSP-Bot</span>
+        <small>Automatische Kursanmeldung</small>
+      </div>
+      <div class="conn" title="Verbindung zum Server">
         <div class="status-dot" id="wsStatus"></div>
         <span id="wsStatusText">Verbinde...</span>
       </div>
       <button class="account-btn logged-out" id="accountBtn" title="Account & Auth-Daten">
-        <span>👤</span>
+        <span aria-hidden="true">👤</span>
         <span id="userStatus">Anmelden</span>
         <span class="token-chip" id="tokenStatus"></span>
       </button>
     </div>
+  </header>
 
-    <div class="tabs">
-      <button class="tab active" data-tab="courses">Kurse</button>
-      <button class="tab" data-tab="mybookings">Buchungen</button>
-      <button class="tab" data-tab="register">Jobs</button>
-      <button class="tab" data-tab="padel">Padel</button>
-    </div>
+  <nav class="tabs" aria-label="Hauptnavigation">
+    <button class="tab active" data-tab="courses">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <span>Kurse</span>
+    </button>
+    <button class="tab" data-tab="mybookings">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18M9 15l2 2 4-4"/></svg>
+      <span>Buchungen</span>
+    </button>
+    <button class="tab" data-tab="register">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/></svg>
+      <span>Jobs</span>
+      <span class="tab-badge" id="jobsBadge"></span>
+    </button>
+    <button class="tab" data-tab="padel">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="10" cy="9" rx="6" ry="7" transform="rotate(-30 10 9)"/><path d="M13.5 15l4.5 6"/><circle cx="19.5" cy="5.5" r="1.5"/></svg>
+      <span>Padel</span>
+    </button>
+  </nav>
 
+  <div class="container">
     <!-- Kurse suchen Panel -->
     <div class="panel active" id="panel-courses">
       <h2>Kurse suchen</h2>
-      <div class="header-filter">
-      <div class="filter-row">
-        <div class="form-group">
-          <label for="filterSport">Sportart</label>
-          <input list="sportsList" id="filterSport" placeholder="Tippen zum Suchen..." autocomplete="off">
-          <datalist id="sportsList"></datalist>
-          <input type="hidden" id="filterSportId">
+      <div class="course-filters">
+        <div class="search-bar">
+          <div class="form-group">
+            <label for="filterSport">Sportart</label>
+            <input list="sportsList" id="filterSport" placeholder="Tippen zum Suchen..." autocomplete="off" enterkeyhint="search">
+            <datalist id="sportsList"></datalist>
+            <input type="hidden" id="filterSportId">
+          </div>
+          <button class="btn btn-secondary filter-toggle" id="filterToggle" aria-expanded="false" aria-controls="filterPanel">Filter</button>
         </div>
-        <div class="form-group">
-          <label for="filterDays">Tage</label>
-          <input type="number" id="filterDays" value="8" min="1" max="30">
-        </div>
-        <div class="form-group">
-          <label for="filterLevel">Level</label>
-          <select id="filterLevel">
-            <option value="">Alle</option>
-            <option value="1">Level 1</option>
-            <option value="2">Level 2</option>
-            <option value="3">Level 3</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label for="filterAvailable">Min. frei</label>
-          <input type="number" id="filterAvailable" value="0" min="0">
-        </div>
-        <div class="form-group">
-          <label for="filterDate">Datum</label>
-          <input type="date" id="filterDate">
-        </div>
-        <div class="form-group">
-          <label for="filterTrainer">Trainer</label>
-          <input type="text" id="filterTrainer" placeholder="Name...">
-        </div>
-        <div class="form-group">
-          <button class="btn btn-primary" id="searchBtn">Suchen</button>
+        <div class="filter-panel" id="filterPanel">
+          <div class="form-group">
+            <label for="filterDays">Tage</label>
+            <input type="number" id="filterDays" value="8" min="1" max="30" inputmode="numeric">
+          </div>
+          <div class="form-group">
+            <label for="filterLevel">Level</label>
+            <select id="filterLevel">
+              <option value="">Alle</option>
+              <option value="1">Level 1</option>
+              <option value="2">Level 2</option>
+              <option value="3">Level 3</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="filterAvailable">Min. frei</label>
+            <input type="number" id="filterAvailable" value="0" min="0" inputmode="numeric">
+          </div>
+          <div class="form-group">
+            <label for="filterDate">Datum</label>
+            <input type="date" id="filterDate">
+          </div>
+          <div class="form-group">
+            <label for="filterTrainer">Trainer</label>
+            <input type="text" id="filterTrainer" placeholder="Name..." enterkeyhint="search">
           </div>
         </div>
+        <button class="btn btn-primary btn-block" id="searchBtn">Suchen</button>
       </div>
 
-      <div id="coursesLoading" class="hidden">
+      <div id="coursesLoading" class="loading-row hidden">
         <span class="spinner"></span> Lade Kurse...
       </div>
 
@@ -1326,7 +1827,7 @@
         <button class="btn btn-secondary" id="myBookingsRefreshBtn">Aktualisieren</button>
       </div>
 
-      <div id="myBookingsLoading" class="hidden">
+      <div id="myBookingsLoading" class="loading-row hidden">
         <span class="spinner"></span> Lade Buchungen...
       </div>
       <div id="myBookingsError" class="hidden"></div>
@@ -1345,7 +1846,7 @@
       
       <div class="form-group">
         <label for="bookingId">Booking ID</label>
-        <input type="number" id="bookingId" placeholder="z.B. 36432">
+        <input type="number" id="bookingId" placeholder="z.B. 36432" inputmode="numeric">
       </div>
 
       <div class="filter-row">
@@ -1358,15 +1859,15 @@
         </div>
         <div class="form-group" id="intervalGroup">
           <label for="intervalSeconds">Intervall (Millisekunden)</label>
-          <input type="number" id="intervalSeconds" value="1000" min="100" step="100">
+          <input type="number" id="intervalSeconds" value="1000" min="100" step="100" inputmode="numeric">
         </div>
         <div class="form-group" id="maxAttemptsGroup">
           <label for="maxAttempts">Max. Versuche (leer = unbegrenzt)</label>
-          <input type="number" id="maxAttempts" placeholder="z.B. 20" min="1">
+          <input type="number" id="maxAttempts" placeholder="z.B. 20" min="1" inputmode="numeric">
         </div>
       </div>
 
-      <button class="btn btn-primary" id="registerBtn">Anmeldung starten</button>
+      <button class="btn btn-primary btn-block" id="registerBtn">Anmeldung starten</button>
 
       <div class="active-jobs" id="activeJobs"></div>
 
@@ -1391,11 +1892,15 @@
       <div id="padelLogin" class="hidden">
         <div id="padelMainLogin" class="hidden">
           <p style="margin-bottom: 10px;">Du bist bereits als <strong id="padelMainLoginName"></strong> angemeldet.</p>
-          <button class="btn btn-primary" id="padelMainLoginBtn">Weiter als <span id="padelMainLoginBtnName"></span></button>
-          <div id="padelMainLoginResult" class="hidden"></div>
+          <button class="btn btn-primary btn-block" id="padelMainLoginBtn">Weiter als <span id="padelMainLoginBtnName"></span></button>
+          <div id="padelMainLoginResult" class="hidden" style="margin-top: 12px;"></div>
         </div>
-        <details id="padelManualLogin" open>
-        <summary id="padelManualLoginSummary" class="padel-hint hidden" style="margin-top: 16px; cursor: pointer;">Anderer Mitspieler? Mit eigenen Auth-Daten anmelden</summary>
+        <div id="padelConnectHint" class="hidden">
+          <p style="margin-bottom: 12px;">Verbinde zuerst deinen HSP-Account, um Padel-Sessions zu erstellen und beizutreten.</p>
+          <button class="btn btn-primary btn-block" id="padelConnectBtn">HSP-Account verbinden</button>
+        </div>
+        <details id="padelManualLogin" style="margin-top: 12px;">
+        <summary id="padelManualLoginSummary" class="padel-hint">Manuell mit Auth-Daten anmelden (am Desktop)</summary>
         <div class="instructions">
           <h3>Mit deinem HSP-Account anmelden</h3>
           <p style="margin-bottom: 10px;">Jeder Mitspieler meldet sich einmal mit seinen eigenen Auth-Daten an. Damit kann der Bot den Platz auch über deinen Account buchen und dich per E-Mail einladen.</p>
@@ -1409,8 +1914,8 @@
           <label for="padelAuthInput">Auth-Daten (JSON)</label>
           <textarea id="padelAuthInput" placeholder='Hier den kopierten Text einfügen...'></textarea>
         </div>
-        <button class="btn btn-primary" id="padelLoginBtn">Anmelden</button>
-        <div id="padelLoginResult" class="hidden"></div>
+        <button class="btn btn-primary btn-block" id="padelLoginBtn">Anmelden</button>
+        <div id="padelLoginResult" class="hidden" style="margin-top: 12px;"></div>
         </details>
       </div>
 
@@ -1420,23 +1925,22 @@
           <button class="btn-link" id="padelLogoutBtn" style="font-size: 0.95rem;">Abmelden</button>
         </div>
 
-        <div class="instructions padel-calendar">
-          <h3>📅 Kalender aufs Handy</h3>
+        <details class="instructions padel-calendar">
+          <summary>📅 Kalender aufs Handy</summary>
           <p>Einmal abonnieren – alle Sessions, bei denen du dabei bist, erscheinen automatisch und werden aktualisiert.</p>
           <div class="padel-calendar-actions">
             <a class="btn btn-primary" id="padelWebcalLink" href="#">Kalender abonnieren</a>
             <button class="btn btn-secondary" id="padelCopyCalBtn">Link kopieren</button>
           </div>
           <p class="padel-hint">Android / Google Kalender: Link kopieren → calendar.google.com → „Weitere Kalender“ → „Per URL“.</p>
-        </div>
+        </details>
 
         <h3 style="margin-bottom: 10px;">Neue Session</h3>
         <p class="padel-hint" id="padelRulesHint"></p>
-        <div class="filter-row">
-          <div class="form-group">
-            <label for="padelDate">Datum</label>
-            <input type="date" id="padelDate">
-          </div>
+        <div class="date-nav">
+          <button class="btn btn-secondary" id="padelPrevDay" aria-label="Vorheriger Tag">‹</button>
+          <input type="date" id="padelDate" aria-label="Datum">
+          <button class="btn btn-secondary" id="padelNextDay" aria-label="Nächster Tag">›</button>
         </div>
         <div id="padelSlots" class="padel-slots"></div>
 
@@ -1452,21 +1956,40 @@
     <div class="modal-content">
       <div class="modal-header">
         <h3>Account</h3>
-        <button class="modal-close" onclick="closeAuthModal()">×</button>
+        <button class="modal-close" onclick="closeAuthModal()" aria-label="Schließen">×</button>
+      </div>
+
+      <!-- App-Account -->
+      <div class="account-box">
+        <div>App-Login: <strong id="appAccountEmail"></strong> <span id="appAccountRole" style="color:#5a8a12;"></span></div>
+        <div class="account-box-actions">
+          <button class="btn btn-secondary" id="appLogoutBtn">Abmelden</button>
+          <button class="btn btn-secondary" id="appChangePwBtn">Passwort ändern</button>
+        </div>
       </div>
 
       <div id="authLoggedIn" class="hidden">
         <div class="alert alert-success">
-          ✅ Angemeldet als <strong id="authLoggedInName"></strong><br>
+          ✅ HSP verbunden: <strong id="authLoggedInName"></strong><br>
           <span id="authLoggedInEmail"></span><br>
           Token: <span id="authLoggedInToken"></span>
         </div>
-        <button class="btn btn-secondary" id="showAuthImportBtn">Neue Auth-Daten importieren</button>
       </div>
 
-      <div id="authImportForm">
+      <!-- HSP via Uni-SSO verknüpfen -->
+      <div class="sheet-section hidden" id="ssoSection">
+        <h3>HSP-Account verbinden</h3>
+        <p class="hint">
+          Melde dich mit deiner Uni-/FH-Kennung an. Du wirst zum offiziellen SSO weitergeleitet – dein Passwort sieht nur die Uni.
+        </p>
+        <div id="ssoProviderButtons" class="btn-stack"></div>
+      </div>
+
+      <button class="btn btn-secondary btn-block" id="showAuthImportBtn">Token manuell importieren</button>
+
+      <div id="authImportForm" class="hidden">
       <div class="instructions">
-        <h3>Anleitung zum Abrufen der Auth-Daten</h3>
+        <h3>Alternativ: Auth-Daten manuell einfügen (am Desktop)</h3>
         <ol>
           <li>Öffne die <a href="https://hochschulsportmuenster.de/home" target="_blank" rel="noopener" style="color: #91C736;">HSP-Website</a> und melde dich an</li>
           <li>Drücke <code>F12</code> um die Entwickler-Tools zu öffnen</li>
@@ -1485,37 +2008,16 @@
       </div>
 
       <div class="form-group">
-        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
-          <input type="checkbox" id="autoFixJson" checked style="width: auto;">
+        <label class="check-label">
+          <input type="checkbox" id="autoFixJson" checked>
           <span>Automatische Format-Korrektur (bei Problemen deaktivieren)</span>
         </label>
       </div>
 
-      <button class="btn btn-primary" id="importAuthBtn">Importieren</button>
+      <button class="btn btn-primary btn-block" id="importAuthBtn">Importieren</button>
       </div>
 
-      <div id="authResult" class="hidden"></div>
-    </div>
-  </div>
-
-  <!-- Polling Modal -->
-  <div class="modal" id="pollingModal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3>Polling-Anmeldung</h3>
-        <button class="modal-close" onclick="closePollingModal()">×</button>
-      </div>
-      <p>Wähle die Einstellungen für die wiederholte Anmeldung:</p>
-      <div class="form-group">
-        <label for="modalInterval">Intervall (Millisekunden)</label>
-        <input type="number" id="modalInterval" value="1000" min="100" step="100">
-      </div>
-      <div class="form-group">
-        <label for="modalMaxAttempts">Max. Versuche (leer = unbegrenzt)</label>
-        <input type="number" id="modalMaxAttempts" placeholder="z.B. 20">
-      </div>
-      <input type="hidden" id="modalBookingId">
-      <button class="btn btn-primary" onclick="startPollingFromModal()">Starten</button>
+      <div id="authResult" class="hidden" style="margin-top: 14px;"></div>
     </div>
   </div>
 
@@ -1524,9 +2026,9 @@
     <div class="modal-content">
       <div class="modal-header">
         <h3>Buchung planen</h3>
-        <button class="modal-close" onclick="closeScheduleModal()">×</button>
+        <button class="modal-close" onclick="closeScheduleModal()" aria-label="Schließen">×</button>
       </div>
-      <p id="scheduleModalCourse" style="margin-bottom: 15px; color: #91C736; font-weight: bold;"></p>
+      <p id="scheduleModalCourse" style="margin-bottom: 15px; color: #5a8a12; font-weight: bold;"></p>
       <div class="schedule-info" style="margin-bottom: 20px;">
         <div class="schedule-info-item">
           <span class="schedule-info-label">Kurs-Startzeit</span>
@@ -1552,7 +2054,7 @@
       <input type="hidden" id="scheduleBookingId">
       <input type="hidden" id="scheduleCourseStartTime">
       <input type="hidden" id="scheduleCourseDescription">
-      <button class="btn btn-primary" onclick="confirmSchedule()" id="scheduleConfirmBtn">Buchung planen</button>
+      <button class="btn btn-primary btn-block" onclick="confirmSchedule()" id="scheduleConfirmBtn">Buchung planen</button>
     </div>
   </div>
 
@@ -1561,14 +2063,16 @@
     <div class="modal-content">
       <div class="modal-header">
         <h3 id="mapModalTitle">Kartendienst wählen</h3>
-        <button class="modal-close" onclick="closeMapModal()">×</button>
+        <button class="modal-close" onclick="closeMapModal()" aria-label="Schließen">×</button>
       </div>
       <p id="mapModalSubtitle">Wähle einen Kartendienst:</p>
-      <div id="mapServiceButtons" style="display: flex; flex-direction: column; gap: 10px; margin-top: 20px;">
+      <div id="mapServiceButtons" class="btn-stack">
         <!-- Buttons will be dynamically added here -->
       </div>
     </div>
   </div>
+
+  <div class="toast-container" id="toastContainer" aria-live="polite"></div>
 
   <script>
     // WebSocket Verbindung
@@ -1576,6 +2080,161 @@
     let activeJobs = new Map();
     let locationsData = {};
     let scheduledJobsMap = new Map(); // Map of bookingId -> scheduled job
+
+    // ============ APP-LOGIN (Session) ============
+    let appAccount = null;
+    let appStarted = false;
+    let authMode = 'login'; // 'login' | 'register'
+
+    // Globaler 401-Handler: abgelaufene Session -> Login-Overlay
+    const _origFetch = window.fetch.bind(window);
+    window.fetch = async (...args) => {
+      const res = await _origFetch(...args);
+      if (res.status === 401) {
+        try {
+          const clone = res.clone();
+          const data = await clone.json();
+          if (data && data.needLogin) { appStarted = false; showAuthOverlay(); }
+        } catch { /* keine JSON-Antwort */ }
+      }
+      return res;
+    };
+
+    // Kurze, nicht blockierende Rückmeldung (ersetzt alert-Dialoge); Tippen schließt sie
+    function toast(message, type = 'info', duration = 4500) {
+      const el = document.createElement('div');
+      el.className = `toast ${type}`;
+      el.setAttribute('role', type === 'error' ? 'alert' : 'status');
+      el.textContent = message;
+      el.addEventListener('click', () => el.remove());
+      document.getElementById('toastContainer').appendChild(el);
+      setTimeout(() => el.remove(), duration);
+    }
+
+    function showAuthOverlay() {
+      document.getElementById('appAuthOverlay').style.display = 'flex';
+    }
+    function hideAuthOverlay() {
+      document.getElementById('appAuthOverlay').style.display = 'none';
+    }
+
+    function setAuthMode(mode) {
+      authMode = mode;
+      const isLogin = mode === 'login';
+      document.getElementById('appAuthSubmitBtn').textContent = isLogin ? 'Anmelden' : 'Account erstellen';
+      document.getElementById('appAuthRegisterHint').classList.toggle('hidden', isLogin);
+      document.getElementById('appAuthPassword').setAttribute('autocomplete', isLogin ? 'current-password' : 'new-password');
+      // aktive Tab-Hervorhebung
+      document.getElementById('authTabLoginBtn').classList.toggle('btn-primary', isLogin);
+      document.getElementById('authTabLoginBtn').classList.toggle('btn-secondary', !isLogin);
+      document.getElementById('authTabRegisterBtn').classList.toggle('btn-primary', !isLogin);
+      document.getElementById('authTabRegisterBtn').classList.toggle('btn-secondary', isLogin);
+      document.getElementById('appAuthResult').classList.add('hidden');
+    }
+
+    async function submitAppAuth() {
+      const email = document.getElementById('appAuthEmail').value.trim();
+      const password = document.getElementById('appAuthPassword').value;
+      const result = document.getElementById('appAuthResult');
+      result.classList.add('hidden');
+      try {
+        const endpoint = authMode === 'login' ? '/api/auth/login' : '/api/auth/register';
+        const res = await _origFetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Anmeldung fehlgeschlagen');
+        document.getElementById('appAuthPassword').value = '';
+        await checkAppAuth();
+      } catch (error) {
+        result.textContent = `❌ ${error.message}`;
+        result.classList.remove('hidden');
+      }
+    }
+
+    async function checkAppAuth() {
+      try {
+        const res = await _origFetch('/api/auth/me');
+        if (res.ok) {
+          const data = await res.json();
+          appAccount = data.account;
+          hideAuthOverlay();
+          updateAccountUi(data);
+          startApp();
+          return true;
+        }
+      } catch { /* Netzwerkfehler */ }
+      showAuthOverlay();
+      return false;
+    }
+
+    function startApp() {
+      if (appStarted) return;
+      appStarted = true;
+      connectWebSocket();
+      loadStatus();
+      loadLocations().finally(loadSports);
+      loadScheduledJobs();
+      initPadel();
+      loadSsoProviders();
+    }
+
+    function updateAccountUi(data) {
+      const acc = data.account || {};
+      const el = document.getElementById('appAccountEmail');
+      if (el) el.textContent = acc.email || '';
+      const roleEl = document.getElementById('appAccountRole');
+      if (roleEl) roleEl.textContent = acc.role === 'admin' ? '(Admin)' : '';
+    }
+
+    async function loadSsoProviders() {
+      try {
+        const res = await fetch('/api/sso/providers');
+        if (!res.ok) return;
+        const { providers } = await res.json();
+        const container = document.getElementById('ssoProviderButtons');
+        if (!container) return;
+        ssoAvailable = providers.length > 0;
+        document.getElementById('ssoSection').classList.toggle('hidden', !ssoAvailable);
+        renderAuthPanel();
+        container.innerHTML = '';
+        providers.forEach(p => {
+          const btn = document.createElement('button');
+          btn.className = 'btn btn-primary';
+          btn.textContent = '🎓 ' + p.name;
+          btn.onclick = () => { window.location.href = '/api/sso/start?provider=' + encodeURIComponent(p.id); };
+          container.appendChild(btn);
+        });
+      } catch { /* ignore */ }
+    }
+
+    async function appLogout() {
+      try { await _origFetch('/api/auth/logout', { method: 'POST' }); } catch {}
+      appStarted = false;
+      appAccount = null;
+      location.reload();
+    }
+
+    async function appChangePassword() {
+      const currentPassword = prompt('Aktuelles Passwort:');
+      if (currentPassword === null) return;
+      const newPassword = prompt('Neues Passwort (mind. 8 Zeichen):');
+      if (newPassword === null) return;
+      try {
+        const res = await _origFetch('/api/auth/change-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ currentPassword, newPassword })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Fehler');
+        toast('✅ Passwort geändert.', 'success');
+      } catch (error) {
+        toast('❌ ' + error.message, 'error');
+      }
+    }
 
     // Load locations data
     async function loadLocations() {
@@ -1627,7 +2286,7 @@
       
       if (!location || !location.latitude || !location.longitude) {
         console.error('Location not found:', locationId, locationName);
-        alert('Standort-Daten nicht verfügbar');
+        toast('Standort-Daten nicht verfügbar', 'error');
         return;
       }
 
@@ -1767,7 +2426,7 @@
           break;
 
         case 'attempt':
-          const type = data.success ? 'success' : (data.rateLimited ? 'warning' : 'error');
+          const type = data.success ? 'success' : (data.rateLimited ? 'warning' : (data.watching ? 'info' : 'error'));
           addLog(type, `Versuch ${data.attempt}: ${data.message}`);
           if (activeJobs.has(data.jobId)) {
             activeJobs.get(data.jobId).attempts = data.attempt;
@@ -1823,6 +2482,7 @@
 
     function renderActiveJobs() {
       const container = document.getElementById('activeJobs');
+      updateJobsBadge();
       if (activeJobs.size === 0) {
         container.innerHTML = '';
         return;
@@ -1848,6 +2508,12 @@
         `;
       });
       container.innerHTML = html;
+    }
+
+    // Zahl laufender + geplanter Jobs direkt in der Navigation
+    function updateJobsBadge() {
+      const count = activeJobs.size + scheduledJobsMap.size;
+      document.getElementById('jobsBadge').textContent = count > 0 ? count : '';
     }
 
     function stopJob(jobId) {
@@ -1892,16 +2558,29 @@
     }
 
     // Tab Navigation
+    const TAB_STORAGE = 'activeTab';
     document.querySelectorAll('.tab').forEach(tab => {
       tab.addEventListener('click', () => {
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab').forEach(t => {
+          t.classList.remove('active');
+          t.removeAttribute('aria-current');
+        });
         document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
         tab.classList.add('active');
+        tab.setAttribute('aria-current', 'page');
         document.getElementById(`panel-${tab.dataset.tab}`).classList.add('active');
+        window.scrollTo(0, 0);
+        try { localStorage.setItem(TAB_STORAGE, tab.dataset.tab); } catch { /* ignorieren */ }
         if (tab.dataset.tab === 'mybookings') {
           loadMyBookings();
         }
       });
+    });
+
+    // Filter auf dem Handy ein-/ausklappen
+    document.getElementById('filterToggle').addEventListener('click', (e) => {
+      const open = document.getElementById('filterPanel').classList.toggle('open');
+      e.currentTarget.setAttribute('aria-expanded', open);
     });
 
     // Status laden
@@ -1966,6 +2645,11 @@
             const id = sportsMap.get(val);
             if (id) {
                 document.getElementById('filterSportId').value = id;
+                // Auswahl aus der Vorschlagsliste (kein normales Tippen): direkt suchen, Tastatur einklappen
+                if (!e.inputType || e.inputType === 'insertReplacementText') {
+                    input.blur();
+                    document.getElementById('searchBtn').click();
+                }
             } else {
                 document.getElementById('filterSportId').value = '';
             }
@@ -1992,9 +2676,11 @@
       }
     });
 
-    // Date and trainer filters re-trigger search on change
-    document.getElementById('filterDate').addEventListener('change', () => {
-      document.getElementById('searchBtn').click();
+    // Filters re-trigger search on change (kein extra Tipp auf "Suchen" nötig)
+    ['filterDate', 'filterLevel', 'filterDays', 'filterAvailable'].forEach(id => {
+      document.getElementById(id).addEventListener('change', () => {
+        document.getElementById('searchBtn').click();
+      });
     });
     let trainerDebounce = null;
     document.getElementById('filterTrainer').addEventListener('input', () => {
@@ -2115,7 +2801,7 @@
       }
       
       if (courses.length === 0 && !silent) {
-        container.innerHTML = '<p style="text-align: center; color: #888; padding: 40px;">Keine Kurse gefunden</p>';
+        container.innerHTML = '<p class="empty-state">Keine Kurse gefunden</p>';
         return;
       }
 
@@ -2141,72 +2827,107 @@
       }
 
       // Initial render or explicit refresh
-      let html = '';
-      courses.forEach(course => {
+      container.innerHTML = courses.map(course => {
         const date = new Date(course.startDate);
-        const dayName = days[date.getUTCDay()];
-        const time = date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
-        const dateStr = date.toLocaleDateString('de-DE');
         const isFull = course.available <= 0;
-        const supervisors = course.supervisors && course.supervisors.length > 0 
-          ? `<span>👤 ${course.supervisors.map(s => `${s.firstName} ${s.lastName}`).join(', ')}</span>`
-          : '';
-        
+
         // Check user participation status
         const isBooked = course.userParticipation?.participationStatus === 1;
         const isWaiting = course.userParticipation?.participationStatus === 3;
         const isScheduled = scheduledJobsMap.has(course.id);
-        const cardClass = isBooked ? 'booked' : (isWaiting ? 'waiting' : (isFull ? 'full' : ''));
+        const blocked = isBooked || isWaiting;
+
+        let cardClass = '';
+        if (isBooked) cardClass = 'booked';
+        else if (isWaiting) cardClass = 'waiting';
+        else if (isFull) cardClass = 'full';
+
         let statusBadge = '';
         if (isBooked) {
           statusBadge = '<span class="status-badge">✓ Angemeldet</span>';
         } else if (isWaiting) {
           statusBadge = '<span class="status-badge waiting">⏳ Warteliste</span>';
         } else if (isScheduled) {
-          const scheduledJob = scheduledJobsMap.get(course.id);
-          const statusIcon = scheduledJob.status === 'running' ? '🔄' : '📅';
+          const statusIcon = scheduledJobsMap.get(course.id).status === 'running' ? '🔄' : '📅';
           statusBadge = `<span class="status-badge">${statusIcon} Geplant</span>`;
         }
 
-        const loc = course.locationId ? locationsData[course.locationId] : null;
-        const hasCoords = loc?.latitude && loc?.longitude;
-        const locationButton = course.locationId
-          ? `<div class="course-map"><button class="${hasCoords ? 'map-thumb' : 'btn-link'}" title="Karte öffnen" onclick="openLocation(${course.locationId}, '${course.location.replace(/'/g, "\\'")}')">${hasCoords ? mapThumbnail(loc.latitude, loc.longitude, 112, 84) : '🗺️'}</button></div>`
-          : '';
+        let primaryLabel = 'Anmelden';
+        if (isBooked) primaryLabel = 'Angemeldet';
+        else if (isWaiting || isFull) primaryLabel = 'Warteliste';
 
-        html += `
-          <div class="course-card ${cardClass}" data-course-id="${course.id}">
-            <div class="course-head">
-              <h3>${course.description}</h3>
-              <span class="availability ${isFull ? 'full' : 'available'}" data-available="${course.available}">
-                ${isFull ? 'Voll' : `${course.available} frei`}
-              </span>
-              <span class="status-slot">${statusBadge}</span>
-              <span class="copy-id" title="Klicken zum Kopieren" onclick="copyId(event, ${course.id})">#${course.id}</span>
-            </div>
-            <div class="course-meta">
-              ${course.level ? `<span class="meta-level">${course.level}</span>` : ''}
-              <span>📅 ${dayName}, ${dateStr} · ${time} Uhr</span>
-              <span>📍 ${course.location}</span>
-              ${supervisors}
-            </div>
-            ${locationButton}
+        return courseCardHtml({
+          id: course.id,
+          title: course.description,
+          level: course.level,
+          start: date,
+          weekday: date.getUTCDay(),
+          location: course.location,
+          locationId: course.locationId,
+          supervisors: course.supervisors,
+          cardClass,
+          attrs: `data-course-id="${course.id}"`,
+          sideTop: `<span class="availability ${isFull ? 'full' : 'available'}" data-available="${course.available}">${isFull ? 'Voll' : `${course.available} frei`}</span>`,
+          statusBadge,
+          actions: `
             <div class="course-actions">
-              <button class="btn btn-primary" onclick="quickRegister(${course.id})" ${isBooked || isWaiting ? 'disabled' : ''}>
-                ${isBooked ? 'Angemeldet' : (isWaiting ? 'Warteliste' : (isFull ? 'Warteliste' : 'Anmelden'))}
-              </button>
-              <button class="btn btn-secondary" onclick="openPollingModal(${course.id})" ${isBooked || isWaiting ? 'disabled' : ''}>
-                Polling
-              </button>
-              <button class="btn btn-secondary" onclick="openScheduleModal(${course.id}, '${course.startDate}', '${course.description.replace(/'/g, "\\'")}')" ${isBooked || isWaiting || isScheduled ? 'disabled' : ''}>
-                ${isScheduled ? 'Geplant' : 'Planen'}
-              </button>
+              <button class="btn btn-primary" onclick="quickRegister(${course.id})" ${blocked ? 'disabled' : ''}>${primaryLabel}</button>
+              <button class="btn btn-secondary" data-start="${escapeHtml(course.startDate)}" data-desc="${escapeHtml(course.description)}" onclick="openScheduleModal(${course.id}, this.dataset.start, this.dataset.desc)" ${blocked || isScheduled ? 'disabled' : ''}>${isScheduled ? 'Geplant' : 'Planen'}</button>
+            </div>`
+        });
+      }).join('');
+    }
+
+    // Gemeinsames Karten-Layout für Kurssuche und "Meine Buchungen"
+    const WEEKDAYS_SHORT = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+    const ICON_PIN = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>';
+    const ICON_USER = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>';
+    const ICON_CLOCK = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
+
+    function courseCardHtml(c) {
+      const time = c.start.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+      const dateStr = c.start.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
+
+      const loc = c.locationId ? locationsData[c.locationId] : null;
+      const hasCoords = loc?.latitude && loc?.longitude;
+      // Karte nur anbieten, wenn es wirklich Koordinaten gibt
+      const map = hasCoords
+        ? `<div class="course-map"><button class="map-thumb" title="Karte öffnen" aria-label="Karte öffnen" data-name="${escapeHtml(c.location)}" onclick="openLocation(${c.locationId}, this.dataset.name)">${mapThumbnail(loc.latitude, loc.longitude, 96, 64)}</button></div>`
+        : '';
+
+      const trainers = c.supervisors?.length
+        ? `<span class="meta-row">${ICON_USER}<span>${escapeHtml(c.supervisors.map(s => `${s.firstName} ${s.lastName}`).join(', '))}</span></span>`
+        : '';
+
+      return `
+        <div class="course-card ${c.cardClass || ''}" ${c.attrs || ''}>
+          <div class="course-date">
+            <span class="cd-day">${WEEKDAYS_SHORT[c.weekday]}</span>
+            <span class="cd-time">${time}</span>
+            <span class="cd-date">${dateStr}</span>
+          </div>
+          <div class="course-head">
+            <h3>${escapeHtml(c.title)}</h3>
+            <div class="course-sub">
+              ${c.level ? `<span class="meta-level">${escapeHtml(c.level)}</span>` : ''}
+              <span class="status-slot">${c.statusBadge || ''}</span>
             </div>
           </div>
-        `;
-      });
-
-      container.innerHTML = html;
+          <div class="course-side">
+            ${c.sideTop || ''}
+            <span class="copy-id" title="Tippen zum Kopieren" onclick="copyId(event, ${c.id})">#${c.id}</span>
+          </div>
+          <div class="course-body">
+            <div class="course-meta">
+              ${c.timeRange ? `<span class="meta-row">${ICON_CLOCK}<span>${c.timeRange} Uhr</span></span>` : ''}
+              <span class="meta-row">${ICON_PIN}<span>${escapeHtml(c.location)}</span></span>
+              ${trainers}
+            </div>
+            ${map}
+          </div>
+          ${c.actions || ''}
+        </div>
+      `;
     }
 
     // ============ MEINE BUCHUNGEN ============
@@ -2236,46 +2957,34 @@
 
       document.getElementById('myBookingsUpcoming').innerHTML = upcoming.length
         ? upcoming.map(b => myBookingCard(b, false)).join('')
-        : '<p style="text-align: center; color: #888; padding: 40px;">Keine kommenden Buchungen</p>';
+        : '<p class="empty-state">Keine kommenden Buchungen</p>';
 
       document.getElementById('myBookingsPastSection').classList.toggle('hidden', past.length === 0);
       document.getElementById('myBookingsPast').innerHTML = past.map(b => myBookingCard(b, true)).join('');
     }
 
     function myBookingCard(booking, isPast) {
-      const days = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
       const start = new Date(booking.startDate);
       const end = booking.endDate ? new Date(booking.endDate) : null;
       const timeOpts = { hour: '2-digit', minute: '2-digit' };
-      const time = start.toLocaleTimeString('de-DE', timeOpts) + (end ? `–${end.toLocaleTimeString('de-DE', timeOpts)}` : '');
       const isWaiting = booking.userParticipation?.participationStatus === 3;
       const title = booking.description || booking.level || booking.location || 'Buchung';
-      const supervisors = booking.supervisors?.length
-        ? `<span>👤 ${escapeHtml(booking.supervisors.map(s => `${s.firstName} ${s.lastName}`).join(', '))}</span>`
-        : '';
 
-      const loc = booking.locationId ? locationsData[booking.locationId] : null;
-      const hasCoords = loc?.latitude && loc?.longitude;
-      const locationButton = booking.locationId
-        ? `<div class="course-map"><button class="${hasCoords ? 'map-thumb' : 'btn-link'}" title="Karte öffnen" onclick="openLocation(${booking.locationId}, '${escapeHtml(booking.location).replace(/'/g, "\\'")}')">${hasCoords ? mapThumbnail(loc.latitude, loc.longitude, 112, 84) : '🗺️'}</button></div>`
-        : '';
-
-      return `
-        <div class="course-card ${isWaiting ? 'waiting' : 'booked'} ${isPast ? 'past' : ''}">
-          <div class="course-head">
-            <h3>${escapeHtml(title)}</h3>
-            <span class="status-slot">${isWaiting ? '<span class="status-badge waiting">⏳ Warteliste</span>' : '<span class="status-badge">✓ Angemeldet</span>'}</span>
-            <span class="copy-id" title="Klicken zum Kopieren" onclick="copyId(event, ${booking.id})">#${booking.id}</span>
-          </div>
-          <div class="course-meta">
-            ${booking.level && booking.level !== title ? `<span class="meta-level">${escapeHtml(booking.level)}</span>` : ''}
-            <span>📅 ${days[start.getDay()]}, ${start.toLocaleDateString('de-DE')} · ${time} Uhr</span>
-            <span>📍 ${escapeHtml(booking.location)}</span>
-            ${supervisors}
-          </div>
-          ${locationButton}
-        </div>
-      `;
+      return courseCardHtml({
+        id: booking.id,
+        title,
+        level: booking.level && booking.level !== title ? booking.level : '',
+        start,
+        weekday: start.getDay(),
+        timeRange: end ? `${start.toLocaleTimeString('de-DE', timeOpts)}–${end.toLocaleTimeString('de-DE', timeOpts)}` : '',
+        location: booking.location,
+        locationId: booking.locationId,
+        supervisors: booking.supervisors,
+        cardClass: `${isWaiting ? 'waiting' : 'booked'} ${isPast ? 'past' : ''}`,
+        statusBadge: isWaiting
+          ? '<span class="status-badge waiting">⏳ Warteliste</span>'
+          : '<span class="status-badge">✓ Angemeldet</span>'
+      });
     }
 
     document.getElementById('myBookingsRefreshBtn').addEventListener('click', loadMyBookings);
@@ -2354,7 +3063,11 @@
     // Schnelle Anmeldung
     async function quickRegister(bookingId) {
       addLog('info', `Starte Anmeldung für Booking ${bookingId}...`);
-      
+
+      // Sofortiges Feedback auf der Karte, Doppel-Tipps verhindern
+      const cardBtn = document.querySelector(`.course-card[data-course-id="${bookingId}"] .btn-primary`);
+      cardBtn?.classList.add('loading');
+
       try {
         const res = await fetch('/api/register', {
           method: 'POST',
@@ -2369,13 +3082,14 @@
           if (data.fullResponse) {
             addLog('info', `Server: ${JSON.stringify(data.fullResponse)}`);
           }
-          alert(`⚠️ Warteliste: ${data.message}`);
+          toast(`⚠️ Warteliste: ${data.message}`, 'warning');
+          setTimeout(() => searchCourses(true), 1000);
         } else if (data.success) {
           addLog('success', `✅ Erfolgreich für Kurs ${bookingId} angemeldet!`);
           if (data.fullResponse) {
             addLog('info', `Server: ${JSON.stringify(data.fullResponse)}`);
           }
-          alert('✅ Erfolgreich angemeldet!');
+          toast('✅ Erfolgreich angemeldet!', 'success');
           // Refresh course list after successful booking (silent mode)
           setTimeout(() => searchCourses(true), 1000);
         } else {
@@ -2383,22 +3097,14 @@
           if (data.fullResponse) {
             addLog('info', `Server: ${JSON.stringify(data.fullResponse)}`);
           }
-          alert(`❌ ${data.message}`);
+          toast(`❌ ${data.message}`, 'error');
         }
       } catch (error) {
         addLog('error', error.message);
-        alert(`Fehler: ${error.message}`);
+        toast(`Fehler: ${error.message}`, 'error');
+      } finally {
+        cardBtn?.classList.remove('loading');
       }
-    }
-
-    // Polling Modal
-    function openPollingModal(bookingId) {
-      document.getElementById('modalBookingId').value = bookingId;
-      document.getElementById('pollingModal').classList.add('active');
-    }
-
-    function closePollingModal() {
-      document.getElementById('pollingModal').classList.remove('active');
     }
 
     // Schedule Modal
@@ -2420,7 +3126,7 @@
       
       // Fetch booking info from server
       try {
-        const res = await fetch(`/api/schedule/info?courseStartTime=${encodeURIComponent(courseStartTime)}`);
+        const res = await fetch(`/api/schedule/info?courseStartTime=${encodeURIComponent(courseStartTime)}&bookingId=${encodeURIComponent(bookingId)}`);
         const info = await res.json();
         
         const bookingAvailable = new Date(info.bookingAvailableAt);
@@ -2430,7 +3136,7 @@
         document.getElementById('scheduleBookingAvailable').textContent = 
           `${days[bookingAvailable.getDay()]}, ${bookingAvailable.toLocaleDateString('de-DE')} um ${bookingAvailable.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr`;
         document.getElementById('schedulePollingStart').textContent = 
-          `~${pollingStart.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })} Uhr (zufällig)`;
+          `~${pollingStart.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })} Uhr (Uhrenabgleich)`;
         document.getElementById('schedulePollingStop').textContent = 
           `${pollingStop.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })} Uhr`;
         
@@ -2505,7 +3211,8 @@
         });
         
         renderScheduledJobs(jobs);
-        
+        updateJobsBadge();
+
         // Refresh course cards to show scheduled status
         const coursesList = document.getElementById('coursesList');
         if (coursesList && coursesList.children.length > 0) {
@@ -2591,28 +3298,6 @@
       }
     }
 
-    function startPollingFromModal() {
-      const bookingId = document.getElementById('modalBookingId').value;
-      const intervalSeconds = parseInt(document.getElementById('modalInterval').value) || 60;
-      const maxAttempts = document.getElementById('modalMaxAttempts').value 
-        ? parseInt(document.getElementById('modalMaxAttempts').value) 
-        : null;
-
-      if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({
-          type: 'startPolling',
-          bookingId,
-          intervalSeconds: intervalSeconds,  // Bereits in Millisekunden
-          maxAttempts
-        }));
-      }
-
-      closePollingModal();
-      
-      // Wechsle zum Anmeldung-Tab
-      document.querySelector('[data-tab="register"]').click();
-    }
-
     // Register Mode Toggle
     document.getElementById('registerMode').addEventListener('change', (e) => {
       const isPolling = e.target.value === 'polling';
@@ -2626,7 +3311,8 @@
       const mode = document.getElementById('registerMode').value;
 
       if (!bookingId) {
-        alert('Bitte Booking ID eingeben');
+        toast('Bitte Booking ID eingeben', 'warning');
+        document.getElementById('bookingId').focus();
         return;
       }
 
@@ -2726,6 +3412,7 @@
 
     // Account-Modal: bei bestehender Anmeldung Status statt Import-Formular zeigen
     let authImportRequested = false;
+    let ssoAvailable = false;
 
     function openAuthModal() {
       authImportRequested = false;
@@ -2740,7 +3427,9 @@
 
     document.getElementById('accountBtn').addEventListener('click', openAuthModal);
     function renderAuthPanel() {
-      const showForm = !mainAccount || authImportRequested;
+      // SSO ist der Standardweg (am Handy der einzig praktikable); das manuelle
+      // Formular erscheint nur auf Wunsch – oder wenn gar kein SSO konfiguriert ist
+      const showForm = authImportRequested || (!mainAccount && !ssoAvailable);
       document.getElementById('authLoggedIn').classList.toggle('hidden', !mainAccount);
       document.getElementById('showAuthImportBtn').classList.toggle('hidden', showForm);
       document.getElementById('authImportForm').classList.toggle('hidden', !showForm);
@@ -2793,7 +3482,7 @@
           `;
           document.getElementById('authDataInput').value = '';
           authImportRequested = false;
-          loadStatus();
+          loadStatus().then(() => { if (!padelMe) initPadel(); });
         } else {
           resultDiv.className = 'alert alert-error';
           resultDiv.textContent = `❌ ${data.error}`;
@@ -2850,15 +3539,13 @@
     }
 
     async function initPadel() {
-      if (!padelUserKey) {
-        showPadelLogin();
-        return;
-      }
+      // Dank App-Session funktioniert Padel auch ohne separaten padelUserKey,
+      // sobald der HSP-Account verknüpft ist.
       try {
         padelMe = await padelFetch('/api/padel/me');
         showPadelMain();
       } catch (error) {
-        console.error('Padel-Login fehlgeschlagen:', error);
+        showPadelLogin();
       }
     }
 
@@ -2871,8 +3558,7 @@
     // Ist im Account-Modal schon ein Account hinterlegt, reicht ein Klick statt erneutem Einfügen
     function renderPadelLoginOptions() {
       document.getElementById('padelMainLogin').classList.toggle('hidden', !mainAccount);
-      document.getElementById('padelManualLoginSummary').classList.toggle('hidden', !mainAccount);
-      document.getElementById('padelManualLogin').open = !mainAccount;
+      document.getElementById('padelConnectHint').classList.toggle('hidden', !!mainAccount);
       if (mainAccount) {
         document.getElementById('padelMainLoginName').textContent = mainAccount.name;
         document.getElementById('padelMainLoginBtnName').textContent = mainAccount.name;
@@ -2926,7 +3612,7 @@
     async function loadPadelSlots() {
       const container = document.getElementById('padelSlots');
       const date = document.getElementById('padelDate').value;
-      if (!date || !padelUserKey) return;
+      if (!date || !padelMe) return;
 
       container.innerHTML = '<span class="spinner"></span>';
       try {
@@ -2954,7 +3640,7 @@
     }
 
     async function loadPadelSessions() {
-      if (!padelUserKey) return;
+      if (!padelMe) return;
       try {
         const data = await padelFetch('/api/padel/sessions');
         padelSessions = data.sessions;
@@ -3039,7 +3725,7 @@
       try {
         await request();
       } catch (error) {
-        alert(error.message);
+        toast(error.message, 'error');
       }
       await loadPadelSessions();
       loadPadelSlots();
@@ -3113,6 +3799,17 @@
 
     document.getElementById('padelLogoutBtn').addEventListener('click', padelLogout);
     document.getElementById('padelDate').addEventListener('change', loadPadelSlots);
+    document.getElementById('padelConnectBtn').addEventListener('click', openAuthModal);
+
+    // Tag vor/zurück per Tipp statt Datepicker
+    function shiftPadelDate(deltaDays) {
+      const input = document.getElementById('padelDate');
+      const [y, m, d] = (input.value || toDateInputValue(new Date())).split('-').map(Number);
+      input.value = toDateInputValue(new Date(y, m - 1, d + deltaDays));
+      loadPadelSlots();
+    }
+    document.getElementById('padelPrevDay').addEventListener('click', () => shiftPadelDate(-1));
+    document.getElementById('padelNextDay').addEventListener('click', () => shiftPadelDate(1));
 
     document.getElementById('padelCopyCalBtn').addEventListener('click', (event) => {
       const button = event.currentTarget;
@@ -3135,18 +3832,44 @@
       }
     });
 
+    // ============ App-Login Event-Wiring ============
+    document.getElementById('authTabLoginBtn').addEventListener('click', () => setAuthMode('login'));
+    document.getElementById('authTabRegisterBtn').addEventListener('click', () => setAuthMode('register'));
+    document.getElementById('appAuthSubmitBtn').addEventListener('click', submitAppAuth);
+    document.getElementById('appAuthPassword').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') submitAppAuth();
+    });
+    document.getElementById('appLogoutBtn').addEventListener('click', appLogout);
+    document.getElementById('appChangePwBtn').addEventListener('click', appChangePassword);
+    setAuthMode('login');
+
+    // Rückmeldung nach SSO-Rücksprung (?linked=1 / ?sso_error=...)
+    (function handleSsoReturn() {
+      const params = new URLSearchParams(location.search);
+      if (params.has('linked') || params.has('sso_error')) {
+        const msg = params.has('linked')
+          ? '✅ HSP-Account via Uni-SSO verbunden!'
+          : '❌ SSO fehlgeschlagen: ' + (params.get('sso_error') || 'Unbekannter Fehler') +
+            '\n\nFalls das wiederholt passiert, nutze bitte den manuellen Token-Import im Account-Fenster.';
+        setTimeout(() => toast(msg, params.has('linked') ? 'success' : 'error', 8000), 400);
+        history.replaceState({}, '', location.pathname);
+      }
+    })();
+
     // Initial laden
     document.getElementById('intervalGroup').style.display = 'none';
     document.getElementById('maxAttemptsGroup').style.display = 'none';
 
-    connectWebSocket();
-    loadStatus();
-    loadLocations().finally(loadSports); // Standorte zuerst, damit Karten-Vorschauen gerendert werden können
-    loadScheduledJobs(); // Load scheduled jobs on page load
-    initPadel();
-    
-    // Kurse initial laden - Entfernt, da loadSports() das jetzt macht
-    // document.getElementById('searchBtn').click();
+    // Zuletzt genutzten Tab wiederherstellen
+    try {
+      const savedTab = localStorage.getItem(TAB_STORAGE);
+      if (savedTab && savedTab !== 'courses' && savedTab !== 'mybookings') {
+        document.querySelector(`.tab[data-tab="${savedTab}"]`)?.click();
+      }
+    } catch { /* ignorieren */ }
+
+    // Erst App-Login prüfen; startApp() läuft nur bei gültiger Session
+    checkAppAuth();
   </script>
 </body>
 </html>

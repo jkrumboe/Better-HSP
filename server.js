@@ -8,16 +8,31 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 
 // Importiere die bestehenden Module
-import { getValidToken, getStoredMemberInfo, loadTokens, saveTokens, getTokenInfo, decodeToken } from './token-manager.js';
+import { getTokenInfo, decodeToken, loadTokens } from './token-manager.js';
 import {
   initializeScheduler,
+  setWaitlistHandler,
   scheduleBooking,
   cancelScheduledJob,
   getScheduledJobs,
+  jobBelongsToMember,
   registerWebSocket,
   getBookingInfo
 } from './scheduler.js';
-import { upsertUserFromAuth, getUserByKey, getUserByCalendarToken, publicUser } from './user-store.js';
+import {
+  upsertUserFromAuth, getUser, getUserByKey, getUserByCalendarToken,
+  publicUser, getValidUserToken
+} from './user-store.js';
+import {
+  registerAccount, verifyLogin, getAccount, changePassword,
+  linkMember, bumpSessionVersion, publicAccount
+} from './auth-store.js';
+import {
+  signSession, verifySession, parseCookies, serializeCookie
+} from './crypto-util.js';
+import {
+  SSO_PROVIDERS, getProvider, buildSsoRedirect, parseTokenResponse, memberFromAccessToken
+} from './sso.js';
 import {
   initializePadel,
   registerPadelWebSocket,
@@ -42,9 +57,110 @@ const PORT = process.env.PORT || 3000;
 const API_URL = 'https://backbone-web-api.production.munster.delcom.nl';
 const Volleyball_ID = 285;
 
+// Hinter dem Reverse Proxy (Nginx Proxy Manager) steht HTTPS – trust proxy sorgt dafür,
+// dass req.protocol/req.secure den X-Forwarded-Proto-Header auswerten.
+app.set('trust proxy', 1);
+
+const NODE_ENV = process.env.NODE_ENV || 'development';
+// Secure-Cookies in Produktion (nur über HTTPS). Lokal ohne HTTPS abschaltbar.
+const COOKIE_SECURE = process.env.COOKIE_SECURE
+  ? process.env.COOKIE_SECURE === 'true'
+  : NODE_ENV === 'production';
+const SESSION_COOKIE = 'hsp_session';
+const SESSION_MAX_AGE = 60 * 60 * 24 * 30; // 30 Tage
+
 // Middleware
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
+
+// Frontend single-origin ausliefern – NUR index.html + resources/,
+// niemals Server-Code, data/ oder andere Projektdateien.
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
+app.use('/resources', express.static(path.join(__dirname, 'resources')));
+
+// Basis-Sicherheitsheader
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader(
+    'Content-Security-Policy',
+    "default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; " +
+    "script-src 'self' 'unsafe-inline'; connect-src 'self'; frame-ancestors 'self'; base-uri 'self'"
+  );
+  next();
+});
+
+// ============ SESSION / AUTH HELPERS ============
+
+function issueSession(res, account) {
+  const token = signSession({ sub: account.id, sv: account.sessionVersion || 1 }, SESSION_MAX_AGE);
+  res.setHeader('Set-Cookie', serializeCookie(SESSION_COOKIE, token, {
+    httpOnly: true, sameSite: 'Lax', secure: COOKIE_SECURE, path: '/', maxAge: SESSION_MAX_AGE
+  }));
+}
+
+function clearSession(res) {
+  res.setHeader('Set-Cookie', serializeCookie(SESSION_COOKIE, '', {
+    httpOnly: true, sameSite: 'Lax', secure: COOKIE_SECURE, path: '/', maxAge: 0
+  }));
+}
+
+/**
+ * Liest die Session aus dem Cookie und hängt req.account an (falls gültig).
+ */
+function attachAccount(req) {
+  if (req._accountResolved) return req.account;
+  req._accountResolved = true;
+  req.account = null;
+  const cookies = parseCookies(req.headers.cookie);
+  const payload = verifySession(cookies[SESSION_COOKIE]);
+  if (!payload?.sub) return null;
+  const account = getAccount(payload.sub);
+  if (!account) return null;
+  // Session-Version prüfen (Passwortwechsel / "überall abmelden")
+  if ((account.sessionVersion || 1) !== (payload.sv || 1)) return null;
+  req.account = account;
+  return account;
+}
+
+// Öffentliche API-Pfade (relativ zum /api-Mount), alles andere erfordert Login.
+const PUBLIC_API = [
+  /^\/auth\/(register|login|logout|me)$/,
+  /^\/sso\/providers$/,
+  /^\/padel\/calendar\//
+];
+
+app.use('/api', (req, res, next) => {
+  attachAccount(req);
+  if (PUBLIC_API.some(rx => rx.test(req.path))) return next();
+  if (!req.account) {
+    return res.status(401).json({ error: 'Nicht angemeldet', needLogin: true });
+  }
+  next();
+});
+
+// ============ HSP-TOKEN PRO ACCOUNT ============
+
+/**
+ * Gültiger HSP-Access-Token des eingeloggten Accounts (null, wenn nicht verknüpft).
+ */
+async function resolveHspToken(req) {
+  const memberId = req.account?.linkedMemberId;
+  if (!memberId) return null;
+  return await getValidUserToken(memberId);
+}
+
+/**
+ * Member-Infos des verknüpften HSP-Accounts.
+ */
+function resolveHspMember(req) {
+  const memberId = req.account?.linkedMemberId;
+  if (!memberId) return { memberId: null, memberEmail: null, memberName: null };
+  const u = getUser(memberId);
+  return u
+    ? { memberId: u.memberId, memberEmail: u.email, memberName: u.name }
+    : { memberId, memberEmail: null, memberName: null };
+}
 
 // Aktive Polling-Jobs speichern
 const activePollingJobs = new Map();
@@ -99,17 +215,18 @@ function savePollingJobs() {
 /**
  * Broadcast a message to all connected WebSocket clients (polling-specific)
  */
-function broadcastPolling(message) {
+function broadcastPolling(message, memberId = null) {
   const messageStr = JSON.stringify(message);
   pollingWsConnections.forEach(ws => {
-    if (ws.readyState === 1) { // WebSocket.OPEN
-      ws.send(messageStr);
-    }
+    if (ws.readyState !== 1) return; // WebSocket.OPEN
+    // Nur an den Besitzer des Jobs senden (wenn memberId bekannt)
+    if (memberId != null && ws.account?.linkedMemberId !== memberId) return;
+    ws.send(messageStr);
   });
 }
 
 /**
- * Send a polling message: broadcast to all WS clients + buffer in job log
+ * Send a polling message: broadcast to the owning client + buffer in job log
  */
 function sendJobMessage(jobId, job, message) {
   // Buffer the message in the job's log
@@ -118,32 +235,164 @@ function sendJobMessage(jobId, job, message) {
   if (job.log.length > MAX_JOB_LOG_ENTRIES) {
     job.log = job.log.slice(-MAX_JOB_LOG_ENTRIES);
   }
-  // Broadcast to all connected clients
-  broadcastPolling(message);
+  // Nur an den Besitzer des Jobs broadcasten
+  broadcastPolling(message, job.memberId);
 }
+
+// ============ AUTH ENDPOINTS (App-Login) ============
+
+// Einfacher In-Memory-Ratelimiter gegen Brute-Force (pro IP)
+const loginAttempts = new Map(); // ip -> { count, resetAt }
+function rateLimit(req, res, { max = 10, windowMs = 15 * 60 * 1000 } = {}) {
+  const ip = req.ip || req.socket?.remoteAddress || 'unknown';
+  const now = Date.now();
+  let entry = loginAttempts.get(ip);
+  if (!entry || now > entry.resetAt) {
+    entry = { count: 0, resetAt: now + windowMs };
+    loginAttempts.set(ip, entry);
+  }
+  entry.count++;
+  if (entry.count > max) {
+    res.status(429).json({ error: 'Zu viele Versuche. Bitte später erneut versuchen.' });
+    return false;
+  }
+  return true;
+}
+
+// Registrierung (offen) – legt Account an und loggt direkt ein
+app.post('/api/auth/register', (req, res) => {
+  if (!rateLimit(req, res, { max: 20 })) return;
+  try {
+    const { email, password } = req.body || {};
+    const account = registerAccount(email, password);
+    issueSession(res, account);
+    res.json({ account: publicAccount(account) });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// Login
+app.post('/api/auth/login', (req, res) => {
+  if (!rateLimit(req, res)) return;
+  const { email, password } = req.body || {};
+  const account = verifyLogin(email, password);
+  if (!account) {
+    return res.status(401).json({ error: 'E-Mail oder Passwort falsch.' });
+  }
+  issueSession(res, account);
+  res.json({ account: publicAccount(account) });
+});
+
+// Logout (aktuelles Gerät)
+app.post('/api/auth/logout', (req, res) => {
+  clearSession(res);
+  res.json({ success: true });
+});
+
+// Überall abmelden (invalidiert alle Sessions dieses Accounts)
+app.post('/api/auth/logout-all', (req, res) => {
+  bumpSessionVersion(req.account.id);
+  clearSession(res);
+  res.json({ success: true });
+});
+
+// Passwort ändern
+app.post('/api/auth/change-password', (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body || {};
+    if (!verifyLogin(req.account.email, currentPassword)) {
+      return res.status(401).json({ error: 'Aktuelles Passwort ist falsch.' });
+    }
+    const updated = changePassword(req.account.id, newPassword);
+    issueSession(res, updated); // neue Session-Version -> frisches Cookie
+    res.json({ success: true });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// Aktueller Account + HSP-Verknüpfung
+app.get('/api/auth/me', (req, res) => {
+  if (!req.account) return res.status(401).json({ error: 'Nicht angemeldet', needLogin: true });
+  const member = resolveHspMember(req);
+  const linkedUser = req.account.linkedMemberId ? getUser(req.account.linkedMemberId) : null;
+  let tokenInfo = null;
+  if (linkedUser?.accessToken) {
+    const info = getTokenInfo(linkedUser.accessToken);
+    if (info) {
+      tokenInfo = {
+        email: info.email, name: info.name, expiresAt: info.expiresAt,
+        remainingText: info.remainingText, isValid: info.isValid,
+        canRefresh: !!linkedUser.refreshToken
+      };
+    }
+  }
+  res.json({
+    account: publicAccount(req.account),
+    hspLinked: !!req.account.linkedMemberId,
+    member: member.memberId ? member : null,
+    tokenInfo
+  });
+});
+
+// ============ SSO (Uni-Login) ============
+
+app.get('/api/sso/providers', (req, res) => {
+  res.json({ providers: SSO_PROVIDERS.map(p => ({ id: p.id, name: p.name })) });
+});
+
+function publicBaseUrl(req) {
+  if (process.env.PUBLIC_URL) return process.env.PUBLIC_URL.replace(/\/+$/, '');
+  return `${req.protocol}://${req.get('host')}`;
+}
+
+// Startet den SSO-Flow: leitet zum delcom-SAML-Discovery weiter
+app.get('/api/sso/start', (req, res) => {
+  const provider = getProvider(String(req.query.provider || ''));
+  if (!provider) return res.status(400).send('Unbekannter SSO-Anbieter');
+  const callbackUrl = `${publicBaseUrl(req)}/api/sso/callback`;
+  res.redirect(buildSsoRedirect(provider.entityId, callbackUrl));
+});
+
+// Rückkehr vom SSO: delcom hängt ?tokenReponse=<base64> an
+app.get('/api/sso/callback', (req, res) => {
+  try {
+    const tokens = parseTokenResponse(req.query.tokenReponse);
+    if (!tokens.accessToken) throw new Error('Kein Access-Token erhalten');
+    const member = memberFromAccessToken(decodeToken, tokens.accessToken);
+    if (!member) throw new Error('Token konnte nicht gelesen werden');
+
+    const user = upsertUserFromAuth({ tokenResponse: tokens, member });
+    linkMember(req.account.id, user.memberId);
+    res.redirect('/?linked=1');
+  } catch (error) {
+    console.error('SSO-Callback Fehler:', error.message);
+    res.redirect('/?sso_error=' + encodeURIComponent(error.message));
+  }
+});
 
 // ============ API ENDPOINTS ============
 
-// Status-Check
+// Status-Check (account-zentriert)
 app.get('/api/status', (req, res) => {
-  const memberInfo = getStoredMemberInfo();
-  const tokens = loadTokens();
+  const member = resolveHspMember(req);
+  const linkedUser = req.account.linkedMemberId ? getUser(req.account.linkedMemberId) : null;
   let tokenInfo = null;
-  
-  if (tokens.accessToken) {
-    tokenInfo = getTokenInfo(tokens.accessToken);
+  if (linkedUser?.accessToken) {
+    const info = getTokenInfo(linkedUser.accessToken);
+    if (info) {
+      tokenInfo = {
+        email: info.email, name: info.name, expiresAt: info.expiresAt,
+        remainingText: info.remainingText, isValid: info.isValid
+      };
+    }
   }
-
   res.json({
-    authenticated: !!tokens.accessToken,
-    member: memberInfo,
-    tokenInfo: tokenInfo ? {
-      email: tokenInfo.email,
-      name: tokenInfo.name,
-      expiresAt: tokenInfo.expiresAt,
-      remainingText: tokenInfo.remainingText,
-      isValid: tokenInfo.isValid
-    } : null,
+    authenticated: !!req.account.linkedMemberId,
+    account: publicAccount(req.account),
+    member: member.memberId ? member : null,
+    tokenInfo,
     activeJobs: activePollingJobs.size
   });
 });
@@ -185,7 +434,7 @@ function normalizeAuthData(body) {
   return authData;
 }
 
-// Auth-Daten importieren
+// HSP-Account per eingefügten delcom_auth-Daten verknüpfen (Fallback zum SSO)
 app.post('/api/auth/import', async (req, res) => {
   try {
     const authData = normalizeAuthData(req.body);
@@ -194,34 +443,16 @@ app.post('/api/auth/import', async (req, res) => {
       return res.status(400).json({ error: 'Ungültige Auth-Daten. Bitte kompletten JSON-Inhalt einfügen.' });
     }
 
-    const tokenResponse = authData.tokenResponse;
-    const member = authData.member;
-
-    const dataDir = path.join(__dirname, 'data');
-    if (!fs.existsSync(dataDir)) {
-      fs.mkdirSync(dataDir, { recursive: true });
-    }
-    
-    // Speichere auth-data.json
-    fs.writeFileSync(path.join(dataDir, 'auth-data.json'), JSON.stringify(authData, null, 2));
-
-    // Speichere in token-store.json
-    saveTokens({
-      accessToken: tokenResponse.accessToken,
-      refreshToken: tokenResponse.refreshToken,
-      idToken: tokenResponse.idToken,
-      expiresIn: tokenResponse.expiresIn,
-      memberId: member.id,
-      memberEmail: member.email,
-      memberName: `${member.firstName || ''} ${member.lastName || ''}`.trim()
-    });
+    // Token verschlüsselt im user-store ablegen und mit dem App-Account verknüpfen
+    const user = upsertUserFromAuth(authData);
+    linkMember(req.account.id, user.memberId);
 
     res.json({
       success: true,
       member: {
-        id: member.id,
-        email: member.email,
-        name: `${member.firstName || ''} ${member.lastName || ''}`.trim()
+        id: user.memberId,
+        email: user.email,
+        name: user.name
       }
     });
   } catch (error) {
@@ -323,10 +554,10 @@ app.get('/api/courses', async (req, res) => {
 
     // Get user's existing bookings to check participation status
     let userBookings = {};
-    const memberInfo = getStoredMemberInfo();
-    if (memberInfo && memberInfo.memberId && courses.length > 0) {
+    const memberInfo = resolveHspMember(req);
+    const token = memberInfo.memberId ? await resolveHspToken(req) : null;
+    if (token && memberInfo.memberId && courses.length > 0) {
       try {
-        const token = await getValidToken();
         const bookingFilter = {
           "$or": [
             { "participations.memberId": memberInfo.memberId },
@@ -375,10 +606,10 @@ app.get('/api/courses', async (req, res) => {
 // Eigene Buchungen (kommende + letzte 30 Tage)
 app.get('/api/my-bookings', async (req, res) => {
   try {
-    const token = await getValidToken();
-    const memberInfo = getStoredMemberInfo();
+    const memberInfo = resolveHspMember(req);
+    const token = await resolveHspToken(req);
     if (!token || !memberInfo.memberId) {
-      return res.status(401).json({ error: 'Nicht authentifiziert. Bitte Token importieren.' });
+      return res.status(401).json({ error: 'HSP-Account nicht verknüpft. Bitte via Uni-SSO anmelden oder Token importieren.' });
     }
 
     const from = new Date();
@@ -512,12 +743,12 @@ app.post('/api/register', async (req, res) => {
       return res.status(400).json({ error: 'bookingId erforderlich' });
     }
 
-    const token = await getValidToken();
+    const token = await resolveHspToken(req);
     if (!token) {
-      return res.status(401).json({ error: 'Nicht authentifiziert. Bitte Token importieren.' });
+      return res.status(401).json({ error: 'HSP-Account nicht verknüpft. Bitte via Uni-SSO anmelden oder Token importieren.' });
     }
 
-    const memberInfo = getStoredMemberInfo();
+    const memberInfo = resolveHspMember(req);
     if (!memberInfo.memberId) {
       return res.status(401).json({ error: 'Keine Member-ID gefunden.' });
     }
@@ -597,24 +828,30 @@ app.post('/api/register/polling', (req, res) => {
   });
 });
 
-// Polling Job stoppen
+// Polling Job stoppen (nur eigene)
 app.post('/api/register/stop', (req, res) => {
   const { jobId } = req.body;
+  const { memberId } = resolveHspMember(req);
 
   if (activePollingJobs.has(jobId)) {
     const job = activePollingJobs.get(jobId);
-    clearInterval(job.interval);
+    if (memberId != null && job.memberId !== memberId) {
+      return res.status(403).json({ error: 'Nicht berechtigt für diesen Job' });
+    }
     activePollingJobs.delete(jobId);
+    savePollingJobs();
     res.json({ success: true, message: 'Job gestoppt' });
   } else {
     res.status(404).json({ error: 'Job nicht gefunden' });
   }
 });
 
-// Aktive Jobs abrufen (inkl. gepufferter Logs für reconnect)
+// Aktive Jobs abrufen (nur eigene, inkl. gepufferter Logs für reconnect)
 app.get('/api/jobs', (req, res) => {
+  const { memberId } = resolveHspMember(req);
   const jobs = [];
   activePollingJobs.forEach((job, id) => {
+    if (memberId != null && job.memberId !== memberId) return;
     jobs.push({
       id,
       bookingId: job.bookingId,
@@ -632,15 +869,15 @@ app.get('/api/jobs', (req, res) => {
 // ============ SCHEDULING ENDPOINTS ============
 
 // Get booking availability info for a course
-app.get('/api/schedule/info', (req, res) => {
-  const { courseStartTime } = req.query;
+app.get('/api/schedule/info', async (req, res) => {
+  const { courseStartTime, bookingId } = req.query;
   
   if (!courseStartTime) {
     return res.status(400).json({ error: 'courseStartTime erforderlich' });
   }
   
   try {
-    const info = getBookingInfo(courseStartTime);
+    const info = await getBookingInfo(courseStartTime, bookingId);
     res.json(info);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -648,19 +885,19 @@ app.get('/api/schedule/info', (req, res) => {
 });
 
 // Schedule a booking
-app.post('/api/schedule', (req, res) => {
+app.post('/api/schedule', async (req, res) => {
   const { bookingId, courseStartTime, courseDescription } = req.body;
   
   if (!bookingId || !courseStartTime) {
     return res.status(400).json({ error: 'bookingId und courseStartTime erforderlich' });
   }
   
-  const memberInfo = getStoredMemberInfo();
+  const memberInfo = resolveHspMember(req);
   if (!memberInfo.memberId) {
-    return res.status(401).json({ error: 'Nicht authentifiziert. Bitte Token importieren.' });
+    return res.status(401).json({ error: 'HSP-Account nicht verknüpft. Bitte via Uni-SSO anmelden oder Token importieren.' });
   }
-  
-  const result = scheduleBooking(bookingId, courseStartTime, courseDescription);
+
+  const result = await scheduleBooking(bookingId, courseStartTime, courseDescription, memberInfo.memberId);
   
   if (result.success) {
     res.json(result);
@@ -669,16 +906,22 @@ app.post('/api/schedule', (req, res) => {
   }
 });
 
-// Get all scheduled jobs
+// Get all scheduled jobs (nur eigene)
 app.get('/api/schedule', (req, res) => {
-  const jobs = getScheduledJobs();
+  const { memberId } = resolveHspMember(req);
+  const jobs = getScheduledJobs(memberId);
   res.json({ jobs });
 });
 
-// Cancel a scheduled job
+// Cancel a scheduled job (nur eigene)
 app.delete('/api/schedule/:jobId', (req, res) => {
   const { jobId } = req.params;
-  
+  const { memberId } = resolveHspMember(req);
+
+  if (!jobBelongsToMember(jobId, memberId)) {
+    return res.status(403).json({ error: 'Nicht berechtigt für diesen Job' });
+  }
+
   const result = cancelScheduledJob(jobId);
   
   if (result.success) {
@@ -690,11 +933,19 @@ app.delete('/api/schedule/:jobId', (req, res) => {
 
 // ============ PADEL ENDPOINTS ============
 
-// Each player logs in with their own delcom_auth; the returned userKey identifies them on later requests
+// Spieler werden über die App-Session (verknüpfter HSP-Account) identifiziert.
+// Fallback: expliziter x-user-key (Altpfad, für Kalender-Clients ohne Session).
 function requireUser(req, res, next) {
+  if (req.account?.linkedMemberId) {
+    const linked = getUser(req.account.linkedMemberId);
+    if (linked) {
+      req.user = linked;
+      return next();
+    }
+  }
   const user = getUserByKey(req.get('x-user-key'));
   if (!user) {
-    return res.status(401).json({ error: 'Bitte zuerst mit deinen HSP-Auth-Daten anmelden' });
+    return res.status(401).json({ error: 'Bitte zuerst deinen HSP-Account via Uni-SSO verknüpfen' });
   }
   req.user = user;
   next();
@@ -714,21 +965,16 @@ app.post('/api/padel/login', (req, res) => {
   }
 
   const user = upsertUserFromAuth(authData);
+  linkMember(req.account.id, user.memberId); // zugleich mit dem App-Account verknüpfen
   res.json({ userKey: user.userKey, user: publicUser(user), calendarToken: user.calendarToken });
 });
 
-// Reuses the account already imported in the Auth tab, so it doesn't have to be pasted twice
+// Nutzt den bereits verknüpften HSP-Account dieses App-Logins
 app.post('/api/padel/login-main', (req, res) => {
-  const tokens = loadTokens();
-  const memberInfo = getStoredMemberInfo();
-  if (!tokens.accessToken || !memberInfo.memberId) {
-    return res.status(400).json({ error: 'Kein Account im Auth-Tab hinterlegt' });
+  const user = req.account.linkedMemberId ? getUser(req.account.linkedMemberId) : null;
+  if (!user) {
+    return res.status(400).json({ error: 'Kein HSP-Account verknüpft. Bitte via Uni-SSO anmelden.' });
   }
-
-  const user = upsertUserFromAuth({
-    tokenResponse: { accessToken: tokens.accessToken, refreshToken: tokens.refreshToken, idToken: tokens.idToken },
-    member: { id: memberInfo.memberId, email: memberInfo.memberEmail, firstName: memberInfo.memberName }
-  });
   res.json({ userKey: user.userKey, user: publicUser(user), calendarToken: user.calendarToken });
 });
 
@@ -791,9 +1037,19 @@ app.get('/api/padel/calendar/:calendarToken/:sessionId.ics', (req, res) => {
 
 // ============ WEBSOCKET ============
 
-wss.on('connection', (ws) => {
+wss.on('connection', (ws, req) => {
   console.log('🔌 WebSocket Client verbunden');
-  
+
+  // WebSocket über das Session-Cookie authentifizieren
+  try {
+    const cookies = parseCookies(req.headers.cookie);
+    const payload = verifySession(cookies[SESSION_COOKIE]);
+    const account = payload?.sub ? getAccount(payload.sub) : null;
+    if (account && (account.sessionVersion || 1) === (payload.sv || 1)) {
+      ws.account = account;
+    }
+  } catch { /* nicht authentifiziert -> ws.account bleibt undefined */ }
+
   // Register WebSocket for scheduler broadcasts
   registerWebSocket(ws);
   registerPadelWebSocket(ws);
@@ -806,6 +1062,10 @@ wss.on('connection', (ws) => {
       const data = JSON.parse(message);
 
       if (data.type === 'startPolling') {
+        if (!ws.account) {
+          ws.send(JSON.stringify({ type: 'error', message: 'Nicht angemeldet' }));
+          return;
+        }
         await handlePollingStart(ws, data);
       } else if (data.type === 'stopPolling') {
         handlePollingStop(ws, data.jobId);
@@ -825,19 +1085,51 @@ async function handlePollingStart(ws, data) {
   const { bookingId, intervalSeconds = 1000, maxAttempts } = data;
   const jobId = `${bookingId}-${Date.now()}`;
 
-  const token = await getValidToken();
+  const memberId = ws.account?.linkedMemberId;
+  if (!memberId) {
+    ws.send(JSON.stringify({ type: 'error', message: 'HSP-Account nicht verknüpft' }));
+    return;
+  }
+
+  const token = await getValidUserToken(memberId);
   if (!token) {
-    ws.send(JSON.stringify({ type: 'error', message: 'Nicht authentifiziert' }));
+    ws.send(JSON.stringify({ type: 'error', message: 'Kein gültiger HSP-Token (bitte neu anmelden)' }));
     return;
   }
 
-  const memberInfo = getStoredMemberInfo();
-  if (!memberInfo.memberId) {
-    ws.send(JSON.stringify({ type: 'error', message: 'Keine Member-ID' }));
-    return;
-  }
+  startPollingJob(jobId, bookingId, intervalSeconds, maxAttempts, memberId);
+}
 
-  startPollingJob(jobId, bookingId, intervalSeconds, maxAttempts, memberInfo.memberId);
+// ============ PLATZ-ÜBERWACHUNG (gemeinsamer Watcher) ============
+//
+// Die HSP-API bietet keinen Push-Kanal. Statt pro Job im Sekundentakt eine Anmeldung zu
+// versuchen (authentifizierter POST), fragt EIN Watcher die freien Plätze aller beobachteten
+// Kurse mit einem einzigen öffentlichen GET ab. Angemeldet wird nur, wenn wirklich ein Platz frei ist.
+
+const WATCH_TICK_MS = 1000;
+// Untergrenze für das Prüfintervall eines Jobs
+const MIN_CHECK_INTERVAL_MS = 1000;
+// Pause nach einem fehlgeschlagenen Anmeldeversuch trotz freiem Platz
+const POST_COOLDOWN_MS = 5 * 1000;
+// Pause für alle Jobs, wenn die Abfrage selbst ins Rate-Limit läuft
+const WATCH_RATE_LIMIT_PAUSE_MS = 15 * 1000;
+// Prüfintervall für Jobs, die der Planen-Modus nach einer Wartelisten-Platzierung übergibt
+const HANDOVER_CHECK_INTERVAL_MS = 2000;
+
+let watcherTimer = null;
+let watcherBusy = false;
+
+function ensureWatcher() {
+  if (!watcherTimer) {
+    watcherTimer = setInterval(watchTick, WATCH_TICK_MS);
+  }
+}
+
+function stopWatcherIfIdle() {
+  if (watcherTimer && activePollingJobs.size === 0) {
+    clearInterval(watcherTimer);
+    watcherTimer = null;
+  }
 }
 
 /**
@@ -846,51 +1138,163 @@ async function handlePollingStart(ws, data) {
 function startPollingJob(jobId, bookingId, intervalSeconds, maxAttempts, memberId) {
   const job = {
     bookingId,
-    intervalSeconds,
+    intervalSeconds, // historischer Name - der Wert ist in Millisekunden
     maxAttempts: maxAttempts || null,
     attempts: 0,
     startedAt: new Date().toISOString(),
     lastAttempt: null,
     memberId,
     log: [],
-    interval: null
+    nextCheckAt: 0,
+    postCooldownUntil: 0
   };
 
   activePollingJobs.set(jobId, job);
   savePollingJobs();
 
-  const startMsg = {
+  sendJobMessage(jobId, job, {
     type: 'jobStarted',
     jobId,
     bookingId,
     intervalSeconds,
     maxAttempts: maxAttempts || 'unbegrenzt'
-  };
-  sendJobMessage(jobId, job, startMsg);
+  });
 
-  // Ersten Versuch sofort starten
-  attemptRegistration(jobId, job, memberId);
-
-  // Polling Interval
-  job.interval = setInterval(async () => {
-    await attemptRegistration(jobId, job, memberId);
-  }, intervalSeconds);
+  ensureWatcher();
+  // Erste Prüfung sofort
+  watchTick();
 }
 
-async function attemptRegistration(jobId, job, memberId) {
-  job.attempts++;
-  job.lastAttempt = new Date().toISOString();
-  // Persist updated attempt count every 10 attempts
-  if (job.attempts % 10 === 0) savePollingJobs();
+function finishPollingJob(jobId, job, success, message) {
+  if (!activePollingJobs.has(jobId)) return;
+  sendJobMessage(jobId, job, {
+    type: 'jobCompleted',
+    jobId,
+    success,
+    message,
+    totalAttempts: job.attempts
+  });
+  activePollingJobs.delete(jobId);
+  savePollingJobs();
+}
 
-  const token = await getValidToken();
+/**
+ * Ein Watcher-Durchlauf: alle fälligen Jobs mit einer einzigen Abfrage prüfen
+ */
+async function watchTick() {
+  if (watcherBusy) return;
+  watcherBusy = true;
+
+  try {
+    const now = Date.now();
+    const due = [...activePollingJobs.entries()].filter(([, job]) => now >= job.nextCheckAt);
+    if (due.length === 0) return;
+
+    for (const [, job] of due) {
+      job.attempts++;
+      job.lastAttempt = new Date().toISOString();
+      job.nextCheckAt = now + Math.max(parseInt(job.intervalSeconds) || 0, MIN_CHECK_INTERVAL_MS);
+    }
+    if (due.some(([, job]) => job.attempts % 10 === 0)) savePollingJobs();
+
+    const ids = [...new Set(due.map(([, job]) => parseInt(job.bookingId)).filter(Number.isFinite))];
+    let bookingsById = new Map();
+    let fetchError = null;
+
+    if (ids.length > 0) {
+      try {
+        const filter = encodeURIComponent(JSON.stringify({ id: { '$in': ids } }));
+        const response = await fetch(
+          `${API_URL}/bookings?s=${filter}&limit=${ids.length}&fields=id,startDate,availableParticipantCount,currentParticipantCount`,
+          { headers: { 'Accept': 'application/json' } }
+        );
+        if (response.status === 429) {
+          fetchError = { rateLimited: true, message: 'Rate-Limit bei der Platz-Abfrage, pausiere...' };
+          for (const job of activePollingJobs.values()) {
+            job.nextCheckAt = Math.max(job.nextCheckAt, Date.now() + WATCH_RATE_LIMIT_PAUSE_MS);
+          }
+        } else if (!response.ok) {
+          fetchError = { message: `Platz-Abfrage fehlgeschlagen (API ${response.status})` };
+        } else {
+          const data = await response.json();
+          bookingsById = new Map((data.data || []).map(b => [b.id, b]));
+        }
+      } catch (error) {
+        fetchError = { message: `Platz-Abfrage fehlgeschlagen: ${error.message}` };
+      }
+    }
+
+    await Promise.all(due.map(([jobId, job]) =>
+      checkPollingJob(jobId, job, bookingsById.get(parseInt(job.bookingId)), fetchError)
+        .catch(error => console.error(`Polling-Job ${jobId} Fehler:`, error))
+    ));
+  } finally {
+    watcherBusy = false;
+    stopWatcherIfIdle();
+  }
+}
+
+async function checkPollingJob(jobId, job, booking, fetchError) {
+  if (!activePollingJobs.has(jobId)) return; // zwischenzeitlich gestoppt
+
+  if (fetchError) {
+    sendJobMessage(jobId, job, {
+      type: 'attempt',
+      jobId,
+      attempt: job.attempts,
+      success: false,
+      rateLimited: !!fetchError.rateLimited,
+      message: fetchError.message
+    });
+  } else if (!booking) {
+    finishPollingJob(jobId, job, false, 'Kurs nicht gefunden');
+    return;
+  } else if (new Date(booking.startDate) <= new Date()) {
+    finishPollingJob(jobId, job, false, 'Kurs hat bereits begonnen');
+    return;
+  } else if (!(booking.availableParticipantCount > 0)) {
+    sendJobMessage(jobId, job, {
+      type: 'attempt',
+      jobId,
+      attempt: job.attempts,
+      success: false,
+      watching: true,
+      message: `Kein Platz frei (${booking.currentParticipantCount ?? '?'} belegt)`
+    });
+  } else if (Date.now() < job.postCooldownUntil) {
+    sendJobMessage(jobId, job, {
+      type: 'attempt',
+      jobId,
+      attempt: job.attempts,
+      success: false,
+      watching: true,
+      message: `${booking.availableParticipantCount} Platz/Plätze frei - nächster Anmeldeversuch in Kürze`
+    });
+  } else {
+    await attemptRegistration(jobId, job, job.memberId, booking.availableParticipantCount);
+  }
+
+  // Max Attempts Check
+  if (activePollingJobs.has(jobId) && job.maxAttempts && job.attempts >= job.maxAttempts) {
+    finishPollingJob(jobId, job, false, `Max. Versuche (${job.maxAttempts}) erreicht`);
+  }
+}
+
+/**
+ * Anmeldeversuch - wird nur aufgerufen, wenn die Platz-Abfrage einen freien Platz gemeldet hat
+ */
+async function attemptRegistration(jobId, job, memberId, freeSpots) {
+  // Bis zum Erfolg gilt die Pause, damit ein dauerhaft abgelehnter Versuch nicht jede Sekunde feuert
+  job.postCooldownUntil = Date.now() + POST_COOLDOWN_MS;
+
+  const token = await getValidUserToken(memberId);
   if (!token) {
     sendJobMessage(jobId, job, {
       type: 'attempt',
       jobId,
       attempt: job.attempts,
       success: false,
-      message: 'Token abgelaufen'
+      message: 'Platz frei, aber Token abgelaufen (bitte neu anmelden)'
     });
     return;
   }
@@ -935,27 +1339,20 @@ async function attemptRegistration(jobId, job, memberId) {
         data: responseData,
         fullResponse: responseData
       });
-      
-      // Job nur bei echter Anmeldung beenden, bei Warteliste weiter versuchen
+
+      // Job nur bei echter Anmeldung beenden, bei Warteliste weiter überwachen
       if (!isWaitlist) {
-        clearInterval(job.interval);
-        sendJobMessage(jobId, job, {
-          type: 'jobCompleted',
-          jobId,
-          success: true,
-          totalAttempts: job.attempts
-        });
-        activePollingJobs.delete(jobId);
-        savePollingJobs();
+        finishPollingJob(jobId, job, true, 'Erfolgreich angemeldet!');
       }
     } else if (response.status === 429) {
+      job.postCooldownUntil = Date.now() + WATCH_RATE_LIMIT_PAUSE_MS;
       sendJobMessage(jobId, job, {
         type: 'attempt',
         jobId,
         attempt: job.attempts,
         success: false,
         rateLimited: true,
-        message: 'Rate-Limit erreicht, warte...'
+        message: 'Platz frei, aber Rate-Limit erreicht - warte...'
       });
     } else {
       sendJobMessage(jobId, job, {
@@ -964,22 +1361,8 @@ async function attemptRegistration(jobId, job, memberId) {
         attempt: job.attempts,
         success: false,
         status: response.status,
-        message: responseData.message || 'Anmeldung fehlgeschlagen'
+        message: `${freeSpots} Platz/Plätze frei, Anmeldung abgelehnt: ${responseData.message || response.status}`
       });
-    }
-
-    // Max Attempts Check
-    if (job.maxAttempts && job.attempts >= job.maxAttempts) {
-      clearInterval(job.interval);
-      sendJobMessage(jobId, job, {
-        type: 'jobCompleted',
-        jobId,
-        success: false,
-        message: `Max. Versuche (${job.maxAttempts}) erreicht`,
-        totalAttempts: job.attempts
-      });
-      activePollingJobs.delete(jobId);
-      savePollingJobs();
     }
   } catch (error) {
     sendJobMessage(jobId, job, {
@@ -995,7 +1378,10 @@ async function attemptRegistration(jobId, job, memberId) {
 function handlePollingStop(ws, jobId) {
   if (activePollingJobs.has(jobId)) {
     const job = activePollingJobs.get(jobId);
-    clearInterval(job.interval);
+    if (ws.account?.linkedMemberId != null && job.memberId !== ws.account.linkedMemberId) {
+      ws.send(JSON.stringify({ type: 'error', message: 'Nicht berechtigt für diesen Job' }));
+      return;
+    }
     sendJobMessage(jobId, job, {
       type: 'jobStopped',
       jobId,
@@ -1035,8 +1421,20 @@ server.listen(PORT, async () => {
   console.log(`\n🚀 HSP-Bot Backend Server läuft auf http://localhost:${PORT}`);
   console.log(`📡 WebSocket bereit für Live-Updates`);
   
+  // Einmalige Migration: eventuellen Alt-Token-Store verschlüsseln
+  loadTokens();
+
+  // Geplante Buchung auf Warteliste gelandet -> Platz-Überwachung übernimmt
+  setWaitlistHandler((bookingId, memberId) => {
+    const alreadyWatching = [...activePollingJobs.values()].some(j =>
+      String(j.bookingId) === String(bookingId) && j.memberId === memberId);
+    if (!alreadyWatching) {
+      startPollingJob(`${bookingId}-${Date.now()}`, bookingId, HANDOVER_CHECK_INTERVAL_MS, null, memberId);
+    }
+  });
+
   // Initialize the scheduler and restore pending jobs
-  initializeScheduler();
+  await initializeScheduler();
 
   // Restore polling jobs from disk
   restorePollingJobs();
