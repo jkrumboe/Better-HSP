@@ -17,6 +17,8 @@ FROM node:20-alpine
 
 WORKDIR /app
 
+ENV NODE_ENV=production
+
 # Copy package files and install production dependencies only
 COPY package*.json ./
 RUN npm ci --only=production
@@ -24,14 +26,11 @@ RUN npm ci --only=production
 # Copy application files
 COPY --from=builder /app .
 
-# Expose ports
-EXPOSE 3000 5173
+# Single-origin: der Express-Server liefert Frontend, API und WebSocket aus.
+EXPOSE 3000
 
-# Create a startup script
-RUN echo '#!/bin/sh' > /app/start.sh && \
-    echo 'node fetch-locations.js' >> /app/start.sh && \
-    echo 'node server.js &' >> /app/start.sh && \
-    echo 'exec npx vite --host' >> /app/start.sh && \
-    chmod +x /app/start.sh
+# Startup: Standorte aktualisieren (nicht fatal), dann Server starten
+RUN printf '%s\n' '#!/bin/sh' 'node fetch-locations.js || echo "fetch-locations übersprungen"' 'exec node server.js' > /app/start.sh \
+    && chmod +x /app/start.sh
 
 CMD ["/app/start.sh"]

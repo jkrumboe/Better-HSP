@@ -1,101 +1,92 @@
-# HSP-Bot Docker Setup
+# HSP-Bot – Online-Deployment (Docker + Nginx Proxy Manager)
 
-## Quick Start
+Die App läuft jetzt **Single-Origin**: der Express-Server liefert Frontend, API und WebSocket
+über **einen** Port aus. Kein separater Vite-Server mehr in Produktion.
 
-### Using Docker Compose (Recommended)
+## 1. Login & Sicherheit – Überblick
 
-```bash
-# Build and start the container
-docker-compose up -d
+- **App-Login**: Jede:r legt sich mit **E-Mail + Passwort** einen Account an (offene Registrierung).
+  Passwörter werden als **scrypt-Hash** gespeichert – niemals im Klartext, nicht umkehrbar.
+- **HSP-Verbindung**: Nach dem Login verbindet man seinen HSP-Account per **Uni-SSO**
+  (Shibboleth) oder – als Fallback – per eingefügten `delcom_auth`-Daten.
+- **HSP-Tokens** (access/refresh/id) liegen **verschlüsselt** (AES-256-GCM) in `data/`.
+  Der **Refresh-Token** erneuert den Access-Token automatisch, damit die App dauerhaft läuft.
+- **Sessions**: HMAC-signiertes, httpOnly-Cookie (`Secure` + `SameSite=Lax` hinter HTTPS).
+- Der **erste** registrierte Account wird automatisch `admin`.
 
-# View logs
-docker-compose logs -f
+Secrets (`SESSION_SECRET`, `TOKEN_ENCRYPTION_KEY`) werden beim ersten Start einmalig erzeugt
+und in `data/.secrets.json` abgelegt (im Volume persistent). Optional per `.env` fest vorgeben.
 
-# Stop the container
-docker-compose down
-```
-
-### Using Docker directly
-
-```bash
-# Build the image
-docker build -t hsp-bot .
-
-# Run the container
-docker run -d \
-  --name hsp-bot \
-  -p 3000:3000 \
-  -p 5173:5173 \
-  -v ${PWD}/data:/app/data \
-  hsp-bot
-```
-
-## Access the Application
-
-- **Frontend (Vite)**: http://localhost:5173
-- **Backend API**: http://localhost:3000
-
-## Container Management
+## 2. Schnellstart
 
 ```bash
-# Rebuild after code changes
-docker-compose up -d --build
-
-# View running containers
-docker ps
-
-# Access container shell
-docker exec -it hsp-bot sh
-
-# View application logs
-docker logs hsp-bot -f
-
-# Restart container
-docker-compose restart
+cp .env.example .env     # PUBLIC_URL eintragen (siehe unten)
+docker compose up -d --build
+docker compose logs -f
 ```
 
-## Ports
+Die App hört im Container auf Port **3000** und ist auf dem Host unter **3003** erreichbar
+(`ports: "3003:3000"` in `docker-compose.yml`). Darauf zeigt der Nginx Proxy Manager.
 
-- `3000`: Express backend server
-- `5173`: Vite development server with hot reload
+## 3. Nginx Proxy Manager einrichten
 
-## Volumes
+1. **Proxy Host** anlegen → Domain z.B. `betterhsp.deine-domain.de`.
+2. **Forward Hostname/IP**: IP/Hostname des Docker-Hosts, **Port** `3003`.
+3. **Websockets Support**: **einschalten** (wichtig für Live-Updates `/ws`).
+4. **SSL**: Let's-Encrypt-Zertifikat anfordern, „Force SSL“ aktivieren.
+5. In `.env` die **PUBLIC_URL** exakt auf diese HTTPS-Adresse setzen:
+   ```
+   PUBLIC_URL=https://betterhsp.deine-domain.de
+   COOKIE_SECURE=true
+   ```
+   `PUBLIC_URL` wird für den **SSO-Rücksprung** gebraucht (Callback-URL).
 
-The following directory is mounted as a volume to persist data:
-- `data/`: Contains `auth-data.json` and `token-store.json`
+## 4. Umgebungsvariablen (`.env` / `docker-compose.yml`)
 
-## Environment Variables
+| Variable | Zweck |
+|---|---|
+| `PUBLIC_URL` | Öffentliche HTTPS-URL, für den SSO-Callback. Ohne Slash am Ende. |
+| `COOKIE_SECURE` | `true` hinter HTTPS-Proxy (Standard in Produktion). |
+| `PORT` | Container-Port (Standard 3000). |
+| `SESSION_SECRET` | Optional. Sonst Auto-Generierung. `openssl rand -hex 48` |
+| `TOKEN_ENCRYPTION_KEY` | Optional. 64 Hex-Zeichen. `openssl rand -hex 32` |
 
-You can customize environment variables in `docker-compose.yml`:
+> ⚠️ Wird `TOKEN_ENCRYPTION_KEY` **nachträglich geändert**, sind bereits verschlüsselte
+> HSP-Tokens nicht mehr lesbar – die Nutzer müssen sich dann einfach neu via SSO verbinden.
 
-```yaml
-environment:
-  - NODE_ENV=production
-  - PORT=3000
-```
+## 5. Volume
 
-## Production Deployment
+`./data` wird gemountet und enthält (alle git-ignoriert):
 
-For production, consider:
-1. Building the Vite app (`npm run build`)
-2. Serving static files through the Express server
-3. Using a reverse proxy (nginx) in front of the container
-4. Removing the Vite dev server from the Dockerfile
+| Datei | Inhalt |
+|---|---|
+| `.secrets.json` | Session-/Verschlüsselungs-Secrets (nur lokal, `chmod 600`) |
+| `accounts.json` | App-Accounts (E-Mail + **scrypt-Hash**) |
+| `users.json` | HSP-Mitglieder inkl. **verschlüsselter** Tokens, Kalender-Token |
+| `scheduled-jobs.json`, `polling-jobs.json` | geplante/laufende Buchungen |
 
-## Troubleshooting
+## 6. Erster Login
 
-**Container won't start:**
+1. App über die Domain öffnen → **Registrieren** (E-Mail + Passwort ≥ 8 Zeichen).
+2. Oben rechts aufs 👤-Symbol → **HSP-Account verbinden** → Uni-/FH-SSO wählen.
+3. Beim Uni-IdP anmelden → zurück in der App ist der HSP-Account verknüpft.
+   - Klappt der SSO-Redirect nicht (delcom akzeptiert fremde Callback-URLs evtl. nicht),
+     den **manuellen Token-Import** im selben Fenster nutzen
+     (`localStorage.getItem("delcom_auth")` auf der HSP-Seite kopieren).
+
+## 7. Container-Verwaltung
+
 ```bash
-docker-compose logs hsp-bot
+docker compose up -d --build   # nach Code-Änderungen neu bauen
+docker compose logs -f
+docker compose restart
+docker compose down
 ```
 
-**Port already in use:**
-Change ports in `docker-compose.yml`:
-```yaml
-ports:
-  - "8080:3000"  # Backend
-  - "8081:5173"  # Frontend
-```
+## 8. Troubleshooting
 
-**Cannot connect to backend:**
-Make sure both containers are on the same network and the proxy settings in `vite.config.js` are correct.
+- **Live-Updates fehlen / WebSocket bricht ab** → im Nginx Proxy Manager „Websockets Support“ aktivieren.
+- **Nach Login sofort wieder ausgeloggt** → `COOKIE_SECURE=true`, aber Zugriff über `http://`?
+  Immer über HTTPS (die Proxy-Domain) zugreifen, nicht direkt über die IP:Port.
+- **SSO endet auf einer delcom-Fehlerseite** → `PUBLIC_URL` prüfen; sonst manuellen Import nutzen.
+- **Logs**: `docker compose logs hsp-bot`

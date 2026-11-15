@@ -3,13 +3,22 @@ services:
     build: .
     container_name: hsp-bot
     ports:
-      - "3003:3003"  # Backend server
-      - "5173:5173"  # Vite dev server
+      - "3003:3000"   # Host 3003 -> Container 3000 (hier zeigt der Nginx Proxy Manager hin)
     volumes:
-      - ./data:/app/data
+      - ./data:/app/data   # persistente, verschlüsselte Token-/Account-Daten
     environment:
       - NODE_ENV=production
-      - PORT=3003
+      - PORT=3000
+      # Hinter HTTPS-Proxy (Nginx Proxy Manager): Secure-Cookies aktiv lassen.
+      - COOKIE_SECURE=true
+      # Öffentliche URL für den SSO-Rücksprung (ohne abschließenden Slash):
+      - PUBLIC_URL=${PUBLIC_URL:-}
+      # Optional fest vorgeben (sonst werden sie einmalig in data/.secrets.json erzeugt):
+      - SESSION_SECRET=${SESSION_SECRET:-}
+      - TOKEN_ENCRYPTION_KEY=${TOKEN_ENCRYPTION_KEY:-}
+    env_file:
+      - path: .env
+        required: false
     restart: unless-stopped
     networks:
       - hsp-network
