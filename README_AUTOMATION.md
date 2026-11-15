@@ -46,7 +46,7 @@ npm run server
 node server.js
 ```
 
-Dann öffne **http://localhost:3000** im Browser.
+Dann öffne **http://localhost:3003** im Browser.
 
 ### GUI-Features
 
@@ -60,7 +60,7 @@ Dann öffne **http://localhost:3000** im Browser.
 
 ### Auth-Daten über GUI importieren
 
-1. Öffne http://localhost:3000
+1. Öffne http://localhost:3003
 2. Klicke auf den Tab **"🔑 Auth-Daten"**
 3. Folge der Anleitung zum Kopieren der Daten aus dem Browser
 4. Füge die Daten ein und klicke "Importieren"

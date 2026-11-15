@@ -19,14 +19,27 @@ und in `data/.secrets.json` abgelegt (im Volume persistent). Optional per `.env`
 
 ## 2. Schnellstart
 
+### Portainer (Git-Stack, empfohlen)
+
+1. **Stacks → Add stack → Repository**
+   - Repository URL: `https://github.com/jkrumboe/HSP-Bot`
+   - Reference: `refs/heads/main` (bzw. der gewünschte Branch)
+   - Compose path: `docker-compose.yml`
+2. **Environment variables**: mindestens `PUBLIC_URL` setzen (siehe Tabelle unten).
+3. **Deploy the stack**. Updates: Stack öffnen → **Pull and redeploy** – das Image wird dank
+   `pull_policy: build` jedes Mal aus dem aktuellen Repo-Stand neu gebaut.
+   Optional „GitOps updates“ aktivieren, dann deployt Portainer nach jedem Push automatisch.
+
+### Docker Compose (CLI)
+
 ```bash
 cp .env.example .env     # PUBLIC_URL eintragen (siehe unten)
 docker compose up -d --build
 docker compose logs -f
 ```
 
-Die App hört im Container auf Port **3000** und ist auf dem Host unter **3003** erreichbar
-(`ports: "3003:3000"` in `docker-compose.yml`). Darauf zeigt der Nginx Proxy Manager.
+Die App läuft auf Port **3003** – im Container und auf dem Host (`ports: "3003:3003"`).
+Der Port kollidiert mit keinem anderen Container auf dem Server. Darauf zeigt der Nginx Proxy Manager.
 
 ## 3. Nginx Proxy Manager einrichten
 
@@ -47,7 +60,8 @@ Die App hört im Container auf Port **3000** und ist auf dem Host unter **3003**
 |---|---|
 | `PUBLIC_URL` | Öffentliche HTTPS-URL, für den SSO-Callback. Ohne Slash am Ende. |
 | `COOKIE_SECURE` | `true` hinter HTTPS-Proxy (Standard in Produktion). |
-| `PORT` | Container-Port (Standard 3000). |
+| `PORT` | Server-Port (Standard 3003). |
+| `TZ` | Zeitzone für geplante Buchungen (Standard `Europe/Berlin`). |
 | `SESSION_SECRET` | Optional. Sonst Auto-Generierung. `openssl rand -hex 48` |
 | `TOKEN_ENCRYPTION_KEY` | Optional. 64 Hex-Zeichen. `openssl rand -hex 32` |
 
@@ -56,7 +70,7 @@ Die App hört im Container auf Port **3000** und ist auf dem Host unter **3003**
 
 ## 5. Volume
 
-`./data` wird gemountet und enthält (alle git-ignoriert):
+Das benannte Volume **`hsp-bot-data`** (→ `/app/data`) übersteht Redeploys und enthält:
 
 | Datei | Inhalt |
 |---|---|

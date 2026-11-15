@@ -1,27 +1,38 @@
+# Portainer: Stacks → Add stack → "Repository" (Git) → Compose path: docker-compose.yml
+# Variablen (PUBLIC_URL usw.) unter "Environment variables" im Stack setzen.
+# Update: Stack öffnen → "Pull and redeploy" – das Image wird dabei neu gebaut.
 services:
   hsp-bot:
-    build: .
+    build:
+      context: .
+    image: hsp-bot:local
+    pull_policy: build   # bei jedem Deploy aus dem aktuellen Repo-Stand neu bauen
     container_name: hsp-bot
+    # Port 3003 ist auf dem Server frei (belegt: 53, 80, 81, 443, 3001, 3006, 5000,
+    # 8000, 8080, 8081, 8088, 8090, 8096, 9443, 11434, 18081).
+    # Hierauf zeigt der Nginx Proxy Manager: <Server-IP>:3003
     ports:
-      - "3003:3000"   # Host 3003 -> Container 3000 (hier zeigt der Nginx Proxy Manager hin)
+      - "3003:3003"
     volumes:
-      - ./data:/app/data   # persistente, verschlüsselte Token-/Account-Daten
+      - hsp-data:/app/data          # Accounts, verschlüsselte Tokens, Secrets – überlebt Redeploys
     environment:
       - NODE_ENV=production
-      - PORT=3000
+      - PORT=3003
+      - TZ=${TZ:-Europe/Berlin}
       # Hinter HTTPS-Proxy (Nginx Proxy Manager): Secure-Cookies aktiv lassen.
-      - COOKIE_SECURE=true
+      - COOKIE_SECURE=${COOKIE_SECURE:-true}
       # Öffentliche URL für den SSO-Rücksprung (ohne abschließenden Slash):
       - PUBLIC_URL=${PUBLIC_URL:-}
       # Optional fest vorgeben (sonst werden sie einmalig in data/.secrets.json erzeugt):
       - SESSION_SECRET=${SESSION_SECRET:-}
       - TOKEN_ENCRYPTION_KEY=${TOKEN_ENCRYPTION_KEY:-}
-    env_file:
-      - path: .env
-        required: false
     restart: unless-stopped
     networks:
       - hsp-network
+
+volumes:
+  hsp-data:
+    name: hsp-bot-data
 
 networks:
   hsp-network:

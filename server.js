@@ -53,7 +53,7 @@ const app = express();
 const server = createServer(app);
 const wss = new WebSocketServer({ server, path: '/ws' });
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3003;
 const API_URL = 'https://backbone-web-api.production.munster.delcom.nl';
 const Volleyball_ID = 285;
 
