@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#91C736">
+  <title>Better-HSP Admin</title>
+  <link rel="icon" href="/resources/logo.png">
+  <style>
+    :root {
+      --green: #91C736; --green-text: #5a8a12; --green-soft: #f0f8e8;
+      --bg: #f4f5f2; --surface: #fff; --text: #222; --muted: #666; --faint: #999;
+      --border: #e2e4de; --red: #e53935; --red-soft: #fdecea; --amber: #b07400; --amber-soft: #fff4dc;
+      --radius: 14px; --shadow: 0 1px 4px rgba(0,0,0,0.08);
+      --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --green-text: #a8d85a; --green-soft: #26321a;
+        --bg: #141613; --surface: #1e211c; --text: #e8eae5; --muted: #a3a79e; --faint: #757970;
+        --border: #30342d; --red: #ff6b66; --red-soft: #3a1f1e; --amber: #f0b542; --amber-soft: #3a2e14;
+        --shadow: none;
+      }
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.45;
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    header {
+      position: sticky; top: 0; z-index: 5; background: var(--surface);
+      border-bottom: 1px solid var(--border); padding: 10px 16px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    header img { width: 28px; height: 28px; border-radius: 6px; }
+    header h1 { font-size: 17px; font-weight: 650; }
+    header .badge { margin-left: 2px; }
+    header .spacer { flex: 1; }
+    header .who { color: var(--muted); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 40vw; }
+    nav {
+      display: flex; gap: 4px; overflow-x: auto; padding: 8px 16px; background: var(--surface);
+      border-bottom: 1px solid var(--border); position: sticky; top: 49px; z-index: 4;
+      scrollbar-width: none;
+    }
+    nav button {
+      border: 0; background: none; color: var(--muted); font: inherit; font-weight: 550;
+      padding: 6px 12px; border-radius: 999px; cursor: pointer; white-space: nowrap;
+    }
+    nav button.active { background: var(--green-soft); color: var(--green-text); }
+    main { max-width: 1100px; margin: 0 auto; padding: 16px; }
+    section[hidden] { display: none; }
+    h2 { font-size: 15px; font-weight: 650; margin: 18px 0 8px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+    h2:first-child { margin-top: 0; }
+    .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+    .tile { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; box-shadow: var(--shadow); }
+    .tile .v { font-size: 26px; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .tile .l { color: var(--muted); font-size: 13px; }
+    .tile .s { color: var(--faint); font-size: 12px; margin-top: 2px; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+    .kv { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; padding: 12px 14px; font-size: 14px; }
+    .kv dt { color: var(--muted); }
+    .kv dd { font-family: var(--mono); font-size: 13px; word-break: break-all; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    th { font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .03em; white-space: nowrap; }
+    tr:last-child td { border-bottom: 0; }
+    td .sub { color: var(--faint); font-size: 12px; }
+    td.actions { white-space: nowrap; text-align: right; }
+    .empty { padding: 18px 14px; color: var(--faint); text-align: center; }
+    .badge { display: inline-block; font-size: 11.5px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--border); color: var(--muted); white-space: nowrap; }
+    .badge.ok { background: var(--green-soft); color: var(--green-text); }
+    .badge.warn { background: var(--amber-soft); color: var(--amber); }
+    .badge.bad { background: var(--red-soft); color: var(--red); }
+    button.btn {
+      font: inherit; font-size: 13px; font-weight: 550; border: 1px solid var(--border); background: var(--surface);
+      color: var(--text); padding: 5px 10px; border-radius: 8px; cursor: pointer; margin-left: 4px;
+    }
+    button.btn:hover, a.btn:hover { border-color: var(--faint); }
+    a.btn {
+      font-size: 13px; font-weight: 550; border: 1px solid var(--border); background: var(--surface);
+      color: var(--text); padding: 5px 10px; border-radius: 8px; text-decoration: none; white-space: nowrap;
+    }
+    .links { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 14px 12px; }
+    .links a.btn { font-family: var(--mono); font-size: 12.5px; }
+    button.btn.danger { color: var(--red); }
+    button.btn.primary { background: var(--green); border-color: var(--green); color: #fff; font-weight: 650; }
+    button.btn:disabled { opacity: .5; cursor: default; }
+    .toolbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
+    .toolbar input[type=search], .toolbar select {
+      font: inherit; font-size: 14px; padding: 7px 10px; border-radius: 8px; border: 1px solid var(--border);
+      background: var(--surface); color: var(--text); min-width: 0; flex: 1 1 180px;
+    }
+    .toolbar select { flex: 0 0 auto; }
+    .toolbar label { font-size: 13px; color: var(--muted); display: flex; gap: 6px; align-items: center; }
+    #logs { font-family: var(--mono); font-size: 12.5px; padding: 8px 0; max-height: 70vh; overflow: auto; }
+    #logs div { padding: 1px 12px; white-space: pre-wrap; word-break: break-word; }
+    #logs .t { color: var(--faint); margin-right: 8px; }
+    #logs .warn { color: var(--amber); }
+    #logs .error { color: var(--red); }
+    .login { max-width: 360px; margin: 12vh auto 0; padding: 0 16px; }
+    .login .card { padding: 22px; }
+    .login h1 { font-size: 20px; margin-bottom: 4px; display: flex; gap: 8px; align-items: center; }
+    .login h1 img { width: 28px; height: 28px; border-radius: 6px; }
+    .login p { color: var(--muted); font-size: 13px; margin-bottom: 16px; }
+    .login input {
+      display: block; width: 100%; font: inherit; padding: 10px 12px; border: 1px solid var(--border);
+      border-radius: 10px; background: var(--bg); color: var(--text); margin-bottom: 10px;
+    }
+    .login button { width: 100%; padding: 10px; font-size: 15px; margin: 4px 0 0; }
+    .err { color: var(--red); font-size: 13px; min-height: 18px; margin-top: 8px; }
+    .toast {
+      position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); background: var(--text); color: var(--bg);
+      padding: 9px 16px; border-radius: 10px; font-size: 14px; opacity: 0; transition: opacity .2s; pointer-events: none; max-width: calc(100vw - 32px);
+    }
+    .toast.show { opacity: 1; }
+    .note { font-size: 13px; color: var(--muted); padding: 10px 14px; border-top: 1px solid var(--border); }
+    .note.warn { color: var(--amber); }
+    /* Mobile: Tabellen als Karten */
+    @media (max-width: 640px) {
+      header .who { display: none; }
+      table.stack thead { display: none; }
+      table.stack tr { display: block; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+      table.stack tr:last-child { border-bottom: 0; }
+      table.stack td { display: flex; justify-content: space-between; gap: 12px; padding: 3px 0; border: 0; text-align: right; }
+      table.stack td::before { content: attr(data-l); color: var(--muted); font-size: 12px; text-align: left; flex-shrink: 0; }
+      table.stack td.primary { display: block; text-align: left; font-weight: 600; padding-bottom: 6px; }
+      table.stack td.primary::before { content: none; }
+      table.stack td.actions { justify-content: flex-end; padding-top: 8px; }
+      table.stack td.actions::before { content: none; }
+    }
+  </style>
+</head>
+<body>
+  <div id="loginView" class="login" hidden>
+    <div class="card">
+      <h1><img src="/resources/logo.png" alt="">Admin</h1>
+      <p>Mit deinem Better-HSP-Account (Rolle Admin) anmelden.</p>
+      <form id="loginForm">
+        <input id="email" type="email" autocomplete="username" placeholder="E-Mail" required>
+        <input id="password" type="password" autocomplete="current-password" placeholder="Passwort" required>
+        <button class="btn primary" type="submit">Anmelden</button>
+        <div class="err" id="loginErr"></div>
+      </form>
+    </div>
+  </div>
+
+  <div id="appView" hidden>
+    <header>
+      <img src="/resources/logo.png" alt="">
+      <h1>Better-HSP</h1><span class="badge ok">Admin</span>
+      <span class="spacer"></span>
+      <span class="who" id="who"></span>
+      <a class="btn" id="appLink" href="#">← App</a>
+      <button class="btn" id="refreshBtn" title="Aktualisieren">↻</button>
+      <button class="btn" id="logoutBtn">Abmelden</button>
+    </header>
+    <nav id="tabs">
+      <button data-tab="overview" class="active">Übersicht</button>
+      <button data-tab="users">Nutzer</button>
+      <button data-tab="jobs">Jobs</button>
+      <button data-tab="padel">Padel</button>
+      <button data-tab="logs">Logs</button>
+    </nav>
+    <main>
+      <section id="tab-overview">
+        <h2>Kennzahlen</h2>
+        <div class="tiles" id="tiles"></div>
+        <h2>System</h2>
+        <div class="card"><dl class="kv" id="system"></dl><div class="links" id="adminLinks"></div><div class="note" id="allowNote"></div></div>
+      </section>
+
+      <section id="tab-users" hidden>
+        <div class="toolbar"><input type="search" id="userFilter" placeholder="Nutzer suchen…"></div>
+        <div class="card table-wrap"><table class="stack" id="usersTable"></table></div>
+        <h2>HSP-Mitglieder ohne App-Account</h2>
+        <div class="card table-wrap"><table class="stack" id="orphansTable"></table></div>
+      </section>
+
+      <section id="tab-jobs" hidden>
+        <h2>Platz-Überwachung (aktiv)</h2>
+        <div class="card table-wrap"><table class="stack" id="pollingTable"></table></div>
+        <h2>Geplante Buchungen</h2>
+        <div class="card table-wrap"><table class="stack" id="scheduledTable"></table></div>
+      </section>
+
+      <section id="tab-padel" hidden>
+        <div class="card table-wrap"><table class="stack" id="padelTable"></table></div>
+      </section>
+
+      <section id="tab-logs" hidden>
+        <div class="toolbar">
+          <input type="search" id="logFilter" placeholder="Logs filtern…">
+          <select id="logLevel">
+            <option value="">Alle Level</option>
+            <option value="warn">Warnungen + Fehler</option>
+            <option value="error">Nur Fehler</option>
+          </select>
+          <label><input type="checkbox" id="logFollow" checked> Mitlaufen</label>
+        </div>
+        <div class="card"><div id="logs"></div></div>
+      </section>
+    </main>
+  </div>
+  <div class="toast" id="toast"></div>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const esc = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const fmtDate = (iso) => {
+    if (!iso) return '–';
+    const d = new Date(iso);
+    return isNaN(d) ? esc(iso) : d.toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' });
+  };
+  const ago = (iso) => {
+    if (!iso) return '–';
+    const s = Math.round((Date.now() - new Date(iso)) / 1000);
+    if (s < 60) return 'gerade eben';
+    if (s < 3600) return `vor ${Math.floor(s / 60)} Min`;
+    if (s < 86400) return `vor ${Math.floor(s / 3600)} Std`;
+    return `vor ${Math.floor(s / 86400)} T`;
+  };
+  const dur = (sec) => {
+    const d = Math.floor(sec / 86400), h = Math.floor(sec % 86400 / 3600), m = Math.floor(sec % 3600 / 60);
+    return d ? `${d} T ${h} Std` : h ? `${h} Std ${m} Min` : `${m} Min`;
+  };
+
+  let toastTimer;
+  function toast(msg) {
+    const t = $('toast'); t.textContent = msg; t.classList.add('show');
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
+  }
+
+  async function api(path, opts = {}) {
+    const res = await fetch('/admin/api' + path, {
+      method: opts.method || 'GET',
+      headers: { 'Content-Type': 'application/json', 'X-Admin-Request': '1' },
+      body: opts.body ? JSON.stringify(opts.body) : undefined,
+      credentials: 'same-origin'
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.status === 401 && data.needLogin) { showLogin(); throw new Error('Nicht angemeldet'); }
+    if (!res.ok) throw new Error(data.error || `Fehler ${res.status}`);
+    return data;
+  }
+
+  // ---------- Login ----------
+  function showLogin() {
+    stopTimers();
+    $('appView').hidden = true; $('loginView').hidden = false;
+    $('email').focus();
+  }
+  async function showApp() {
+    $('loginView').hidden = true; $('appView').hidden = false;
+    await refresh();
+    startTimers();
+  }
+  $('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    $('loginErr').textContent = '';
+    try {
+      await api('/login', { method: 'POST', body: { email: $('email').value, password: $('password').value } });
+      $('password').value = '';
+      await init();
+    } catch (err) { $('loginErr').textContent = err.message; }
+  });
+  $('logoutBtn').addEventListener('click', async () => {
+    await api('/logout', { method: 'POST' }).catch(() => {});
+    showLogin();
+  });
+
+  // ---------- Tabs ----------
+  const TAB_KEY = 'hspAdminTab';
+  function selectTab(name) {
+    document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+    document.querySelectorAll('main section').forEach(s => { s.hidden = s.id !== 'tab-' + name; });
+    try { localStorage.setItem(TAB_KEY, name); } catch {}
+    if (name === 'logs') loadLogs(true);
+  }
+  $('tabs').addEventListener('click', (e) => { if (e.target.dataset.tab) selectTab(e.target.dataset.tab); });
+
+  // ---------- Render ----------
+  let snap = null;
+
+  function tokenBadge(t) {
+    if (!t) return '<span class="badge">nicht verknüpft</span>';
+    const cls = { valid: 'ok', refreshable: 'warn', expired: 'bad', none: 'bad' }[t.state] || '';
+    return `<span class="badge ${cls}">${esc(t.label)}</span>`;
+  }
+  const statusBadge = (s, label) => {
+    const cls = { pending: 'warn', running: 'ok', success: 'ok', booked: 'ok', open: 'warn', scheduled: 'warn',
+      failed: 'bad', error: 'bad', cancelled: '' }[s] || '';
+    return `<span class="badge ${cls}">${esc(label || s)}</span>`;
+  };
+  function table(el, head, rows, emptyText) {
+    if (!rows.length) { el.innerHTML = `<tbody><tr><td class="empty">${esc(emptyText)}</td></tr></tbody>`; return; }
+    el.innerHTML = `<thead><tr>${head.map(h => `<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody>`;
+  }
+
+  function renderOverview() {
+    const o = snap.overview, sys = snap.system;
+    const ts = o.tokenStates || {};
+    const tiles = [
+      [o.accounts, 'App-Accounts', `${o.admins} Admin · ${o.linkedAccounts} mit HSP verknüpft`],
+      [ts.valid || 0, 'Gültige HSP-Tokens', `${ts.refreshable || 0} erneuerbar · ${(ts.expired || 0) + (ts.none || 0)} abgelaufen`],
+      [o.pollingJobs, 'Platz-Überwachungen', 'aktiv'],
+      [o.scheduledPending, 'Geplante Buchungen', `${o.scheduledRunning} laufen gerade`],
+      [o.padelActive, 'Padel-Sessions', 'offen / geplant'],
+      [o.wsClients, 'Live-Verbindungen', 'WebSocket-Clients'],
+      [o.errorsInLog, 'Fehler im Log', `letzte ${500} Zeilen`]
+    ];
+    $('tiles').innerHTML = tiles.map(([v, l, s]) =>
+      `<div class="tile"><div class="v">${esc(v)}</div><div class="l">${esc(l)}</div><div class="s">${esc(s)}</div></div>`).join('');
+    const rows = [
+      ['Laufzeit', `${dur(sys.uptimeSec)} (seit ${fmtDate(sys.startedAt)})`],
+      ['Speicher', `${sys.rssMb} MB RSS · ${sys.heapUsedMb} MB Heap`],
+      ['Load', sys.loadAvg.join(' / ')],
+      ['Node', `${sys.node} (${sys.env})`],
+      ['Host', sys.hostname],
+      ['Public URL', sys.publicUrl || '– (nicht gesetzt)'],
+      ['Admin-Zugriff erlaubt', sys.allowList.join(', ')],
+      ...(sys.denyList.length ? [['Gesperrt (Docker)', sys.denyList.join(', ')]] : [])
+    ];
+    $('system').innerHTML = rows.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('');
+    $('adminLinks').innerHTML = sys.adminLinks.map(l =>
+      `<a class="btn" href="${esc(l.url)}">${esc(l.label)}: ${esc(l.url.replace(/^http:\/\/|\/admin$/g, ''))}</a>`).join('');
+    const note = $('allowNote');
+    note.className = 'note' + (sys.networkDetected ? '' : ' warn');
+    note.textContent = `Du greifst von ${me.ip} zu. ` + (sys.networkDetected
+      ? 'Erreichbar von allen Geräten im Heimnetz und im Tailnet.'
+      : 'Server-Adressen nicht erkennbar (Docker-Bridge-Modus) – mit network_mode: host werden sie automatisch erkannt.');
+  }
+
+  function renderUsers() {
+    const q = $('userFilter').value.trim().toLowerCase();
+    const users = snap.users
+      .filter(u => !q || [u.email, u.member?.name, u.member?.email, u.linkedMemberId].some(v => String(v ?? '').toLowerCase().includes(q)))
+      .sort((a, b) => String(b.lastLoginAt || b.createdAt).localeCompare(String(a.lastLoginAt || a.createdAt)));
+    table($('usersTable'), ['Account', 'Rolle', 'HSP-Mitglied', 'HSP-Token', 'Jobs', 'Letzter Login', 'Registriert', ''],
+      users.map(u => `<tr>
+        <td class="primary" data-l="Account">${esc(u.email)}${u.id === me.id ? ' <span class="sub">(du)</span>' : ''}</td>
+        <td data-l="Rolle">${u.role === 'admin' ? '<span class="badge ok">Admin</span>' : '<span class="badge">Nutzer</span>'}</td>
+        <td data-l="HSP-Mitglied">${u.member ? `${esc(u.member.name || '–')}<div class="sub">${esc(u.member.email || '')} · #${esc(u.member.memberId)}</div>` : '–'}</td>
+        <td data-l="HSP-Token">${tokenBadge(u.token)}</td>
+        <td data-l="Jobs">${u.pollingJobs} Überw. · ${u.scheduledJobs} geplant</td>
+        <td data-l="Letzter Login" title="${esc(fmtDate(u.lastLoginAt))}">${ago(u.lastLoginAt)}</td>
+        <td data-l="Registriert">${fmtDate(u.createdAt)}</td>
+        <td class="actions">
+          <button class="btn" data-act="role" data-id="${esc(u.id)}" data-role="${u.role === 'admin' ? 'user' : 'admin'}">${u.role === 'admin' ? 'Admin entziehen' : 'Zum Admin'}</button>
+          <button class="btn" data-act="logout" data-id="${esc(u.id)}" data-email="${esc(u.email)}">Abmelden</button>
+          <button class="btn danger" data-act="delete" data-id="${esc(u.id)}" data-email="${esc(u.email)}" ${u.id === me.id ? 'disabled' : ''}>Löschen</button>
+        </td></tr>`),
+      q ? 'Keine Treffer' : 'Noch keine Accounts');
+    table($('orphansTable'), ['Mitglied', 'E-Mail', 'HSP-Token', 'Aktualisiert'],
+      snap.orphanMembers.map(m => `<tr>
+        <td class="primary" data-l="Mitglied">${esc(m.name || '–')} <span class="sub">#${esc(m.memberId)}</span></td>
+        <td data-l="E-Mail">${esc(m.email || '–')}</td>
+        <td data-l="HSP-Token">${tokenBadge(m.token)}</td>
+        <td data-l="Aktualisiert">${fmtDate(m.updatedAt)}</td></tr>`),
+      'Keine');
+  }
+
+  function renderJobs() {
+    table($('pollingTable'), ['Buchung', 'Nutzer', 'Versuche', 'Intervall', 'Gestartet', 'Letzte Prüfung', ''],
+      snap.pollingJobs.map(j => `<tr>
+        <td class="primary" data-l="Buchung">#${esc(j.bookingId)}</td>
+        <td data-l="Nutzer">${esc(j.memberName)}</td>
+        <td data-l="Versuche">${esc(j.attempts)}${j.maxAttempts ? ' / ' + esc(j.maxAttempts) : ''}</td>
+        <td data-l="Intervall">${esc(Math.round(j.intervalSeconds / 100) / 10)} s</td>
+        <td data-l="Gestartet">${fmtDate(j.startedAt)}</td>
+        <td data-l="Letzte Prüfung">${ago(j.lastAttempt)}</td>
+        <td class="actions"><button class="btn danger" data-act="stopPolling" data-id="${esc(j.id)}">Stoppen</button></td></tr>`),
+      'Keine aktiven Überwachungen');
+    const sched = [...snap.scheduledJobs].sort((a, b) => String(a.pollingStartAt).localeCompare(String(b.pollingStartAt)));
+    table($('scheduledTable'), ['Kurs', 'Nutzer', 'Status', 'Kursbeginn', 'Start Buchung', ''],
+      sched.map(j => `<tr>
+        <td class="primary" data-l="Kurs">${esc(j.courseDescription || 'Kurs')} <span class="sub">#${esc(j.bookingId)}</span></td>
+        <td data-l="Nutzer">${esc(j.memberName)}</td>
+        <td data-l="Status">${statusBadge(j.status)}</td>
+        <td data-l="Kursbeginn">${fmtDate(j.courseStartTime)}</td>
+        <td data-l="Start Buchung">${fmtDate(j.pollingStartAt)}</td>
+        <td class="actions">${['pending', 'running'].includes(j.status) ? `<button class="btn danger" data-act="cancelSchedule" data-id="${esc(j.id)}">Abbrechen</button>` : ''}</td></tr>`),
+      'Keine geplanten Buchungen (letzte 24 h)');
+  }
+
+  function renderPadel() {
+    table($('padelTable'), ['Termin', 'Status', 'Spieler', 'Gebucht von', 'Info'],
+      snap.padelSessions.map(s => `<tr>
+        <td class="primary" data-l="Termin">${fmtDate(s.startDate)}</td>
+        <td data-l="Status">${statusBadge(s.status, s.statusLabel)}</td>
+        <td data-l="Spieler">${esc(s.participants.join(', ') || '–')}</td>
+        <td data-l="Gebucht von">${esc(s.bookedByName || '–')}</td>
+        <td data-l="Info"><span class="sub">${esc(s.statusMessage || '')}</span></td></tr>`),
+      'Keine Padel-Sessions');
+  }
+
+  function renderAll() { renderOverview(); renderUsers(); renderJobs(); renderPadel(); }
+
+  async function refresh() {
+    try { snap = await api('/snapshot'); renderAll(); }
+    catch (err) { if (err.message !== 'Nicht angemeldet') toast(err.message); }
+  }
+
+  // ---------- Aktionen ----------
+  document.addEventListener('click', async (e) => {
+    const b = e.target.closest('button[data-act]');
+    if (!b) return;
+    const { act, id, email, role } = b.dataset;
+    const actions = {
+      role: [`Rolle ändern auf "${role}"?`, () => api(`/users/${encodeURIComponent(id)}/role`, { method: 'POST', body: { role } }), 'Rolle geändert'],
+      logout: [`Alle Sessions von ${email} beenden?`, () => api(`/users/${encodeURIComponent(id)}/logout-all`, { method: 'POST' }), 'Sessions beendet'],
+      delete: [`Account ${email} endgültig löschen? (HSP-Tokens und Jobs bleiben bestehen)`, () => api(`/users/${encodeURIComponent(id)}`, { method: 'DELETE' }), 'Account gelöscht'],
+      stopPolling: ['Diese Platz-Überwachung stoppen?', () => api(`/polling/${encodeURIComponent(id)}`, { method: 'DELETE' }), 'Überwachung gestoppt'],
+      cancelSchedule: ['Diese geplante Buchung abbrechen?', () => api(`/schedule/${encodeURIComponent(id)}`, { method: 'DELETE' }), 'Buchung abgebrochen']
+    };
+    const [question, run, done] = actions[act] || [];
+    if (!run || !confirm(question)) return;
+    b.disabled = true;
+    try { await run(); toast(done); await refresh(); }
+    catch (err) { toast(err.message); b.disabled = false; }
+  });
+  $('userFilter').addEventListener('input', () => snap && renderUsers());
+  $('refreshBtn').addEventListener('click', () => { refresh(); loadLogs(true); });
+
+  // ---------- Logs ----------
+  let logs = [];
+  async function loadLogs(full = false) {
+    try {
+      const since = !full && logs.length ? `?since=${encodeURIComponent(logs[logs.length - 1].ts)}` : '';
+      const data = await api('/logs' + since);
+      logs = full ? data.logs : logs.concat(data.logs).slice(-500);
+      renderLogs();
+    } catch {}
+  }
+  function renderLogs() {
+    const q = $('logFilter').value.trim().toLowerCase();
+    const lvl = $('logLevel').value;
+    const box = $('logs');
+    const rows = logs.filter(l =>
+      (!lvl || (lvl === 'error' ? l.level === 'error' : ['warn', 'error'].includes(l.level))) &&
+      (!q || l.msg.toLowerCase().includes(q)));
+    box.innerHTML = rows.length
+      ? rows.map(l => `<div class="${l.level}"><span class="t">${esc(new Date(l.ts).toLocaleTimeString('de-DE'))}</span>${esc(l.msg)}</div>`).join('')
+      : '<div class="empty">Keine Einträge</div>';
+    if ($('logFollow').checked) box.scrollTop = box.scrollHeight;
+  }
+  $('logFilter').addEventListener('input', renderLogs);
+  $('logLevel').addEventListener('change', renderLogs);
+
+  // ---------- Auto-Refresh ----------
+  let timers = [];
+  function startTimers() {
+    stopTimers();
+    timers.push(setInterval(() => { if (!document.hidden) refresh(); }, 15000));
+    timers.push(setInterval(() => { if (!document.hidden && !$('tab-logs').hidden) loadLogs(); }, 3000));
+  }
+  function stopTimers() { timers.forEach(clearInterval); timers = []; }
+
+  // ---------- Start ----------
+  let me = {};
+  async function init() {
+    try {
+      me = await api('/me');
+      $('who').textContent = me.email;
+      $('appLink').href = me.appUrl || `${location.protocol}//${location.hostname}:${me.appPort}/`;
+      let tab = 'overview';
+      try { tab = localStorage.getItem(TAB_KEY) || tab; } catch {}
+      await showApp();
+      selectTab(document.querySelector(`#tabs button[data-tab="${tab}"]`) ? tab : 'overview');
+    } catch (err) {
+      if (err.message !== 'Nicht angemeldet') { showLogin(); $('loginErr').textContent = err.message; }
+    }
+  }
+  init();
+})();
+</script>
+</body>
+</html>

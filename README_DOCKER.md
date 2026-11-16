@@ -104,3 +104,29 @@ docker compose down
   Immer über HTTPS (die Proxy-Domain) zugreifen, nicht direkt über die IP:Port.
 - **SSO endet auf einer delcom-Fehlerseite** → `PUBLIC_URL` prüfen; sonst manuellen Import nutzen.
 - **Logs**: `docker compose logs hsp-bot`
+
+## Admin-Bereich (nur Heimnetz + Tailscale)
+
+Der Admin-Bereich (Nutzer, HSP-Token-Status, Jobs, Padel, Live-Logs) läuft auf einem
+**eigenen Port 3004** und ist bewusst **nicht** über den Nginx Proxy Manager / die Domain erreichbar.
+
+**Nichts einzurichten:** Der Container läuft mit `network_mode: host`, erkennt dadurch die
+Adressen des Servers (Heimnetz + Tailscale) selbst und lässt alle Geräte aus dem Heimnetz und
+dem Tailnet durch. Alle anderen IPs bekommen 403.
+
+So kommst du hin und zurück:
+- **App → Admin:** in der App auf „Account“ – Admins sehen dort die Buttons „Tailscale“
+  (funktioniert zuhause und unterwegs) und „Heimnetz“.
+- **Admin → App:** Button „← App“ oben im Admin-Bereich.
+
+Schutz: (1) eigener Port, nicht über die Domain und nicht am Router freigegeben,
+(2) automatische IP-Allowlist auf die echte TCP-Quelladresse (`X-Forwarded-For` wird ignoriert;
+Docker-Bridge-Netze sind ausgeschlossen), (3) Login mit einem App-Account mit Rolle `admin`.
+
+Hinweise:
+- Port 3004 **nicht** im Router freigeben und **nicht** im Nginx Proxy Manager eintragen.
+- `network_mode: host` gibt es nur unter Linux. Ohne Host-Netzwerk funktioniert der Zugriff
+  aus dem Heimnetz (10.x / 192.168.x) und Tailscale trotzdem, nur die Links in der App erscheinen
+  erst, nachdem du dich einmal direkt unter `http://<Server-IP>:3004/admin` angemeldet hast.
+- Optional `ADMIN_ALLOWED_IPS` (kommagetrennt, CIDR erlaubt) ersetzt die automatische Erkennung.
+- `ADMIN_ENABLED=false` schaltet den Admin-Bereich komplett ab.

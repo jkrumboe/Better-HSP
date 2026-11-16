@@ -8,11 +8,14 @@ services:
     image: hsp-bot:local
     pull_policy: build   # bei jedem Deploy aus dem aktuellen Repo-Stand neu bauen
     container_name: hsp-bot
-    # Port 3003 ist auf dem Server frei (belegt: 53, 80, 81, 443, 3001, 3006, 5000,
-    # 8000, 8080, 8081, 8088, 8090, 8096, 9443, 11434, 18081).
-    # Hierauf zeigt der Nginx Proxy Manager: <Server-IP>:3003
-    ports:
-      - "3003:3003"
+    # Host-Netzwerk: der Container sieht die echten Adressen des Servers (Heimnetz + tailscale0)
+    # und die echten IPs der Besucher. Dadurch erkennt der Admin-Bereich Heimnetz und Tailscale
+    # automatisch – keine IPs eintragen. (Nur Linux; "ports:" entfällt dabei.)
+    # Belegte Ports auf dem Server: 3003 = App, 3004 = Admin (beide vorher frei; belegt waren
+    # 53, 80, 81, 443, 3001, 3006, 5000, 8000, 8080, 8081, 8088, 8090, 8096, 9443, 11434, 18081).
+    # Der Nginx Proxy Manager zeigt weiterhin auf <Server-IP>:3003 – Port 3004 dort NICHT eintragen
+    # und am Router NICHT freigeben.
+    network_mode: host
     volumes:
       - hsp-data:/app/data          # Accounts, verschlüsselte Tokens, Secrets – überlebt Redeploys
     environment:
@@ -26,14 +29,12 @@ services:
       # Optional fest vorgeben (sonst werden sie einmalig in data/.secrets.json erzeugt):
       - SESSION_SECRET=${SESSION_SECRET:-}
       - TOKEN_ENCRYPTION_KEY=${TOKEN_ENCRYPTION_KEY:-}
+      # Admin-Bereich (eigener Port, siehe admin.js)
+      - ADMIN_PORT=3004
+      # Optional: erlaubte IPs/Netze manuell festlegen (ersetzt die automatische Erkennung).
+      - ADMIN_ALLOWED_IPS=${ADMIN_ALLOWED_IPS:-}
     restart: unless-stopped
-    networks:
-      - hsp-network
 
 volumes:
   hsp-data:
     name: hsp-bot-data
-
-networks:
-  hsp-network:
-    driver: bridge

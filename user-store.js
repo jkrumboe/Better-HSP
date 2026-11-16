@@ -208,3 +208,18 @@ export async function getValidUserToken(memberId) {
   saveUsers(users);
   return refreshed.accessToken;
 }
+
+/**
+ * Alle HSP-Mitglieder ohne Token-Inhalte (für die Admin-Übersicht).
+ */
+export function listUsersForAdmin() {
+  return Object.values(loadUsers()).map(u => ({
+    memberId: u.memberId,
+    name: u.name || null,
+    email: u.email || null,
+    accessToken: u.accessToken || null, // nur serverseitig zur Statusberechnung, wird nicht ausgeliefert
+    hasRefreshToken: !!u.refreshToken,
+    createdAt: u.createdAt || null,
+    updatedAt: u.updatedAt || null
+  }));
+}

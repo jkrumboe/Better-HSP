@@ -1966,6 +1966,10 @@
           <button class="btn btn-secondary" id="appLogoutBtn">Abmelden</button>
           <button class="btn btn-secondary" id="appChangePwBtn">Passwort ändern</button>
         </div>
+        <div id="adminLinksBox" class="hidden" style="margin-top:10px;">
+          <div style="font-size:13px;color:#666;margin-bottom:6px;">🛡️ Admin-Bereich (nur im Heimnetz / mit Tailscale):</div>
+          <div id="adminLinksList" class="account-box-actions"></div>
+        </div>
       </div>
 
       <div id="authLoggedIn" class="hidden">
@@ -2187,6 +2191,22 @@
       if (el) el.textContent = acc.email || '';
       const roleEl = document.getElementById('appAccountRole');
       if (roleEl) roleEl.textContent = acc.role === 'admin' ? '(Admin)' : '';
+      const box = document.getElementById('adminLinksBox');
+      const list = document.getElementById('adminLinksList');
+      const links = acc.role === 'admin' && Array.isArray(data.adminLinks) ? data.adminLinks : [];
+      if (box && list) {
+        list.innerHTML = '';
+        links.forEach((l, i) => {
+          const a = document.createElement('a');
+          a.className = 'btn ' + (i === 0 ? 'btn-primary' : 'btn-secondary');
+          a.href = l.url;
+          a.textContent = l.label;
+          a.title = l.url;
+          a.style.textDecoration = 'none';
+          list.appendChild(a);
+        });
+        box.classList.toggle('hidden', links.length === 0);
+      }
     }
 
     async function loadSsoProviders() {

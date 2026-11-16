@@ -144,3 +144,62 @@ export function publicAccount(account) {
     createdAt: account.createdAt
   };
 }
+
+// ============ ADMIN ============
+
+/**
+ * Alle Accounts (öffentliche Sicht + Admin-relevante Felder, nie passwordHash).
+ */
+export function listAccounts() {
+  return Object.values(loadAccounts()).map(a => ({
+    ...publicAccount(a),
+    updatedAt: a.updatedAt || null,
+    lastLoginAt: a.lastLoginAt || null
+  }));
+}
+
+/**
+ * Merkt sich den Zeitpunkt des letzten Logins (für die Admin-Übersicht).
+ */
+export function recordLogin(accountId) {
+  const accounts = loadAccounts();
+  const acc = accounts[accountId];
+  if (!acc) return;
+  acc.lastLoginAt = new Date().toISOString();
+  saveAccounts(accounts);
+}
+
+const countAdmins = (accounts) => Object.values(accounts).filter(a => a.role === 'admin').length;
+
+/**
+ * Setzt die Rolle ('admin' | 'user'). Der letzte Admin kann nicht herabgestuft werden.
+ */
+export function setRole(accountId, role) {
+  if (!['admin', 'user'].includes(role)) throw new Error('Ungültige Rolle.');
+  const accounts = loadAccounts();
+  const acc = accounts[accountId];
+  if (!acc) throw new Error('Account nicht gefunden.');
+  if (acc.role === 'admin' && role !== 'admin' && countAdmins(accounts) <= 1) {
+    throw new Error('Der letzte Admin kann nicht herabgestuft werden.');
+  }
+  acc.role = role;
+  acc.sessionVersion = (acc.sessionVersion || 1) + 1; // Rechte sofort wirksam
+  acc.updatedAt = new Date().toISOString();
+  saveAccounts(accounts);
+  return acc;
+}
+
+/**
+ * Löscht einen Account. Der letzte Admin kann nicht gelöscht werden.
+ */
+export function deleteAccount(accountId) {
+  const accounts = loadAccounts();
+  const acc = accounts[accountId];
+  if (!acc) throw new Error('Account nicht gefunden.');
+  if (acc.role === 'admin' && countAdmins(accounts) <= 1) {
+    throw new Error('Der letzte Admin kann nicht gelöscht werden.');
+  }
+  delete accounts[accountId];
+  saveAccounts(accounts);
+  return acc;
+}

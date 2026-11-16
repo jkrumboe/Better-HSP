@@ -1,5 +1,7 @@
 // server.js - Express Server mit WebSocket für HSP-Bot GUI
 
+// Zuerst laden: der Admin-Bereich puffert ab hier die Konsolenausgaben
+import { startAdminServer, getAdminLinks } from './admin.js';
 import express from 'express';
 import { createServer } from 'http';
 import { WebSocketServer } from 'ws';
@@ -25,7 +27,7 @@ import {
 } from './user-store.js';
 import {
   registerAccount, verifyLogin, getAccount, changePassword,
-  linkMember, bumpSessionVersion, publicAccount
+  linkMember, bumpSessionVersion, publicAccount, recordLogin
 } from './auth-store.js';
 import {
   signSession, verifySession, parseCookies, serializeCookie,
@@ -94,6 +96,7 @@ app.use((req, res, next) => {
 // ============ SESSION / AUTH HELPERS ============
 
 function issueSession(res, account) {
+  recordLogin(account.id);
   const token = signSession({ sub: account.id, sv: account.sessionVersion || 1 }, SESSION_MAX_AGE);
   res.setHeader('Set-Cookie', serializeCookie(SESSION_COOKIE, token, {
     httpOnly: true, sameSite: 'Lax', secure: COOKIE_SECURE, path: '/', maxAge: SESSION_MAX_AGE
@@ -331,6 +334,8 @@ app.get('/api/auth/me', (req, res) => {
   }
   res.json({
     account: publicAccount(req.account),
+    // Admins bekommen die Adressen des Admin-Bereichs (nur im Heimnetz/Tailscale erreichbar)
+    adminLinks: req.account.role === 'admin' ? getAdminLinks() : undefined,
     hspLinked: !!req.account.linkedMemberId,
     member: member.memberId ? member : null,
     tokenInfo
@@ -1412,6 +1417,18 @@ function handlePollingStop(ws, jobId) {
 }
 
 /**
+ * Stoppt eine Platz-Überwachung ohne Besitzer-Prüfung (nur für den Admin-Bereich).
+ */
+function adminStopPollingJob(jobId) {
+  const job = activePollingJobs.get(jobId);
+  if (!job) return false;
+  sendJobMessage(jobId, job, { type: 'jobStopped', jobId, totalAttempts: job.attempts });
+  activePollingJobs.delete(jobId);
+  savePollingJobs();
+  return true;
+}
+
+/**
  * Restore polling jobs from disk after server restart
  */
 function restorePollingJobs() {
@@ -1455,5 +1472,21 @@ server.listen(PORT, async () => {
 
   // Restore padel sessions and their scheduled bookings
   await initializePadel();
+
+  // Admin-Bereich auf eigenem Port (nur über Tailscale erreichbar, siehe admin.js)
+  startAdminServer({
+    getPollingJobs: () => [...activePollingJobs.entries()].map(([id, job]) => ({
+      id,
+      bookingId: job.bookingId,
+      memberId: job.memberId,
+      attempts: job.attempts,
+      maxAttempts: job.maxAttempts,
+      intervalSeconds: job.intervalSeconds,
+      startedAt: job.startedAt,
+      lastAttempt: job.lastAttempt
+    })),
+    stopPollingJob: adminStopPollingJob,
+    getWsClientCount: () => wss.clients.size
+  });
   console.log('');
 });

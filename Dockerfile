@@ -22,7 +22,7 @@ VOLUME ["/app/data"]
 USER node
 
 # Single-origin: der Express-Server liefert Frontend, API und WebSocket aus.
-EXPOSE 3003
+EXPOSE 3003 3004
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
   CMD wget -q -O /dev/null "http://127.0.0.1:${PORT:-3003}/" || exit 1
