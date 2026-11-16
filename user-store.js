@@ -6,7 +6,7 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import { fileURLToPath } from 'url';
-import { isTokenValid, refreshAccessToken, decodeToken } from './token-manager.js';
+import { isTokenValid, refreshAccessToken, decodeToken, verifyAccessTokenWithDelcom } from './token-manager.js';
 import { encryptSecret, decryptSecret, isEncrypted } from './crypto-util.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -115,13 +115,29 @@ const normalizeMemberId = (id) => (/^\d+$/.test(String(id)) ? Number(id) : id);
  * die maßgebliche memberId – nie die vom Client mitgeschickte member.id.
  */
 export async function verifyAndUpsertUser(tokenResponse) {
-  if (!tokenResponse?.refreshToken) {
-    throw new Error('Kein Refresh-Token übermittelt – Token kann nicht verifiziert werden.');
+  if (!tokenResponse?.refreshToken && !tokenResponse?.accessToken) {
+    throw new Error('Kein Token übermittelt – bitte kompletten JSON-Inhalt einfügen.');
   }
 
-  const refreshed = await refreshAccessToken(tokenResponse.refreshToken, {});
+  // 1. Weg: Refresh-Token bei delcom einlösen (liefert frisch ausgestellte Tokens)
+  let refreshed = tokenResponse.refreshToken
+    ? await refreshAccessToken(tokenResponse.refreshToken, {})
+    : null;
+
+  // 2. Weg (Fallback): eingereichten Access-Token direkt bei delcom prüfen
   if (!refreshed?.accessToken) {
-    throw new Error('HSP-Token wurde von delcom nicht akzeptiert (ungültig oder abgelaufen). Bitte erneut anmelden.');
+    if (!tokenResponse.accessToken || !isTokenValid(tokenResponse.accessToken)) {
+      throw new Error('HSP-Token ist abgelaufen. Bitte im HSP-Portal neu anmelden und die Daten erneut kopieren.');
+    }
+    if (!(await verifyAccessTokenWithDelcom(tokenResponse.accessToken))) {
+      throw new Error('HSP-Token wurde von delcom nicht akzeptiert (ungültig oder abgelaufen). Bitte erneut anmelden.');
+    }
+    console.log('✅ HSP-Token direkt bei delcom verifiziert (Refresh nicht verfügbar)');
+    refreshed = {
+      accessToken: tokenResponse.accessToken,
+      refreshToken: tokenResponse.refreshToken || null,
+      idToken: tokenResponse.idToken || null
+    };
   }
 
   const payload = decodeToken(refreshed.accessToken);

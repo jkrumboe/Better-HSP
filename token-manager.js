@@ -201,6 +201,41 @@ async function refreshAccessToken(refreshToken, memberMeta = {}) {
 }
 
 /**
+ * Prüft einen Access-Token direkt bei delcom (ohne Refresh).
+ *
+ * Ein JWT ist nur Base64 – sein Inhalt (sub, email) ist erst vertrauenswürdig, wenn delcom die
+ * Signatur akzeptiert. Damit das auch dann aussagekräftig ist, wenn ein Endpoint ungültige Tokens
+ * stillschweigend ignorieren würde, gilt ein Token nur als echt, wenn
+ *   (a) der Request mit dem Token erfolgreich ist UND
+ *   (b) derselbe Request mit absichtlich kaputter Signatur abgelehnt wird (401/403).
+ */
+async function verifyAccessTokenWithDelcom(accessToken) {
+  const payload = decodeToken(accessToken);
+  if (!payload?.sub || !isTokenValid(accessToken)) return false;
+
+  const parts = String(accessToken).split('.');
+  if (parts.length !== 3) return false;
+  const sig = parts[2];
+  const tampered = `${parts[0]}.${parts[1]}.${(sig[0] === 'A' ? 'B' : 'A')}${sig.slice(1)}`;
+
+  const filter = encodeURIComponent(JSON.stringify({ memberId: payload.sub }));
+  const probes = [
+    `${API_BASE}/participations?s=${filter}&limit=1`,
+    `${API_BASE}/bookings?s=${encodeURIComponent(JSON.stringify({ 'participations.memberId': payload.sub }))}&join=participations&limit=1`
+  ];
+  const call = (url, token) => fetch(url, {
+    headers: { 'Accept': 'application/json', 'Authorization': `Bearer ${token}` }
+  }).then(r => r.status).catch(() => 0);
+
+  for (const url of probes) {
+    const [good, bad] = await Promise.all([call(url, accessToken), call(url, tampered)]);
+    if (good >= 200 && good < 300 && (bad === 401 || bad === 403)) return true;
+    if (good === 401 || good === 403) return false; // delcom lehnt den echten Token ab
+  }
+  return false;
+}
+
+/**
  * Holt einen gültigen Token (erstellt neuen falls nötig)
  */
 async function getValidToken() {
@@ -285,6 +320,7 @@ export {
   loadTokens,
   saveTokens,
   refreshAccessToken,
+  verifyAccessTokenWithDelcom,
   getValidToken,
   importFromLocalStorage,
   TOKEN_STORE_FILE
