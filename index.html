@@ -903,8 +903,36 @@
     .log-entry.info { color: #1976d2; }
     .log-entry.warning { color: #b87a00; }
 
-    .active-jobs {
-      margin-top: 20px;
+    .jobs-section {
+      margin-top: 22px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    .jobs-section h3 {
+      margin-bottom: 4px;
+    }
+
+    .section-hint {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-bottom: 12px;
+    }
+
+    .jobs-empty {
+      color: var(--faint);
+      font-size: 0.95rem;
+    }
+
+    .manual-register {
+      display: flex;
+      gap: 10px;
+      margin: 8px 0 10px;
+    }
+
+    .manual-register input {
+      flex: 1;
+      min-width: 0;
     }
 
     .job-card {
@@ -914,6 +942,18 @@
       margin-bottom: 12px;
       border-left: 4px solid var(--amber);
       box-shadow: var(--shadow);
+    }
+
+    .job-card.unwatched {
+      background: var(--surface);
+      border-left-color: var(--border);
+    }
+
+    .job-status {
+      font-size: 0.9rem;
+      color: var(--muted);
+      margin-bottom: 6px;
+      overflow-wrap: anywhere;
     }
 
     .job-header,
@@ -944,12 +984,6 @@
       gap: 6px 18px;
       color: var(--muted);
       font-size: 0.9rem;
-    }
-
-    .scheduled-jobs {
-      margin-top: 24px;
-      padding-top: 18px;
-      border-top: 1px solid var(--border);
     }
 
     .scheduled-job-card {
@@ -1842,46 +1876,41 @@
 
     <!-- Anmeldung Panel -->
     <div class="panel" id="panel-register">
-      <h2>Kurs-Anmeldung</h2>
-      
-      <div class="form-group">
-        <label for="bookingId">Booking ID</label>
-        <input type="number" id="bookingId" placeholder="z.B. 36432" inputmode="numeric">
+      <div class="my-bookings-header">
+        <h2>Jobs</h2>
+        <button class="btn btn-secondary" id="jobsRefreshBtn">↻ Aktualisieren</button>
       </div>
 
-      <div class="filter-row">
-        <div class="form-group">
-          <label for="registerMode">Modus</label>
-          <select id="registerMode">
-            <option value="single">Einmalige Anmeldung</option>
-            <option value="polling">Wiederholend (Polling)</option>
-          </select>
-        </div>
-        <div class="form-group" id="intervalGroup">
-          <label for="intervalSeconds">Intervall (Millisekunden)</label>
-          <input type="number" id="intervalSeconds" value="1000" min="100" step="100" inputmode="numeric">
-        </div>
-        <div class="form-group" id="maxAttemptsGroup">
-          <label for="maxAttempts">Max. Versuche (leer = unbegrenzt)</label>
-          <input type="number" id="maxAttempts" placeholder="z.B. 20" min="1" inputmode="numeric">
-        </div>
-      </div>
+      <section class="jobs-section">
+        <h3>Warteliste – Platz-Überwachung</h3>
+        <p class="section-hint">Wird ein Platz frei, meldet dich der Bot automatisch an.</p>
+        <div id="activeJobs"></div>
+      </section>
 
-      <button class="btn btn-primary btn-block" id="registerBtn">Anmeldung starten</button>
-
-      <div class="active-jobs" id="activeJobs"></div>
-
-      <div class="scheduled-jobs" id="scheduledJobsSection">
-        <h3 style="margin-bottom: 15px;">Geplante Buchungen</h3>
+      <section class="jobs-section">
+        <h3>Geplante Buchungen</h3>
+        <p class="section-hint">Der Bot meldet dich an, sobald die Anmeldung öffnet.</p>
         <div id="scheduledJobsList"></div>
-      </div>
+      </section>
 
-      <div class="log-container" id="logContainer">
-        <div class="log-entry info">
-          <span class="time">--:--:--</span>
-          <span>Bereit für Anmeldungen...</span>
+      <details class="jobs-section">
+        <summary>Per Booking ID anmelden</summary>
+        <div class="manual-register">
+          <input type="number" id="bookingId" placeholder="Booking ID, z.B. 36432" inputmode="numeric" aria-label="Booking ID">
+          <button class="btn btn-primary" id="registerBtn">Anmelden</button>
         </div>
-      </div>
+        <p class="section-hint">Ist der Kurs voll, landest du auf der Warteliste und die Platz-Überwachung startet automatisch.</p>
+      </details>
+
+      <details class="jobs-section">
+        <summary>Protokoll</summary>
+        <div class="log-container" id="logContainer">
+          <div class="log-entry info">
+            <span class="time">--:--:--</span>
+            <span>Bereit.</span>
+          </div>
+        </div>
+      </details>
     </div>
 
     <!-- Padel Panel -->
@@ -2081,7 +2110,8 @@
   <script>
     // WebSocket Verbindung
     let ws = null;
-    let activeJobs = new Map();
+    let activeJobs = new Map(); // jobId -> laufende Platz-Überwachung
+    let waitlistBookings = [];  // eigene kommende Wartelisten-Einträge (aus /api/my-bookings)
     let locationsData = {};
     let scheduledJobsMap = new Map(); // Map of bookingId -> scheduled job
 
@@ -2387,8 +2417,9 @@
       ws.onopen = () => {
         document.getElementById('wsStatus').classList.add('connected');
         document.getElementById('wsStatusText').textContent = 'Verbunden';
-        // Restore active jobs from server on (re)connect
-        restoreActiveJobs();
+        // Jobs vom Server holen (auch nach Reconnect, falls Updates verpasst wurden)
+        loadWatchJobs();
+        loadScheduledJobs();
       };
 
       ws.onclose = () => {
@@ -2404,18 +2435,15 @@
     }
 
     function handleWebSocketMessage(data) {
-      const logContainer = document.getElementById('logContainer');
-      const time = new Date().toLocaleTimeString('de-DE');
-
-       switch (data.type) {
+      switch (data.type) {
         case 'jobStarted':
-          addLog('info', `Job gestartet: Booking ${data.bookingId}, Intervall: ${data.intervalSeconds}s`);
-          isPolling = true;
+          addLog('info', `Platz-Überwachung gestartet: ${data.title || `Booking ${data.bookingId}`}`);
           activeJobs.set(data.jobId, {
             bookingId: data.bookingId,
+            title: data.title,
+            courseStart: data.courseStart,
             attempts: 0,
-            intervalSeconds: data.intervalSeconds,
-            maxAttempts: data.maxAttempts
+            lastMessage: null
           });
           renderActiveJobs();
           break;
@@ -2431,9 +2459,10 @@
           break;
 
         case 'scheduleCompleted':
-          addLog(data.success ? 'success' : 'warning', 
+          addLog(data.success ? 'success' : 'warning',
             `Geplante Buchung beendet: ${data.message} (${data.totalAttempts} Versuche)`);
           loadScheduledJobs();
+          if (data.isWaitlist) loadWatchJobs();
           // Refresh course list if successful
           if (data.success) {
             setTimeout(() => searchCourses(true), 1000);
@@ -2445,40 +2474,43 @@
           loadScheduledJobs();
           break;
 
-        case 'attempt':
-          const type = data.success ? 'success' : (data.rateLimited ? 'warning' : (data.watching ? 'info' : 'error'));
-          addLog(type, `Versuch ${data.attempt}: ${data.message}`);
-          if (activeJobs.has(data.jobId)) {
-            activeJobs.get(data.jobId).attempts = data.attempt;
+        case 'attempt': {
+          const job = activeJobs.get(data.jobId);
+          if (job) {
+            job.attempts = data.attempt;
+            job.lastMessage = data.message;
+            job.lastAttempt = new Date().toISOString();
             renderActiveJobs();
           }
+          // "Kein Platz frei" kommt alle paar Sekunden – nur Auffälliges protokollieren
+          if (!data.watching || !job) {
+            addLog(data.rateLimited ? 'warning' : 'error', `${jobLabel(job, data)}: ${data.message}`);
+          }
           break;
+        }
 
         case 'success':
-          const successMsg = data.isWaitlist ? `⚠️ Warteliste: ${data.message}` : `✅ ${data.message}`;
-          addLog(data.isWaitlist ? 'warning' : 'success', successMsg);
-          if (data.fullResponse) {
-            addLog('info', `Server: ${JSON.stringify(data.fullResponse)}`);
-          }
+          addLog(data.isWaitlist ? 'warning' : 'success',
+            `${jobLabel(activeJobs.get(data.jobId), data)}: ${data.message}`);
           break;
 
-        case 'jobCompleted':
-          addLog(data.success ? 'success' : 'info', 
-            `Job beendet nach ${data.totalAttempts} Versuchen: ${data.success ? 'Erfolgreich!' : data.message}`);
+        case 'jobCompleted': {
+          const label = jobLabel(activeJobs.get(data.jobId), data);
+          addLog(data.success ? 'success' : 'info', `${label}: ${data.success ? 'Erfolgreich angemeldet!' : data.message}`);
+          if (data.success) toast(`✅ Platz frei geworden – angemeldet: ${label}`, 'success', 8000);
           activeJobs.delete(data.jobId);
-          isPolling = activeJobs.size > 0;
           renderActiveJobs();
-          // Refresh course list if successful booking (silent mode)
           if (data.success) {
             setTimeout(() => searchCourses(true), 1000);
+            loadWatchJobs();
           }
           break;
+        }
 
         case 'jobStopped':
-          addLog('info', `Job gestoppt nach ${data.totalAttempts} Versuchen`);
+          addLog('info', `Platz-Überwachung gestoppt: ${jobLabel(activeJobs.get(data.jobId), data)}`);
           activeJobs.delete(data.jobId);
-          isPolling = activeJobs.size > 0;
-          renderActiveJobs();
+          loadWatchJobs();
           break;
 
         case 'padelUpdate':
@@ -2500,29 +2532,69 @@
       logContainer.insertBefore(entry, logContainer.firstChild);
     }
 
+    function jobLabel(job, data = {}) {
+      return job?.title || data.title || `Booking ${job?.bookingId ?? data.bookingId ?? '?'}`;
+    }
+
+    function formatCourseStart(iso) {
+      if (!iso) return '';
+      const d = new Date(iso);
+      if (isNaN(d)) return '';
+      const wd = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'][d.getDay()];
+      return `${wd}, ${d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })} · ${d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr`;
+    }
+
     function renderActiveJobs() {
       const container = document.getElementById('activeJobs');
       updateJobsBadge();
-      if (activeJobs.size === 0) {
-        container.innerHTML = '';
+
+      const watchedIds = new Set([...activeJobs.values()].map(j => String(j.bookingId)));
+      const unwatched = waitlistBookings.filter(b => !watchedIds.has(String(b.id)));
+
+      if (activeJobs.size === 0 && unwatched.length === 0) {
+        container.innerHTML = '<p class="jobs-empty">Du stehst auf keiner Warteliste.</p>';
         return;
       }
 
-      let html = '<h3 style="margin-bottom: 15px;">🔄 Aktive Jobs</h3>';
+      let html = '';
       activeJobs.forEach((job, jobId) => {
+        const lastCheck = job.lastAttempt
+          ? new Date(job.lastAttempt).toLocaleTimeString('de-DE')
+          : '–';
         html += `
           <div class="job-card">
             <div class="job-header">
               <div>
-                <strong>Booking ${job.bookingId}</strong>
-                <span class="spinner" style="margin-left: 10px;"></span>
+                <strong>${escapeHtml(jobLabel(job))}</strong>
+                <span class="spinner" style="margin-left: 10px;" aria-label="läuft"></span>
               </div>
-              <button class="btn btn-danger" onclick="stopJob('${jobId}')">⏹ Stoppen</button>
+              <button class="btn btn-danger" onclick="stopJob('${escapeHtml(jobId)}')">⏹ Stoppen</button>
+            </div>
+            ${job.lastMessage ? `<div class="job-status">${escapeHtml(job.lastMessage)}</div>` : ''}
+            <div class="job-stats">
+              ${job.courseStart ? `<span>${formatCourseStart(job.courseStart)}</span>` : ''}
+              <span>Booking ${escapeHtml(String(job.bookingId))}</span>
+              <span>${job.attempts} Prüfungen · zuletzt ${lastCheck}</span>
+            </div>
+          </div>
+        `;
+      });
+
+      unwatched.forEach(b => {
+        const title = b.description || b.level || `Booking ${b.id}`;
+        html += `
+          <div class="job-card unwatched">
+            <div class="job-header">
+              <div>
+                <strong>${escapeHtml(title)}</strong>
+                <span class="status-badge waiting" style="margin-left: 8px;">Nicht überwacht</span>
+              </div>
+              <button class="btn btn-primary" data-title="${escapeHtml(title)}" data-start="${escapeHtml(b.startDate || '')}"
+                onclick="startWatch(${Number(b.id)}, this.dataset.title, this.dataset.start)">▶ Überwachen</button>
             </div>
             <div class="job-stats">
-              <span>Versuche: ${job.attempts}</span>
-              <span>Intervall: ${job.intervalSeconds}ms</span>
-              <span>Max: ${job.maxAttempts || 'unbegrenzt'}</span>
+              <span>${formatCourseStart(b.startDate)}</span>
+              <span>Booking ${Number(b.id)}</span>
             </div>
           </div>
         `;
@@ -2536,44 +2608,73 @@
       document.getElementById('jobsBadge').textContent = count > 0 ? count : '';
     }
 
-    function stopJob(jobId) {
-      if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({ type: 'stopPolling', jobId }));
+    async function stopJob(jobId) {
+      if (!confirm('Platz-Überwachung stoppen? Du bleibst trotzdem auf der Warteliste.')) return;
+      try {
+        const res = await fetch(`/api/watch/${encodeURIComponent(jobId)}`, { method: 'DELETE' });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          toast(data.error || 'Stoppen fehlgeschlagen', 'error');
+        }
+        loadWatchJobs();
+      } catch (error) {
+        toast(`Fehler: ${error.message}`, 'error');
+      }
+    }
+
+    async function startWatch(bookingId, title, courseStart) {
+      try {
+        const res = await fetch('/api/watch', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ bookingId, title, courseStart })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(data.error || (res.status === 404
+            ? 'Server kennt diese Funktion nicht – bitte Server neu starten'
+            : `Fehler ${res.status}`));
+        }
+        toast('Platz-Überwachung gestartet', 'success');
+        loadWatchJobs();
+      } catch (error) {
+        toast(`❌ ${error.message}`, 'error');
       }
     }
 
     /**
-     * Restore active polling jobs from server on (re)connect.
-     * Populates activeJobs map and replays buffered logs.
+     * Laufende Platz-Überwachungen + eigene Wartelisten-Einträge vom Server laden.
+     * Wird beim (Re-)Connect, beim Öffnen des Jobs-Tabs und nach Änderungen aufgerufen.
      */
-    async function restoreActiveJobs() {
+    let watchLoadSeq = 0;
+    async function loadWatchJobs() {
+      const seq = ++watchLoadSeq;
       try {
-        const res = await fetch('/api/jobs');
-        const data = await res.json();
+        const [jobsRes, bookingsRes] = await Promise.all([
+          fetch('/api/jobs'),
+          fetch('/api/my-bookings').catch(() => null)
+        ]);
+        const jobsData = await jobsRes.json();
+        const bookingsData = bookingsRes?.ok ? await bookingsRes.json() : { bookings: [] };
+        if (seq !== watchLoadSeq) return; // neuere Anfrage unterwegs
 
-        if (data.jobs && data.jobs.length > 0) {
-          data.jobs.forEach(job => {
-            activeJobs.set(job.id, {
-              bookingId: job.bookingId,
-              attempts: job.attempts,
-              intervalSeconds: job.intervalSeconds,
-              maxAttempts: job.maxAttempts
-            });
+        activeJobs.clear();
+        (jobsData.jobs || []).forEach(job => activeJobs.set(job.id, job));
 
-            // Replay buffered log messages
-            if (job.log && job.log.length > 0) {
-              job.log.forEach(entry => {
-                handleWebSocketMessage(entry);
-              });
-            }
-          });
+        const now = new Date();
+        waitlistBookings = (bookingsData.bookings || []).filter(b =>
+          b.userParticipation?.participationStatus === 3 && new Date(b.startDate) > now);
 
-          isPolling = activeJobs.size > 0;
-          renderActiveJobs();
-          addLog('info', `${data.jobs.length} laufende(r) Job(s) vom Server wiederhergestellt`);
-        }
+        // Fehlende Titel aus den Wartelisten-Einträgen ergänzen
+        activeJobs.forEach(job => {
+          const b = waitlistBookings.find(w => String(w.id) === String(job.bookingId));
+          if (b && !job.title) job.title = b.description || b.level;
+          if (b && !job.courseStart) job.courseStart = b.startDate;
+        });
+
+        renderActiveJobs();
       } catch (error) {
-        console.error('Fehler beim Wiederherstellen der Jobs:', error);
+        console.error('Fehler beim Laden der Jobs:', error);
       }
     }
 
@@ -2593,6 +2694,8 @@
         try { localStorage.setItem(TAB_STORAGE, tab.dataset.tab); } catch { /* ignorieren */ }
         if (tab.dataset.tab === 'mybookings') {
           loadMyBookings();
+        } else if (tab.dataset.tab === 'register') {
+          loadWatchJobs();
         }
       });
     });
@@ -2710,7 +2813,6 @@
 
     // Kurse suchen
     let autoRefreshInterval = null;
-    let isPolling = false;
     let isRefreshing = false;
 
     async function searchCourses(silent = false) {
@@ -2781,17 +2883,8 @@
 
       // Wait until next 30-second mark, then refresh every 30 seconds
       setTimeout(() => {
-        // Do initial refresh
-        if (!isPolling) {
-          searchCourses(true);
-        }
-
-        // Set up interval for every 30 seconds
-        autoRefreshInterval = setInterval(() => {
-          if (!isPolling) {
-            searchCourses(true);
-          }
-        }, 30000);
+        searchCourses(true);
+        autoRefreshInterval = setInterval(() => searchCourses(true), 30000);
       }, msUntilNext30 || 30000);
     }
 
@@ -3085,24 +3178,25 @@
       addLog('info', `Starte Anmeldung für Booking ${bookingId}...`);
 
       // Sofortiges Feedback auf der Karte, Doppel-Tipps verhindern
-      const cardBtn = document.querySelector(`.course-card[data-course-id="${bookingId}"] .btn-primary`);
+      const card = document.querySelector(`.course-card[data-course-id="${bookingId}"]`);
+      const cardBtn = card?.querySelector('.btn-primary');
       cardBtn?.classList.add('loading');
+      // Titel/Startzeit für die Platz-Überwachung mitschicken, falls die Karte sie kennt
+      const meta = card?.querySelector('[data-start]')?.dataset || {};
 
       try {
         const res = await fetch('/api/register', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ bookingId })
+          body: JSON.stringify({ bookingId, title: meta.desc || undefined, courseStart: meta.start || undefined })
         });
 
         const data = await res.json();
-        
+
         if (data.isWaitlist) {
-          addLog('warning', `⚠️ Auf Warteliste gesetzt: ${data.message}`);
-          if (data.fullResponse) {
-            addLog('info', `Server: ${JSON.stringify(data.fullResponse)}`);
-          }
-          toast(`⚠️ Warteliste: ${data.message}`, 'warning');
+          addLog('warning', `⚠️ ${data.message}`);
+          toast(`⚠️ Warteliste – du wirst automatisch angemeldet, sobald ein Platz frei wird`, 'warning', 7000);
+          loadWatchJobs();
           setTimeout(() => searchCourses(true), 1000);
         } else if (data.success) {
           addLog('success', `✅ Erfolgreich für Kurs ${bookingId} angemeldet!`);
@@ -3245,12 +3339,11 @@
 
     function renderScheduledJobs(jobs) {
       const container = document.getElementById('scheduledJobsList');
-      const section = document.getElementById('scheduledJobsSection');
-      
+
       const pendingJobs = jobs.filter(j => j.status === 'pending' || j.status === 'running');
       
       if (pendingJobs.length === 0) {
-        container.innerHTML = '<p style="color: #666;">Keine geplanten Buchungen</p>';
+        container.innerHTML = '<p class="jobs-empty">Keine geplanten Buchungen.</p>';
         return;
       }
       
@@ -3283,7 +3376,7 @@
                 <span class="schedule-time-highlight">${days[bookingAvailable.getDay()]}, ${bookingAvailable.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr</span>
               </div>
               <div class="schedule-info-item">
-                <span class="schedule-info-label">Polling startet</span>
+                <span class="schedule-info-label">Bot startet</span>
                 <span>~${pollingStart.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })} Uhr</span>
               </div>
               <div class="schedule-info-item">
@@ -3318,41 +3411,23 @@
       }
     }
 
-    // Register Mode Toggle
-    document.getElementById('registerMode').addEventListener('change', (e) => {
-      const isPolling = e.target.value === 'polling';
-      document.getElementById('intervalGroup').style.display = isPolling ? 'block' : 'none';
-      document.getElementById('maxAttemptsGroup').style.display = isPolling ? 'block' : 'none';
-    });
-
-    // Manueller Register Button
+    // Manuelle Anmeldung per Booking ID
     document.getElementById('registerBtn').addEventListener('click', async () => {
-      const bookingId = document.getElementById('bookingId').value;
-      const mode = document.getElementById('registerMode').value;
-
+      const input = document.getElementById('bookingId');
+      const bookingId = input.value;
       if (!bookingId) {
         toast('Bitte Booking ID eingeben', 'warning');
-        document.getElementById('bookingId').focus();
+        input.focus();
         return;
       }
-
-      if (mode === 'single') {
-        await quickRegister(bookingId);
-      } else {
-        const intervalSeconds = parseInt(document.getElementById('intervalSeconds').value) || 1000;
-        const maxAttempts = document.getElementById('maxAttempts').value 
-          ? parseInt(document.getElementById('maxAttempts').value) 
-          : null;
-
-        if (ws && ws.readyState === WebSocket.OPEN) {
-          ws.send(JSON.stringify({
-            type: 'startPolling',
-            bookingId,
-            intervalSeconds: intervalSeconds,  // Bereits in Millisekunden
-            maxAttempts
-          }));
-        }
-      }
+      await quickRegister(bookingId);
+    });
+    document.getElementById('bookingId').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') document.getElementById('registerBtn').click();
+    });
+    document.getElementById('jobsRefreshBtn').addEventListener('click', () => {
+      loadWatchJobs();
+      loadScheduledJobs();
     });
 
     /**
@@ -3875,10 +3950,6 @@
         history.replaceState({}, '', location.pathname);
       }
     })();
-
-    // Initial laden
-    document.getElementById('intervalGroup').style.display = 'none';
-    document.getElementById('maxAttemptsGroup').style.display = 'none';
 
     // Zuletzt genutzten Tab wiederherstellen
     try {

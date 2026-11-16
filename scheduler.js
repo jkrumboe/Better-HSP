@@ -335,7 +335,10 @@ async function executeScheduledJob(jobData) {
         updateJobStatus(id, 'waitlist', watching ? 'Auf Warteliste - Platz-Überwachung aktiv' : 'Auf Warteliste');
         if (watching) {
           try {
-            waitlistHandler(bookingId, memberId);
+            waitlistHandler(bookingId, memberId, {
+              title: jobData.courseDescription || null,
+              courseStart: jobData.courseStartTime || null
+            });
           } catch (error) {
             console.error('Waitlist handover failed:', error);
           }

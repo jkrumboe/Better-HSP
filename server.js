@@ -207,7 +207,9 @@ function savePollingJobs() {
         attempts: job.attempts,
         startedAt: job.startedAt,
         lastAttempt: job.lastAttempt,
-        memberId: job.memberId
+        memberId: job.memberId,
+        title: job.title || null,
+        courseStart: job.courseStart || null
       });
     });
     fs.writeFileSync(POLLING_JOBS_FILE, JSON.stringify(jobs, null, 2));
@@ -233,6 +235,7 @@ function broadcastPolling(message, memberId = null) {
  * Send a polling message: broadcast to the owning client + buffer in job log
  */
 function sendJobMessage(jobId, job, message) {
+  if (message.message) job.lastMessage = message.message;
   // Buffer the message in the job's log
   if (!job.log) job.log = [];
   job.log.push({ ...message, timestamp: new Date().toISOString() });
@@ -795,11 +798,19 @@ app.post('/api/register', async (req, res) => {
       // Prüfe ob Warteliste oder echte Anmeldung anhand status-Feld
       // status: 1 = Angemeldet, status: 3 = Warteliste
       const isWaitlist = responseData.status === 3;
-      
+
+      // Auf der Warteliste: frei werdende Plätze automatisch überwachen
+      let watchJobId = null;
+      if (isWaitlist) {
+        const { title, courseStart } = req.body;
+        watchJobId = startWaitlistWatch(bookingId, memberInfo.memberId, { title, courseStart }).jobId;
+      }
+
       res.json({
         success: !isWaitlist,
         isWaitlist: isWaitlist,
-        message: isWaitlist ? 'Auf Warteliste gesetzt' : 'Erfolgreich angemeldet!',
+        watchJobId,
+        message: isWaitlist ? 'Auf Warteliste gesetzt - Platz-Überwachung aktiv' : 'Erfolgreich angemeldet!',
         participationStatus: responseData.status,
         data: responseData,
         fullResponse: responseData
@@ -825,56 +836,51 @@ app.post('/api/register', async (req, res) => {
   }
 });
 
-// Polling Job starten
-app.post('/api/register/polling', (req, res) => {
-  const { bookingId, intervalSeconds = 60, maxAttempts } = req.body;
-
+// Platz-Überwachung für einen Kurs starten (z.B. für einen bestehenden Wartelisten-Eintrag)
+app.post('/api/watch', async (req, res) => {
+  const { bookingId, title, courseStart } = req.body;
   if (!bookingId) {
     return res.status(400).json({ error: 'bookingId erforderlich' });
   }
-
-  const jobId = `${bookingId}-${Date.now()}`;
-  
-  res.json({
-    success: true,
-    jobId,
-    message: `Polling-Job gestartet. Verbinde via WebSocket für Updates.`
-  });
-});
-
-// Polling Job stoppen (nur eigene)
-app.post('/api/register/stop', (req, res) => {
-  const { jobId } = req.body;
   const { memberId } = resolveHspMember(req);
-
-  if (activePollingJobs.has(jobId)) {
-    const job = activePollingJobs.get(jobId);
-    if (memberId != null && job.memberId !== memberId) {
-      return res.status(403).json({ error: 'Nicht berechtigt für diesen Job' });
-    }
-    activePollingJobs.delete(jobId);
-    savePollingJobs();
-    res.json({ success: true, message: 'Job gestoppt' });
-  } else {
-    res.status(404).json({ error: 'Job nicht gefunden' });
+  if (!memberId) {
+    return res.status(401).json({ error: 'HSP-Account nicht verknüpft. Bitte via Uni-SSO anmelden oder Token importieren.' });
   }
+  if (!(await getValidUserToken(memberId))) {
+    return res.status(401).json({ error: 'Kein gültiger HSP-Token (bitte neu anmelden)' });
+  }
+  const result = startWaitlistWatch(bookingId, memberId, { title, courseStart });
+  res.json({ success: true, ...result });
 });
 
-// Aktive Jobs abrufen (nur eigene, inkl. gepufferter Logs für reconnect)
+// Platz-Überwachung stoppen (nur eigene)
+app.delete('/api/watch/:jobId', (req, res) => {
+  const { memberId } = resolveHspMember(req);
+  if (!memberId) {
+    return res.status(401).json({ error: 'Nicht angemeldet' });
+  }
+  const result = stopWatchJob(req.params.jobId, memberId);
+  if (result === 'forbidden') return res.status(403).json({ error: 'Nicht berechtigt für diesen Job' });
+  if (result === 'notFound') return res.status(404).json({ error: 'Job nicht gefunden' });
+  res.json({ success: true });
+});
+
+// Laufende Platz-Überwachungen abrufen (nur eigene)
 app.get('/api/jobs', (req, res) => {
   const { memberId } = resolveHspMember(req);
+  if (!memberId) return res.json({ jobs: [] });
   const jobs = [];
   activePollingJobs.forEach((job, id) => {
-    if (memberId != null && job.memberId !== memberId) return;
+    if (job.memberId !== memberId) return;
     jobs.push({
       id,
       bookingId: job.bookingId,
+      title: job.title,
+      courseStart: job.courseStart,
       attempts: job.attempts,
-      maxAttempts: job.maxAttempts,
-      intervalSeconds: job.intervalSeconds,
       startedAt: job.startedAt,
       lastAttempt: job.lastAttempt,
-      log: job.log || []
+      lastMessage: job.lastMessage
     });
   });
   res.json({ jobs });
@@ -1076,48 +1082,12 @@ wss.on('connection', (ws, req) => {
   // Register for polling broadcasts
   pollingWsConnections.add(ws);
 
-  ws.on('message', async (message) => {
-    try {
-      const data = JSON.parse(message);
-
-      if (data.type === 'startPolling') {
-        if (!ws.account) {
-          ws.send(JSON.stringify({ type: 'error', message: 'Nicht angemeldet' }));
-          return;
-        }
-        await handlePollingStart(ws, data);
-      } else if (data.type === 'stopPolling') {
-        handlePollingStop(ws, data.jobId);
-      }
-    } catch (error) {
-      ws.send(JSON.stringify({ type: 'error', message: error.message }));
-    }
-  });
-
+  // Der Kanal ist nur noch Server -> Client (Jobs werden per HTTP gestartet/gestoppt)
   ws.on('close', () => {
     console.log('🔌 WebSocket Client getrennt');
     pollingWsConnections.delete(ws);
   });
 });
-
-async function handlePollingStart(ws, data) {
-  const { bookingId, intervalSeconds = 1000, maxAttempts } = data;
-  const jobId = `${bookingId}-${Date.now()}`;
-
-  const memberId = ws.account?.linkedMemberId;
-  if (!memberId) {
-    ws.send(JSON.stringify({ type: 'error', message: 'HSP-Account nicht verknüpft' }));
-    return;
-  }
-
-  const token = await getValidUserToken(memberId);
-  if (!token) {
-    ws.send(JSON.stringify({ type: 'error', message: 'Kein gültiger HSP-Token (bitte neu anmelden)' }));
-    return;
-  }
-
-  startPollingJob(jobId, bookingId, intervalSeconds, maxAttempts, memberId);
-}
 
 // ============ PLATZ-ÜBERWACHUNG (gemeinsamer Watcher) ============
 //
@@ -1154,9 +1124,12 @@ function stopWatcherIfIdle() {
 /**
  * Start a polling job (decoupled from WebSocket — works even without connected clients)
  */
-function startPollingJob(jobId, bookingId, intervalSeconds, maxAttempts, memberId) {
+function startPollingJob(jobId, bookingId, intervalSeconds, maxAttempts, memberId, meta = {}) {
   const job = {
     bookingId,
+    title: meta.title || null,
+    courseStart: meta.courseStart || null,
+    lastMessage: null,
     intervalSeconds, // historischer Name - der Wert ist in Millisekunden
     maxAttempts: maxAttempts || null,
     attempts: 0,
@@ -1175,6 +1148,8 @@ function startPollingJob(jobId, bookingId, intervalSeconds, maxAttempts, memberI
     type: 'jobStarted',
     jobId,
     bookingId,
+    title: job.title,
+    courseStart: job.courseStart,
     intervalSeconds,
     maxAttempts: maxAttempts || 'unbegrenzt'
   });
@@ -1182,6 +1157,38 @@ function startPollingJob(jobId, bookingId, intervalSeconds, maxAttempts, memberI
   ensureWatcher();
   // Erste Prüfung sofort
   watchTick();
+}
+
+/**
+ * Platz-Überwachung für einen Wartelisten-Kurs starten (ohne Duplikate pro Nutzer + Kurs).
+ * @returns {{ jobId: string, created: boolean }}
+ */
+function startWaitlistWatch(bookingId, memberId, meta = {}) {
+  const existing = [...activePollingJobs.entries()].find(([, j]) =>
+    String(j.bookingId) === String(bookingId) && j.memberId === memberId);
+  if (existing) {
+    const [jobId, job] = existing;
+    if (!job.title && meta.title) job.title = meta.title;
+    if (!job.courseStart && meta.courseStart) job.courseStart = meta.courseStart;
+    return { jobId, created: false };
+  }
+  const jobId = `${bookingId}-${Date.now()}`;
+  startPollingJob(jobId, bookingId, HANDOVER_CHECK_INTERVAL_MS, null, memberId, meta);
+  return { jobId, created: true };
+}
+
+/**
+ * Platz-Überwachung stoppen. Mit memberId nur eigene Jobs.
+ * @returns {'ok' | 'notFound' | 'forbidden'}
+ */
+function stopWatchJob(jobId, memberId = null) {
+  const job = activePollingJobs.get(jobId);
+  if (!job) return 'notFound';
+  if (memberId != null && job.memberId !== memberId) return 'forbidden';
+  sendJobMessage(jobId, job, { type: 'jobStopped', jobId, totalAttempts: job.attempts });
+  activePollingJobs.delete(jobId);
+  savePollingJobs();
+  return 'ok';
 }
 
 function finishPollingJob(jobId, job, success, message) {
@@ -1255,6 +1262,9 @@ async function watchTick() {
 
 async function checkPollingJob(jobId, job, booking, fetchError) {
   if (!activePollingJobs.has(jobId)) return; // zwischenzeitlich gestoppt
+
+  // Startzeit für die Anzeige im Jobs-Tab nachtragen
+  if (booking?.startDate && !job.courseStart) job.courseStart = booking.startDate;
 
   if (fetchError) {
     sendJobMessage(jobId, job, {
@@ -1394,38 +1404,11 @@ async function attemptRegistration(jobId, job, memberId, freeSpots) {
   }
 }
 
-function handlePollingStop(ws, jobId) {
-  if (activePollingJobs.has(jobId)) {
-    const job = activePollingJobs.get(jobId);
-    if (ws.account?.linkedMemberId != null && job.memberId !== ws.account.linkedMemberId) {
-      ws.send(JSON.stringify({ type: 'error', message: 'Nicht berechtigt für diesen Job' }));
-      return;
-    }
-    sendJobMessage(jobId, job, {
-      type: 'jobStopped',
-      jobId,
-      totalAttempts: job.attempts
-    });
-    activePollingJobs.delete(jobId);
-    savePollingJobs();
-  } else {
-    ws.send(JSON.stringify({
-      type: 'error',
-      message: 'Job nicht gefunden'
-    }));
-  }
-}
-
 /**
  * Stoppt eine Platz-Überwachung ohne Besitzer-Prüfung (nur für den Admin-Bereich).
  */
 function adminStopPollingJob(jobId) {
-  const job = activePollingJobs.get(jobId);
-  if (!job) return false;
-  sendJobMessage(jobId, job, { type: 'jobStopped', jobId, totalAttempts: job.attempts });
-  activePollingJobs.delete(jobId);
-  savePollingJobs();
-  return true;
+  return stopWatchJob(jobId) === 'ok';
 }
 
 /**
@@ -1437,7 +1420,8 @@ function restorePollingJobs() {
 
   console.log(`🔄 Stelle ${savedJobs.length} Polling-Job(s) wieder her...`);
   for (const saved of savedJobs) {
-    startPollingJob(saved.id, saved.bookingId, saved.intervalSeconds, saved.maxAttempts, saved.memberId);
+    startPollingJob(saved.id, saved.bookingId, saved.intervalSeconds, saved.maxAttempts, saved.memberId,
+      { title: saved.title, courseStart: saved.courseStart });
     // Restore attempt count from saved state
     const job = activePollingJobs.get(saved.id);
     if (job) {
@@ -1456,13 +1440,7 @@ server.listen(PORT, async () => {
   loadTokens();
 
   // Geplante Buchung auf Warteliste gelandet -> Platz-Überwachung übernimmt
-  setWaitlistHandler((bookingId, memberId) => {
-    const alreadyWatching = [...activePollingJobs.values()].some(j =>
-      String(j.bookingId) === String(bookingId) && j.memberId === memberId);
-    if (!alreadyWatching) {
-      startPollingJob(`${bookingId}-${Date.now()}`, bookingId, HANDOVER_CHECK_INTERVAL_MS, null, memberId);
-    }
-  });
+  setWaitlistHandler((bookingId, memberId, meta) => startWaitlistWatch(bookingId, memberId, meta));
 
   // Initialize the scheduler and restore pending jobs
   await initializeScheduler();
