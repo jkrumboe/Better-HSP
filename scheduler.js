@@ -314,6 +314,72 @@ async function runPreflight(jobData) {
   broadcast({ type: 'scheduleWarning', jobId: id, bookingId: jobData.bookingId, message }, memberId);
 }
 
+// ============ TOKEN-KEEP-ALIVE ============
+// Ohne offene App fragt niemand den Token ab: er würde erst zur Öffnung erneuert, wenn der
+// Refresh-Token womöglich schon verfallen ist. Daher erneuert der Server die Tokens aller
+// Mitglieder mit geplanten Buchungen / Platz-Überwachungen selbst, kurz bevor sie ablaufen.
+
+const KEEPALIVE_INTERVAL_MS = 5 * 60 * 1000;
+// Erneuern, sobald der Access-Token in weniger als 1 Tag abläuft. Schlägt der Refresh fehl,
+// bleibt so noch ein Tag, um sich neu anzumelden. (Setzt voraus, dass ein neuer Token > 1 Tag gilt,
+// sonst würde alle 5 Minuten erneuert.)
+const KEEPALIVE_MIN_VALIDITY_MS = 24 * 60 * 60 * 1000;
+const KEEPALIVE_WARNING_PREFIX = 'HSP-Login abgelaufen';
+
+let keepAliveTimer = null;
+let keepAliveBusy = false;
+
+/**
+ * Startet die serverseitige Token-Erneuerung.
+ * getExtraMemberIds: liefert weitere Mitglieder, deren Token aktiv gehalten werden soll
+ * (z.B. laufende Platz-Überwachungen aus server.js).
+ */
+export function startTokenKeepAlive(getExtraMemberIds = () => []) {
+  if (keepAliveTimer) return;
+  const tick = () => {
+    keepAliveTick(getExtraMemberIds).catch(error => console.error('Token-Keep-Alive fehlgeschlagen:', error));
+  };
+  keepAliveTimer = setInterval(tick, KEEPALIVE_INTERVAL_MS);
+  tick();
+}
+
+async function keepAliveTick(getExtraMemberIds) {
+  if (keepAliveBusy) return;
+  keepAliveBusy = true;
+  try {
+    const pendingJobs = loadScheduledJobs().filter(j => j.memberId != null && j.status === 'pending');
+    const memberIds = new Set(pendingJobs.map(j => j.memberId));
+    for (const memberId of getExtraMemberIds() || []) {
+      if (memberId != null) memberIds.add(memberId);
+    }
+
+    for (const memberId of memberIds) {
+      const token = await getValidUserToken(memberId, { minValidityMs: KEEPALIVE_MIN_VALIDITY_MS });
+      const memberJobs = pendingJobs.filter(j => j.memberId === memberId);
+
+      if (token) {
+        // Login funktioniert (wieder) -> eine frühere Login-Warnung entfernen
+        for (const job of memberJobs) {
+          if (job.statusMessage?.startsWith(KEEPALIVE_WARNING_PREFIX)) {
+            updateJobStatus(job.id, 'pending', null, { clearMessage: true });
+          }
+        }
+        continue;
+      }
+
+      console.warn(`⚠️ Token-Keep-Alive: kein gültiger Token für Mitglied ${memberId}`);
+      for (const job of memberJobs) {
+        if (job.statusMessage?.startsWith(KEEPALIVE_WARNING_PREFIX)) continue; // schon gewarnt
+        const message = `${KEEPALIVE_WARNING_PREFIX} - bitte in der App neu anmelden, sonst kann nicht gebucht werden`;
+        updateJobStatus(job.id, 'pending', message);
+        broadcast({ type: 'scheduleWarning', jobId: job.id, bookingId: job.bookingId, message }, memberId);
+      }
+    }
+  } finally {
+    keepAliveBusy = false;
+  }
+}
+
 /**
  * Execute the scheduled booking job
  */

@@ -192,6 +192,21 @@ export async function getValidUserToken(memberId, { minValidityMs = 60000 } = {}
     return user.accessToken;
   }
 
+  // Nur ein Refresh pro Mitglied gleichzeitig: parallele Refreshes mit demselben (rotierenden)
+  // Refresh-Token würden sich gegenseitig entwerten (z.B. Keep-Alive + laufender Job)
+  if (refreshInFlight.has(memberId)) {
+    return refreshInFlight.get(memberId);
+  }
+  const promise = refreshUserToken(memberId, user)
+    .finally(() => refreshInFlight.delete(memberId));
+  refreshInFlight.set(memberId, promise);
+  return promise;
+}
+
+// memberId -> laufender Refresh
+const refreshInFlight = new Map();
+
+async function refreshUserToken(memberId, user) {
   const refreshed = await refreshAccessToken(user.refreshToken, {});
   if (!refreshed?.accessToken) {
     // Refresh fehlgeschlagen: den alten Token weiterverwenden, solange er überhaupt noch gilt

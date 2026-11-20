@@ -15,6 +15,7 @@ import {
   initializeScheduler,
   setWaitlistHandler,
   fetchParticipationStatus,
+  startTokenKeepAlive,
   scheduleBooking,
   cancelScheduledJob,
   getScheduledJobs,
@@ -1467,6 +1468,10 @@ server.listen(PORT, async () => {
 
   // Restore polling jobs from disk
   restorePollingJobs();
+
+  // HSP-Tokens für geplante Buchungen und Platz-Überwachungen serverseitig aktiv halten
+  // (funktioniert auch, wenn niemand die App offen hat)
+  startTokenKeepAlive(() => [...activePollingJobs.values()].map(job => job.memberId));
 
   // Restore padel sessions and their scheduled bookings
   await initializePadel();
