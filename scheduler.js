@@ -20,11 +20,21 @@ let wsConnections = new Set();
 const FALLBACK_MINUTES_AHEAD = 6 * 24 * 60;
 // Job startet so lange vor der Öffnung (Zeit für Uhrenabgleich)
 const LEAD_MS = 15 * 1000;
-// So lange nach der Öffnung wird weiter versucht
-const WINDOW_MS = 60 * 1000;
-// Erste Versuche relativ zur Öffnung (Serverzeit); danach 1s-Takt bis +15s, dann 3s-Takt
-const ATTEMPT_OFFSETS_MS = [-50, 100, 300, 700];
-const MIN_ATTEMPT_GAP_MS = 200;
+// So lange nach der Öffnung wird direkt per POST versucht. Danach übernimmt die Platz-Überwachung,
+// die mit EINER öffentlichen Abfrage für alle Kurse auskommt und nur bei freiem Platz bucht -
+// das schont den HSP-Server deutlich mehr als minutenlanges Dauer-POSTen.
+const WINDOW_MS = 10 * 1000;
+// Versuche relativ zur Öffnung (Serverzeit): dicht um den Öffnungszeitpunkt (deckt eine ungenaue
+// Uhrenschätzung ab), danach 1s-Takt bis zum Fensterende. Insgesamt ~16 POSTs pro Plan.
+const ATTEMPT_OFFSETS_MS = [-100, 50, 200, 400, 700, 1000, 1500, 2000];
+const MIN_ATTEMPT_GAP_MS = 100;
+const LATE_ATTEMPT_GAP_MS = 1000;
+// Vorab-Prüfung (Token erneuern, Login-Probleme melden) so lange vor der Öffnung
+const PREFLIGHT_MS = 10 * 60 * 1000;
+// Der Token muss ab Job-Start mindestens so lange gültig sein, sonst wird er vorher erneuert
+const TOKEN_MIN_VALIDITY_MS = WINDOW_MS + 10 * 60 * 1000;
+const PARTICIPATION_BOOKED = 1;
+const PARTICIPATION_WAITLIST = 3;
 const PRODUCT_CACHE_TTL_MS = 60 * 60 * 1000;
 
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -35,7 +45,8 @@ const productWindowCache = new Map();
 // IDs laufender Jobs (damit ein Abbruch auch während der Ausführung greift)
 const runningJobs = new Set();
 
-// Wird aufgerufen, wenn eine geplante Buchung auf der Warteliste landet
+// Wird aufgerufen, wenn eine geplante Buchung auf der Warteliste landet oder im
+// Öffnungsfenster keinen Platz bekommt (startet die Platz-Überwachung bis Kursbeginn)
 let waitlistHandler = null;
 export function setWaitlistHandler(fn) {
   waitlistHandler = fn;
@@ -186,10 +197,9 @@ export function registerWebSocket(ws) {
 /**
  * Attempt registration for a booking
  */
-async function attemptRegistration(jobId, bookingId, memberId) {
-  const token = await getValidUserToken(memberId);
+async function attemptRegistration(bookingId, memberId, token) {
   if (!token) {
-    return { success: false, message: 'Token expired' };
+    return { success: false, noToken: true, message: 'HSP-Login abgelaufen - bitte in der App neu anmelden' };
   }
 
   try {
@@ -228,6 +238,8 @@ async function attemptRegistration(jobId, bookingId, memberId) {
       };
     } else if (response.status === 429) {
       return { success: false, rateLimited: true, message: 'Rate-Limit erreicht' };
+    } else if (response.status === 401) {
+      return { success: false, unauthorized: true, status: 401, message: 'Token abgelehnt - wird erneuert' };
     } else {
       return {
         success: false,
@@ -238,6 +250,68 @@ async function attemptRegistration(jobId, bookingId, memberId) {
   } catch (error) {
     return { success: false, message: error.message };
   }
+}
+
+/**
+ * Echten Anmeldestatus eines Mitglieds für einen Kurs bei HSP abfragen.
+ * @returns {Promise<number|null>} 1 = angemeldet, 3 = Warteliste, null = keine Teilnahme / unbekannt
+ */
+export async function fetchParticipationStatus(bookingId, memberId, token) {
+  const id = parseInt(bookingId);
+  if (!token || !Number.isFinite(id) || memberId == null) return null;
+  try {
+    const filter = encodeURIComponent(JSON.stringify({ id: { '$in': [id] } }));
+    const res = await fetch(`${API_URL}/bookings?s=${filter}&join=participations&limit=1`, {
+      headers: { 'Accept': 'application/json', 'Authorization': `Bearer ${token}` }
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const participation = data.data?.[0]?.participations?.find(p =>
+      (p.memberId === memberId || p.invitedMemberId === memberId) &&
+      (p.status === PARTICIPATION_BOOKED || p.status === PARTICIPATION_WAITLIST));
+    return participation ? participation.status : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Platz-Überwachung übernehmen lassen. Gibt true zurück, wenn sie läuft.
+ */
+function handOverToWatcher(jobData) {
+  if (!waitlistHandler) return false;
+  try {
+    waitlistHandler(jobData.bookingId, jobData.memberId, {
+      title: jobData.courseDescription || null,
+      courseStart: jobData.courseStartTime || null
+    });
+    return true;
+  } catch (error) {
+    console.error('Watcher handover failed:', error);
+    return false;
+  }
+}
+
+/**
+ * Vorab-Prüfung einige Minuten vor der Öffnung: Token erneuern, damit er im Fenster sicher gilt,
+ * und den Nutzer rechtzeitig warnen, wenn der HSP-Login nicht mehr funktioniert.
+ */
+async function runPreflight(jobData) {
+  const { id, memberId, bookingAvailableAt } = jobData;
+  if (!loadScheduledJobs().some(j => j.id === id && j.status === 'pending')) return;
+
+  const token = await getValidUserToken(memberId, { minValidityMs: PREFLIGHT_MS + TOKEN_MIN_VALIDITY_MS });
+  if (token) {
+    console.log(`✅ Preflight ${id}: Token gültig`);
+    updateJobStatus(id, 'pending', null, { clearMessage: true });
+    return;
+  }
+
+  const openAt = new Date(bookingAvailableAt).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Berlin' });
+  const message = `HSP-Login abgelaufen - bitte vor ${openAt} Uhr neu anmelden, sonst kann nicht gebucht werden`;
+  console.warn(`⚠️ Preflight ${id}: kein gültiger Token`);
+  updateJobStatus(id, 'pending', message);
+  broadcast({ type: 'scheduleWarning', jobId: id, bookingId: jobData.bookingId, message }, memberId);
 }
 
 /**
@@ -260,9 +334,52 @@ async function executeScheduledJob(jobData) {
 
   runningJobs.add(id);
   scheduledJobs.delete(id);
-  updateJobStatus(id, 'running');
+  updateJobStatus(id, 'running', null, { clearMessage: true });
+
+  let attempts = 0;
+  const finish = (status, statusMessage, event) => {
+    broadcast({ type: 'scheduleCompleted', jobId: id, bookingId, totalAttempts: attempts, ...event }, memberId);
+    updateJobStatus(id, status, statusMessage);
+  };
+  // Echte Anmeldung oder Warteliste abschließen. Gibt true zurück, wenn der Job damit erledigt ist.
+  const settle = (participationStatus) => {
+    if (participationStatus === PARTICIPATION_BOOKED) {
+      console.log(`✅ Scheduled job ${id} succeeded after ${attempts} attempts`);
+      finish('completed', 'Erfolgreich angemeldet', { success: true, message: 'Erfolgreich angemeldet!' });
+      return true;
+    }
+    if (participationStatus === PARTICIPATION_WAITLIST) {
+      // Kurs war sofort voll: weitere Versuche bringen nichts -> an die Platz-Überwachung übergeben
+      console.log(`⚠️ Scheduled job ${id} landed on the waitlist after ${attempts} attempts`);
+      const watching = handOverToWatcher(jobData);
+      finish('waitlist', watching ? 'Auf Warteliste - Platz-Überwachung aktiv' : 'Auf Warteliste', {
+        success: false,
+        isWaitlist: true,
+        handedOver: watching,
+        message: watching
+          ? 'Auf Warteliste gesetzt - frei werdende Plätze werden überwacht'
+          : 'Auf Warteliste gesetzt'
+      });
+      return true;
+    }
+    return false;
+  };
 
   try {
+    // Token schon jetzt so erneuern, dass er das ganze Fenster über gilt (kein Refresh zur Öffnung)
+    let token = await getValidUserToken(memberId, { minValidityMs: TOKEN_MIN_VALIDITY_MS });
+    if (!token) {
+      broadcast({
+        type: 'scheduleWarning',
+        jobId: id,
+        bookingId,
+        message: 'HSP-Login abgelaufen - bitte jetzt neu anmelden, der Bot versucht es weiter'
+      }, memberId);
+    }
+
+    // Bereits angemeldet (z.B. manuell oder durch einen früheren Lauf vor einem Neustart)?
+    if (settle(await fetchParticipationStatus(bookingId, memberId, token))) return;
+
     // Uhr mit dem HSP-Server abgleichen, damit die Versuche zur Server-Öffnungszeit ankommen
     const { offset, uncertainty } = await measureClockOffset();
     const localOpen = new Date(bookingAvailableAt).getTime() - offset;
@@ -279,8 +396,8 @@ async function executeScheduledJob(jobData) {
       stopTime: new Date(deadline).toISOString()
     }, memberId);
 
-    let attempts = 0;
     let nextAt = localOpen + ATTEMPT_OFFSETS_MS[0];
+    let statusChecked = false;
 
     while (true) {
       const wait = nextAt - Date.now();
@@ -292,8 +409,11 @@ async function executeScheduledJob(jobData) {
       }
       if (Date.now() > deadline) break;
 
+      // Nutzer kann sich während des Fensters neu anmelden -> neuen Token aufgreifen
+      if (!token) token = await getValidUserToken(memberId);
+
       attempts++;
-      const result = await attemptRegistration(id, bookingId, memberId);
+      const result = await attemptRegistration(bookingId, memberId, token);
 
       broadcast({
         type: 'scheduleAttempt',
@@ -304,90 +424,96 @@ async function executeScheduledJob(jobData) {
       }, memberId);
 
       if (result.success) {
-        console.log(`✅ Scheduled job ${id} succeeded after ${attempts} attempts`);
-        broadcast({
-          type: 'scheduleCompleted',
-          jobId: id,
-          bookingId,
-          success: true,
-          totalAttempts: attempts,
-          message: result.message
-        }, memberId);
-        updateJobStatus(id, 'completed', 'Erfolgreich angemeldet');
+        settle(PARTICIPATION_BOOKED);
+        return;
+      }
+      if (result.isWaitlist) {
+        settle(PARTICIPATION_WAITLIST);
         return;
       }
 
-      if (result.isWaitlist) {
-        // Kurs war sofort voll: weitere Versuche bringen nichts -> an die Platz-Überwachung übergeben
-        console.log(`⚠️ Scheduled job ${id} landed on the waitlist after ${attempts} attempts`);
-        const watching = !!waitlistHandler;
-        broadcast({
-          type: 'scheduleCompleted',
-          jobId: id,
-          bookingId,
-          success: false,
-          isWaitlist: true,
-          totalAttempts: attempts,
-          message: watching
-            ? 'Auf Warteliste gesetzt - frei werdende Plätze werden überwacht'
-            : 'Auf Warteliste gesetzt'
-        }, memberId);
-        updateJobStatus(id, 'waitlist', watching ? 'Auf Warteliste - Platz-Überwachung aktiv' : 'Auf Warteliste');
-        if (watching) {
-          try {
-            waitlistHandler(bookingId, memberId, {
-              title: jobData.courseDescription || null,
-              courseStart: jobData.courseStartTime || null
-            });
-          } catch (error) {
-            console.error('Waitlist handover failed:', error);
-          }
-        }
-        return;
+      if (result.unauthorized) {
+        // Token wurde abgelehnt: sofort erneuern (erzwingt Refresh)
+        token = await getValidUserToken(memberId, { minValidityMs: Number.MAX_SAFE_INTEGER });
+      } else if (result.status && !result.rateLimited && !statusChecked && Date.now() >= localOpen + 1000) {
+        // Auch nach der Öffnung abgelehnt - evtl. "bereits angemeldet": einmal den echten Status prüfen
+        statusChecked = true;
+        if (settle(await fetchParticipationStatus(bookingId, memberId, token))) return;
       }
 
       // Nächsten Versuch planen: erst die festen Offsets um die Öffnung, dann 1s-, später 3s-Takt
       if (attempts < ATTEMPT_OFFSETS_MS.length) {
         nextAt = localOpen + ATTEMPT_OFFSETS_MS[attempts];
       } else {
-        nextAt = Date.now() + (Date.now() - localOpen < 15 * 1000 ? 1000 : 3000);
+        nextAt = Date.now() + LATE_ATTEMPT_GAP_MS;
       }
       nextAt = Math.max(nextAt, Date.now() + (result.rateLimited ? 2000 : MIN_ATTEMPT_GAP_MS));
     }
 
-    console.log(`❌ Scheduled job ${id} failed after ${attempts} attempts`);
-    broadcast({
-      type: 'scheduleCompleted',
-      jobId: id,
-      bookingId,
-      success: false,
-      totalAttempts: attempts,
-      message: 'Zeitfenster abgelaufen ohne erfolgreiche Anmeldung'
-    }, memberId);
-    updateJobStatus(id, 'failed', 'Zeitfenster abgelaufen');
+    // Letzter Abgleich, bevor wir aufgeben
+    token = token || await getValidUserToken(memberId);
+    if (settle(await fetchParticipationStatus(bookingId, memberId, token))) return;
+
+    console.log(`❌ Scheduled job ${id}: no spot after ${attempts} attempts - handing over to watcher`);
+    handOverAfterFailure('Im Öffnungsfenster kein Platz bekommen');
   } catch (error) {
     console.error(`Scheduled job ${id} crashed:`, error);
     broadcast({ type: 'scheduleError', jobId: id, message: error.message }, memberId);
-    updateJobStatus(id, 'failed', error.message);
+    handOverAfterFailure(`Fehler: ${error.message}`);
   } finally {
     runningJobs.delete(id);
+  }
+
+  // Nicht aufgeben: die Platz-Überwachung meldet an, sobald bis Kursbeginn ein Platz frei wird
+  function handOverAfterFailure(reason) {
+    if (!runningJobs.has(id)) return; // abgebrochen
+    const watching = handOverToWatcher(jobData);
+    finish(watching ? 'watching' : 'failed',
+      watching ? `${reason} - Platz-Überwachung läuft bis Kursbeginn` : reason, {
+        success: false,
+        handedOver: watching,
+        message: watching
+          ? `${reason} - frei werdende Plätze werden bis Kursbeginn überwacht`
+          : reason
+      });
   }
 }
 
 /**
  * Update job status in persistence
  */
-function updateJobStatus(jobId, status, message = null) {
+function updateJobStatus(jobId, status, message = null, { clearMessage = false } = {}) {
   const jobs = loadScheduledJobs();
   const jobIndex = jobs.findIndex(j => j.id === jobId);
   if (jobIndex !== -1) {
     jobs[jobIndex].status = status;
     if (message) {
       jobs[jobIndex].statusMessage = message;
+    } else if (clearMessage) {
+      delete jobs[jobIndex].statusMessage;
     }
     jobs[jobIndex].updatedAt = new Date().toISOString();
     saveScheduledJobs(jobs);
   }
+}
+
+/**
+ * Vorab-Prüfung und Haupt-Job bei node-schedule einplanen
+ */
+function armJob(jobData, pollingStartAt) {
+  const preflightAt = new Date(new Date(jobData.bookingAvailableAt).getTime() - PREFLIGHT_MS);
+  let preflightJob = null;
+  if (preflightAt > new Date()) {
+    preflightJob = schedule.scheduleJob(preflightAt, () => {
+      runPreflight(jobData).catch(error => console.error(`Preflight ${jobData.id} failed:`, error));
+    });
+  } else {
+    runPreflight(jobData).catch(error => console.error(`Preflight ${jobData.id} failed:`, error));
+  }
+  const job = schedule.scheduleJob(pollingStartAt, () => {
+    executeScheduledJob(jobData);
+  });
+  scheduledJobs.set(jobData.id, { ...jobData, scheduleJob: job, preflightJob });
 }
 
 /**
@@ -449,15 +575,7 @@ export async function scheduleBooking(bookingId, courseStartTime, courseDescript
     console.log(`⚡ Job ${id} starting immediately (within polling window)`);
     executeScheduledJob(jobData);
   } else {
-    const job = schedule.scheduleJob(pollingStartAt, () => {
-      executeScheduledJob(jobData);
-    });
-    
-    scheduledJobs.set(id, {
-      ...jobData,
-      scheduleJob: job
-    });
-    
+    armJob(jobData, pollingStartAt);
     console.log(`📅 Scheduled job ${id} for ${pollingStartAt.toISOString()}`);
   }
 
@@ -480,6 +598,9 @@ export function cancelScheduledJob(jobId) {
     if (job.scheduleJob) {
       job.scheduleJob.cancel();
     }
+    if (job.preflightJob) {
+      job.preflightJob.cancel();
+    }
     scheduledJobs.delete(jobId);
   }
 
@@ -500,8 +621,8 @@ export function cancelScheduledJob(jobId) {
  */
 export function getScheduledJobs(memberId = null) {
   const jobs = loadScheduledJobs();
-  // Filter out old completed/failed jobs (older than 24 hours)
-  const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  // Beendete Jobs 7 Tage zeigen, damit auch wer die App erst später öffnet das Ergebnis sieht
+  const cutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
   return jobs.filter(j =>
     (memberId == null || j.memberId === memberId) &&
     (j.status === 'pending' ||
@@ -527,6 +648,7 @@ export async function initializeScheduler() {
 
   const jobs = loadScheduledJobs();
   const toStart = [];
+  const toArm = [];
   let restoredCount = 0;
   let cleanedCount = 0;
 
@@ -567,16 +689,15 @@ export async function initializeScheduler() {
       console.log(`⚡ Restoring active job ${jobData.id}`);
       toStart.push(jobData);
     } else {
-      const job = schedule.scheduleJob(pollingStartAt, () => {
-        executeScheduledJob(jobData);
-      });
-      scheduledJobs.set(jobData.id, { ...jobData, scheduleJob: job });
+      toArm.push([jobData, pollingStartAt]);
       console.log(`📅 Restored scheduled job ${jobData.id} for ${pollingStartAt.toISOString()}`);
     }
     restoredCount++;
   }
 
   saveScheduledJobs(jobs);
+  // Erst nach dem Speichern einplanen, damit eine sofortige Vorab-Prüfung den aktuellen Stand sieht
+  toArm.forEach(([jobData, pollingStartAt]) => armJob(jobData, pollingStartAt));
   toStart.forEach(jobData => executeScheduledJob(jobData));
 
   console.log(`📅 Scheduler initialized: ${restoredCount} jobs restored, ${cleanedCount} expired jobs cleaned`);

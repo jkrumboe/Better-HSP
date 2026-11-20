@@ -14,6 +14,7 @@ import { getTokenInfo, loadTokens } from './token-manager.js';
 import {
   initializeScheduler,
   setWaitlistHandler,
+  fetchParticipationStatus,
   scheduleBooking,
   cancelScheduledJob,
   getScheduledJobs,
@@ -1386,6 +1387,19 @@ async function attemptRegistration(jobId, job, memberId, freeSpots) {
         message: 'Platz frei, aber Rate-Limit erreicht - warte...'
       });
     } else {
+      // Abgelehnt - evtl. weil HSP die Person schon angemeldet hat (z.B. von der Warteliste nachgerückt)
+      if (await fetchParticipationStatus(job.bookingId, memberId, token) === 1) {
+        sendJobMessage(jobId, job, {
+          type: 'success',
+          jobId,
+          attempt: job.attempts,
+          isWaitlist: false,
+          message: 'Erfolgreich angemeldet!',
+          participationStatus: 1
+        });
+        finishPollingJob(jobId, job, true, 'Erfolgreich angemeldet!');
+        return;
+      }
       sendJobMessage(jobId, job, {
         type: 'attempt',
         jobId,

@@ -54,9 +54,46 @@ Dann öffne **http://localhost:3003** im Browser.
 |---------|--------------|
 | 🔍 **Kurssuche** | Filtere nach Level, Zeitraum und freien Plätzen |
 | 🎯 **Schnellanmeldung** | Ein Klick auf "Anmelden" für sofortige Buchung |
-| 🔄 **Polling** | Wiederholte Versuche mit Live-Status-Updates |
+| ⏰ **Geplante Buchung** | Bucht automatisch zur Öffnung des Buchungsfensters (siehe unten) |
+| 👀 **Platz-Überwachung** | Meldet an, sobald in einem vollen Kurs ein Platz frei wird |
 | 🔑 **Auth-Import** | Token direkt im Browser einfügen |
 | 📊 **Live-Feedback** | WebSocket-basierte Echtzeit-Updates |
+
+### ⏰ Geplante Buchung („Planen“)
+
+Für Kurse, deren Buchung noch nicht geöffnet ist. Der Zeitpunkt der Öffnung kommt pro Sportart
+aus der HSP-API (`bookableAvailableMinutesAhead`, z.B. 6, 7, 14 oder 28 Tage vor Kursbeginn).
+
+Ablauf eines Plans:
+
+1. **Vorab-Prüfung (10 Min. vor Öffnung):** Der HSP-Token wird erneuert, damit er im Buchungsfenster
+   sicher gilt. Klappt das nicht, erscheint am Plan die Warnung „HSP-Login abgelaufen – bitte neu
+   anmelden“. Dann muss sich der Nutzer vor der Öffnung einmal neu anmelden.
+2. **Start (15 s vor Öffnung):** Token wird bei Bedarf noch einmal erneuert, der echte Anmeldestatus
+   geprüft (schon angemeldet → fertig) und die eigene Uhr mit der HSP-Serveruhr abgeglichen.
+3. **Buchungsfenster (bis 10 s nach Öffnung):** Anmeldeversuche dicht um die Öffnung
+   (−0,1 s bis +2 s, 8 Versuche), danach 1 Versuch pro Sekunde.
+   - Angemeldet → Plan erledigt.
+   - Auf Warteliste gelandet → Übergabe an die Platz-Überwachung.
+   - Abgelehnt → einmalige Prüfung, ob die Person schon angemeldet ist.
+   - Rate-Limit (429) → 2 s Pause.
+4. **Kein Platz nach 10 s:** Der Plan gibt nicht auf, sondern übergibt an die
+   **Platz-Überwachung** (Status `watching`), die bis Kursbeginn weiterläuft.
+
+**Last auf dem HSP-Server:** höchstens ~26 Anfragen pro Plan (8 GETs für Öffnungszeit und
+Uhrenabgleich, bis zu 3 Status-GETs, ~15 POSTs). In der Regel endet ein Plan schon nach 1–3 POSTs.
+Ein Plan kann bis 10 s nach Öffnung angelegt werden, danach direkt über die Kurskarte buchen.
+
+### 👀 Platz-Überwachung
+
+Ein einziger Watcher prüft die freien Plätze **aller** überwachten Kurse mit einer gemeinsamen,
+öffentlichen Abfrage (alle 1–2 s). Ein Anmeldeversuch (POST) wird nur gesendet, wenn wirklich ein
+Platz frei ist; nach einem abgelehnten Versuch gilt eine Pause von 5 s, bei Rate-Limit 15 s.
+Ist die Person inzwischen angemeldet (z.B. von der Warteliste nachgerückt), endet die Überwachung
+automatisch. Sie endet spätestens mit Kursbeginn.
+
+> **Keine Garantie:** Ist ein Kurs bei Öffnung sofort voll und wird bis Kursbeginn kein Platz frei,
+> kann auch der Bot keinen Platz bekommen.
 
 ### Auth-Daten über GUI importieren
 
@@ -161,9 +198,10 @@ Hauptendpoint ist:
 https://backbone-web-api.production.munster.delcom.nl/participations
 ```
 
-Token-Refresh:
+Token-Refresh (Body `{"refresh_token": "..."}`, Antwort mit `access_token`/`refresh_token`;
+das alte `/auth/refresh` liefert inzwischen 404):
 ```
-https://backbone-web-api.production.munster.delcom.nl/auth/refresh
+https://backbone-web-api.production.munster.delcom.nl/auth/token-refresh
 ```
 
 ## 🐛 Troubleshooting

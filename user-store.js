@@ -181,19 +181,21 @@ export function getUserByCalendarToken(calendarToken) {
 }
 
 /**
- * Returns a valid access token for the given member, refreshing it if necessary
+ * Returns a valid access token for the given member, refreshing it if necessary.
+ * minValidityMs: the token must stay valid at least this long, otherwise it is refreshed early.
  */
-export async function getValidUserToken(memberId) {
+export async function getValidUserToken(memberId, { minValidityMs = 60000 } = {}) {
   const user = getUser(memberId);
   if (!user?.accessToken) return null;
 
-  if (isTokenValid(user.accessToken)) {
+  if (isTokenValid(user.accessToken, minValidityMs)) {
     return user.accessToken;
   }
 
   const refreshed = await refreshAccessToken(user.refreshToken, {});
   if (!refreshed?.accessToken) {
-    return null;
+    // Refresh fehlgeschlagen: den alten Token weiterverwenden, solange er überhaupt noch gilt
+    return isTokenValid(user.accessToken) ? user.accessToken : null;
   }
 
   // Re-read before writing so we don't clobber concurrent updates of other users

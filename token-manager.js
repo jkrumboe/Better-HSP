@@ -47,15 +47,15 @@ function decodeToken(token) {
 /**
  * Prüft, ob ein Token noch gültig ist
  */
-function isTokenValid(token) {
+function isTokenValid(token, minValidityMs = 60000) {
   const payload = decodeToken(token);
   if (!payload || !payload.exp) return false;
   
   const expiresAt = new Date(payload.exp * 1000);
   const now = new Date();
   
-  // Token ist gültig, wenn Ablauf mindestens 1 Minute in der Zukunft liegt
-  return expiresAt.getTime() - now.getTime() > 60000;
+  // Token ist gültig, wenn der Ablauf mindestens minValidityMs (Standard: 1 Minute) in der Zukunft liegt
+  return expiresAt.getTime() - now.getTime() > minValidityMs;
 }
 
 /**
@@ -165,14 +165,15 @@ async function refreshAccessToken(refreshToken, memberMeta = {}) {
   try {
     console.log('🔄 Generiere neuen Access-Token mit Refresh-Token...');
     
-    const res = await fetch(`${API_BASE}/auth/refresh`, {
+    // Endpoint wie im aktuellen HSP-Frontend (das alte /auth/refresh liefert 404)
+    const res = await fetch(`${API_BASE}/auth/token-refresh`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json'
       },
       body: JSON.stringify({
-        refreshToken: refreshToken
+        refresh_token: refreshToken
       })
     });
 
@@ -183,13 +184,18 @@ async function refreshAccessToken(refreshToken, memberMeta = {}) {
     }
 
     const data = await res.json();
+    const accessToken = data.access_token || data.accessToken;
+    if (!accessToken) {
+      console.error('❌ Token-Refresh ohne Access-Token in der Antwort');
+      return null;
+    }
     console.log('✅ Neuer Token generiert!');
-    
+
     return {
-      accessToken: data.accessToken,
-      idToken: data.idToken,
-      refreshToken: data.refreshToken || refreshToken,
-      expiresIn: data.expiresIn,
+      accessToken,
+      idToken: data.id_token || data.idToken,
+      refreshToken: data.refresh_token || data.refreshToken || refreshToken,
+      expiresIn: data.expires_in ?? data.expiresIn,
       memberId: memberMeta.memberId || null,
       memberEmail: memberMeta.memberEmail || null,
       memberName: memberMeta.memberName || null
