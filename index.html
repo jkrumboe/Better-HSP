@@ -4750,9 +4750,17 @@
     (function handleSsoReturn() {
       const params = new URLSearchParams(location.search);
       if (params.has('linked') || params.has('sso_error')) {
+        // Nur feste Codes – freier Text aus der URL wird nie angezeigt
+        const SSO_ERRORS = {
+          state: 'Der Anmeldevorgang ist abgelaufen oder wurde bereits verwendet. Bitte erneut starten.',
+          no_token: 'Vom HSP-Login wurden keine gültigen Zugangsdaten übermittelt.',
+          verify: 'Die Zugangsdaten wurden vom HSP-System nicht akzeptiert.',
+          unknown: 'Unbekannter Fehler.'
+        };
+        const code = params.get('sso_error');
         const msg = params.has('linked')
           ? '✅ HSP-Account via Uni-SSO verbunden!'
-          : '❌ SSO fehlgeschlagen: ' + (params.get('sso_error') || 'Unbekannter Fehler') +
+          : '❌ SSO fehlgeschlagen: ' + (Object.hasOwn(SSO_ERRORS, code) ? SSO_ERRORS[code] : SSO_ERRORS.unknown) +
             '\n\nFalls das wiederholt passiert, nutze bitte den manuellen Token-Import im Account-Fenster.';
         setTimeout(() => toast(msg, params.has('linked') ? 'success' : 'error', 8000), 400);
         history.replaceState({}, '', location.pathname);

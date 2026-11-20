@@ -33,7 +33,7 @@ import {
 } from './auth-store.js';
 import {
   signSession, verifySession, parseCookies, serializeCookie,
-  signState, verifyState, randomToken
+  signState, randomToken
 } from './crypto-util.js';
 import {
   SSO_PROVIDERS, getProvider, buildSsoRedirect, parseTokenResponse
@@ -371,25 +371,58 @@ app.get('/api/sso/start', (req, res) => {
   res.redirect(buildSsoRedirect(provider.entityId, callbackUrl));
 });
 
+// Bereits eingelöste SSO-States (nonce -> Ablauf in ms). Jeder state ist nur EINMAL gültig.
+// In-Memory genügt: nach einem Neustart sind höchstens 15 Min. alte States betroffen,
+// und die sind ohnehin an den eigenen Account gebunden.
+const usedSsoNonces = new Map();
+function consumeSsoNonce(nonce, expSeconds) {
+  const now = Date.now();
+  for (const [n, exp] of usedSsoNonces) if (exp < now) usedSsoNonces.delete(n);
+  if (!nonce || usedSsoNonces.has(nonce)) return false;
+  usedSsoNonces.set(nonce, (expSeconds || 0) * 1000 || now + 15 * 60 * 1000);
+  return true;
+}
+
+// Feste Fehlercodes für den Rücksprung – die URL transportiert nie freien Text,
+// damit niemand per präpariertem Link beliebige Meldungen in der App anzeigen kann.
+class SsoError extends Error {
+  constructor(code, message) { super(message); this.code = code; }
+}
+
 // Rückkehr vom SSO: delcom hängt ?tokenReponse=<base64> an
 app.get('/api/sso/callback/:state', async (req, res) => {
   try {
-    const st = verifyState(req.params.state);
+    const payload = verifySession(req.params.state);
+    const st = payload?.st;
     if (!st || st.acct !== req.account.id) {
-      throw new Error('Ungültiger oder abgelaufener SSO-Vorgang. Bitte erneut starten.');
+      throw new SsoError('state', 'Ungültiger oder abgelaufener SSO-State');
+    }
+    if (!consumeSsoNonce(st.n, payload.exp)) {
+      throw new SsoError('state', 'SSO-State wurde bereits verwendet');
     }
 
-    const tokens = parseTokenResponse(req.query.tokenReponse);
-    if (!tokens.accessToken) throw new Error('Kein Access-Token erhalten');
+    let tokens;
+    try {
+      tokens = parseTokenResponse(req.query.tokenReponse);
+    } catch {
+      throw new SsoError('no_token', 'tokenReponse fehlt oder ist nicht lesbar');
+    }
+    if (!tokens.accessToken) throw new SsoError('no_token', 'Kein Access-Token erhalten');
 
     // Tokens bei delcom verifizieren; memberId stammt aus dem frisch ausgestellten Token
-    const user = await verifyAndUpsertUser(tokens);
+    let user;
+    try {
+      user = await verifyAndUpsertUser(tokens);
+    } catch (error) {
+      throw new SsoError('verify', error.message);
+    }
     linkMember(req.account.id, user.memberId);
     refreshPadelEligibilityFor(user.memberId); // fresh token may make padel bookings possible again
     res.redirect('/?linked=1');
   } catch (error) {
     console.error('SSO-Callback Fehler:', error.message);
-    res.redirect('/?sso_error=' + encodeURIComponent(error.message));
+    const code = error instanceof SsoError ? error.code : 'unknown';
+    res.redirect('/?sso_error=' + code);
   }
 });
 
