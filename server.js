@@ -49,7 +49,8 @@ import {
   cancelSession,
   retrySession,
   getCalendarFeed,
-  getSessionIcs
+  getSessionIcs,
+  refreshPadelEligibilityFor
 } from './padel.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -383,6 +384,7 @@ app.get('/api/sso/callback/:state', async (req, res) => {
     // Tokens bei delcom verifizieren; memberId stammt aus dem frisch ausgestellten Token
     const user = await verifyAndUpsertUser(tokens);
     linkMember(req.account.id, user.memberId);
+    refreshPadelEligibilityFor(user.memberId); // fresh token may make padel bookings possible again
     res.redirect('/?linked=1');
   } catch (error) {
     console.error('SSO-Callback Fehler:', error.message);
@@ -464,6 +466,7 @@ app.post('/api/auth/import', async (req, res) => {
     // Token bei delcom verifizieren, verschlüsselt ablegen und mit dem App-Account verknüpfen
     const user = await verifyAndUpsertUser(authData.tokenResponse);
     linkMember(req.account.id, user.memberId);
+    refreshPadelEligibilityFor(user.memberId); // fresh token may make padel bookings possible again
 
     res.json({
       success: true,
@@ -994,6 +997,7 @@ app.post('/api/padel/login', async (req, res) => {
     return res.status(401).json({ error: error.message });
   }
   linkMember(req.account.id, user.memberId); // zugleich mit dem App-Account verknüpfen
+  refreshPadelEligibilityFor(user.memberId);
   res.json({ userKey: user.userKey, user: publicUser(user), calendarToken: user.calendarToken });
 });
 

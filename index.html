@@ -1570,115 +1570,202 @@
       text-decoration: line-through;
     }
 
+    /* ---------- Padel-Session-Karte ---------- */
     .padel-session-card {
       background: var(--surface);
       border-radius: var(--radius);
-      padding: 10px 14px;
-      margin-bottom: 8px;
+      padding: 14px 16px 6px;
+      margin-bottom: 10px;
       box-shadow: var(--shadow);
-    }
-
-    .padel-session-card.status-scheduled,
-    .padel-session-card.status-booking {
-      background: #fff9e6;
-    }
-
-    .padel-session-card.status-booked {
-      background: var(--green-soft);
     }
 
     .padel-session-card.status-failed,
     .padel-session-card.status-cancelled,
     .padel-session-card.status-expired {
-      background: #fff5f5;
-      opacity: 0.8;
+      opacity: 0.75;
     }
 
-    .padel-session-header {
+    .padel-card-head {
       display: flex;
+      align-items: center;
       justify-content: space-between;
-      align-items: flex-start;
-      flex-wrap: wrap;
       gap: 10px;
     }
 
-    .padel-status {
-      font-size: 0.8rem;
-      font-weight: bold;
-      padding: 2px 8px;
-      border-radius: 8px;
-      background: rgba(0,0,0,0.06);
-      margin-left: 6px;
-      white-space: nowrap;
+    .padel-card-date {
+      font-size: 1.05rem;
+      font-weight: 700;
     }
 
-    .padel-session-details {
+    .padel-card-date span {
+      color: var(--muted);
+      font-weight: 500;
+      margin-left: 4px;
+    }
+
+    .padel-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 999px;
+      white-space: nowrap;
+      background: #f0f1ee;
+      color: var(--muted);
+    }
+
+    .padel-status::before {
+      content: '';
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .padel-status.s-scheduled,
+    .padel-status.s-booking { background: #fff4dc; color: #a86b00; }
+    .padel-status.s-booked { background: var(--green-soft); color: var(--green-text); }
+    .padel-status.s-failed { background: #fdecec; color: var(--red); }
+
+    .padel-card-info {
       margin: 4px 0 0;
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    .padel-card-info.is-error {
+      color: var(--red);
     }
 
     .padel-players {
       display: flex;
       flex-wrap: wrap;
+      align-items: center;
       gap: 6px;
-      margin: 8px 0;
+      margin: 12px 0;
     }
 
     .padel-player {
-      background: var(--surface);
-      border: 1px solid #ddd;
-      border-radius: 12px;
-      padding: 3px 10px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #f4f5f2;
+      border-radius: 999px;
+      padding: 3px 10px 3px 3px;
       font-size: 0.85rem;
     }
 
-    .padel-player.booker {
-      border-color: var(--green);
-      color: var(--green-text);
-      font-weight: bold;
+    .padel-avatar {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #dfe3da;
+      color: #555;
+      font-size: 0.7rem;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
     }
 
-    .padel-player.empty {
-      border-style: dashed;
-      color: #bbb;
-    }
+    .padel-player.booker .padel-avatar { background: var(--green); color: #fff; }
+    .padel-player.blocked { background: #fff4dc; }
+    .padel-player.blocked .padel-avatar { background: var(--amber); color: #fff; }
 
-    .padel-player.blocked {
-      border-color: var(--amber);
+    .padel-free {
+      font-size: 0.8rem;
+      color: var(--faint);
+      margin-left: 2px;
     }
 
     .padel-eligibility-warning {
-      background: #fff7e6;
-      border: 1px solid var(--amber);
-      border-radius: 8px;
+      background: #fff4dc;
+      border-radius: 10px;
       padding: 8px 12px;
-      margin: 0 0 8px;
+      margin: 0 0 12px;
       font-size: 0.85rem;
-      line-height: 1.4;
+      line-height: 1.45;
+      color: #6b4a00;
     }
 
-    .padel-session-actions {
+    .padel-eligibility-warning strong {
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    .padel-card-foot {
       display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
+      align-items: center;
+      gap: 4px;
+      border-top: 1px solid var(--border);
+      padding-top: 6px;
     }
 
-    .padel-session-actions .btn {
-      flex: 0 0 auto;
-      padding: 6px 16px;
-      font-size: 0.9rem;
+    .padel-card-foot .spacer {
+      flex: 1;
     }
 
-    .padel-session-card details {
-      margin-top: 4px;
-      font-size: 0.85rem;
+    .padel-ghost {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 36px;
+      padding: 0 10px;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
       color: var(--muted);
+      font-size: 0.85rem;
+      text-decoration: none;
+      cursor: pointer;
     }
 
-    .padel-session-card details ul {
+    .padel-ghost:hover { background: #f0f1ee; color: var(--text); }
+    .padel-ghost.danger:hover { background: #fdecec; color: var(--red); }
+
+    .padel-ghost svg {
+      width: 18px;
+      height: 18px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .padel-ghost.log-toggle svg {
+      width: 14px;
+      height: 14px;
+      transition: transform 0.15s;
+    }
+
+    .padel-session-card.show-log .log-toggle svg { transform: rotate(90deg); }
+
+    .padel-card-foot .btn {
+      min-height: 34px;
+      padding: 0 14px;
+      font-size: 0.85rem;
+      border-radius: 8px;
+    }
+
+    .padel-log {
+      display: none;
       list-style: none;
-      font-family: monospace;
+      margin: 4px 0 6px;
+      padding: 8px 10px;
+      background: #f7f8f5;
+      border-radius: 8px;
+      font-size: 0.78rem;
+      color: var(--muted);
       overflow-wrap: anywhere;
     }
+
+    .padel-log li { padding: 2px 0; }
+    .padel-log time { font-variant-numeric: tabular-nums; color: var(--faint); margin-right: 6px; }
+    .padel-session-card.show-log .padel-log { display: block; }
 
     /* ---------- Login-Overlay ---------- */
     .auth-overlay {
@@ -1942,8 +2029,7 @@
         grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
       }
 
-      .padel-calendar-actions .btn,
-      .padel-session-actions .btn {
+      .padel-calendar-actions .btn {
         flex: 0 0 auto;
       }
 
@@ -4411,6 +4497,44 @@
       }
     }
 
+    // Session ids whose log is expanded - survives re-renders triggered by websocket updates
+    const openPadelLogs = new Set();
+
+    const PADEL_ICONS = {
+      calendar: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18M12 13v5M9.5 15.5h5"/></svg>',
+      trash: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>',
+      chevron: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>'
+    };
+
+    function padelInitials(name) {
+      return String(name || '?').split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('');
+    }
+
+    function togglePadelLog(sessionId) {
+      const card = document.getElementById(`padel-session-${sessionId}`);
+      if (card.classList.toggle('show-log')) {
+        openPadelLogs.add(sessionId);
+      } else {
+        openPadelLogs.delete(sessionId);
+      }
+    }
+
+    function padelInfoLine(s) {
+      const opens = formatPadelDate(s.bookingOpensAt);
+      switch (s.status) {
+        case 'open': {
+          const missing = Math.max(0, s.minPlayers - s.participants.length);
+          return `Noch ${missing} Spieler ${missing === 1 ? 'fehlt' : 'fehlen'} · Buchung öffnet ${opens} Uhr`;
+        }
+        case 'scheduled':
+          return `Bot bucht automatisch am ${opens} Uhr`;
+        case 'booked':
+          return `Gebucht von ${escapeHtml(s.bookedByName || '?')}${s.hspBookingId ? ` · HSP #${escapeHtml(s.hspBookingId)}` : ''}`;
+        default:
+          return escapeHtml(s.statusMessage || '');
+      }
+    }
+
     function renderPadelSessions() {
       const container = document.getElementById('padelSessions');
       if (padelSessions.length === 0) {
@@ -4422,72 +4546,76 @@
       container.innerHTML = padelSessions.map(s => {
         const isIn = s.participants.some(p => p.memberId === myId);
         const isActive = PADEL_ACTIVE_STATUSES.includes(s.status);
+        const isPlanning = ['open', 'scheduled'].includes(s.status);
 
+        // ---- Players ----
         const eligibilityOf = memberId => s.eligibility?.players.find(e => e.memberId === memberId);
         const players = s.participants.map(p => {
           const isBooker = p.memberId === s.bookedBy;
           const check = eligibilityOf(p.memberId);
-          const blocked = check && ['over', 'noToken'].includes(check.state);
-          const title = [p.email, check?.note].filter(Boolean).join(' – ');
-          return `<span class="padel-player ${isBooker ? 'booker' : ''} ${blocked ? 'blocked' : ''}" title="${escapeHtml(title)}">${isBooker ? '🎫 ' : ''}${blocked ? '⚠️ ' : ''}${escapeHtml(p.name)}</span>`;
+          const blocked = check && ['over', 'noCard', 'noToken'].includes(check.state);
+          const title = [p.email, isBooker ? 'hat gebucht' : null, blocked ? check.note : null].filter(Boolean).join(' – ');
+          return `<span class="padel-player ${isBooker ? 'booker' : ''} ${blocked ? 'blocked' : ''}" title="${escapeHtml(title)}"><span class="padel-avatar">${blocked ? '!' : escapeHtml(padelInitials(p.name))}</span>${escapeHtml(p.name)}</span>`;
         }).join('');
+        const free = isActive ? s.maxPlayers - s.participants.length : 0;
+        const freeLabel = free > 0 ? `<span class="padel-free">+${free} frei</span>` : '';
 
-        let eligibilityWarning = '';
-        if (s.eligibility && ['open', 'scheduled'].includes(s.status) && s.eligibility.players.length > 0) {
-          const blocked = s.eligibility.players.filter(e => ['over', 'noToken'].includes(e.state));
-          const reasons = blocked.map(e => `${escapeHtml(e.name)}: ${escapeHtml(e.note)}`).join('<br>');
-          if (!s.eligibility.anyCanBook) {
-            const fixHint = blocked.some(e => e.state === 'noToken') ? ' HSP-Token neu importieren oder' : '';
-            eligibilityWarning = `<div class="padel-eligibility-warning">⚠️ <strong>Aktuell kann voraussichtlich niemand buchen.</strong><br>${reasons}<br><small>Lösung:${fixHint} jemanden mit freiem Kontingent einladen.</small></div>`;
-          }
+        // ---- Warning: nobody can book ----
+        let warning = '';
+        if (isPlanning && s.eligibility && s.eligibility.players.length > 0 && !s.eligibility.anyCanBook) {
+          // Short reasons only - the full detail is in the player's tooltip
+          const SHORT_REASON = { noToken: 'Token abgelaufen', noCard: 'keine Mitgliedschaft', over: 'Limit erreicht' };
+          const reasons = s.eligibility.players
+            .filter(e => SHORT_REASON[e.state])
+            .map(e => `${escapeHtml(e.name)}: ${SHORT_REASON[e.state]}`)
+            .join(' · ');
+          warning = `<div class="padel-eligibility-warning"><strong>Niemand kann buchen</strong>${reasons}</div>`;
         }
-        const freeSpots = isActive ? '<span class="padel-player empty">frei</span>'.repeat(Math.max(0, s.maxPlayers - s.participants.length)) : '';
 
+        // ---- Footer actions: quiet icons/text, at most one filled primary button ----
         const actions = [];
-        if (isActive && !isIn && s.participants.length < s.maxPlayers) {
+        if (isIn) {
+          actions.push(`<a class="padel-ghost" href="/api/padel/calendar/${padelMe.calendarToken}/${s.id}.ics" title="Zum Kalender hinzufügen" aria-label="Zum Kalender hinzufügen">${PADEL_ICONS.calendar}</a>`);
+        }
+        const isCreator = s.createdBy === myId;
+        const aloneCreator = isCreator && s.participants.length === 1; // leaving == cancelling, show only the trash
+        if (isActive && isIn && s.status !== 'booking' && !(isPlanning && aloneCreator)) {
+          actions.push(`<button class="padel-ghost" onclick="leavePadelSession('${s.id}')">Ich kann nicht</button>`);
+        }
+        if (isCreator && isPlanning) {
+          actions.push(`<button class="padel-ghost danger" onclick="cancelPadelSession('${s.id}')" title="Session absagen" aria-label="Session absagen">${PADEL_ICONS.trash}</button>`);
+        }
+        if (isActive && !isIn && free > 0) {
           actions.push(`<button class="btn btn-primary" onclick="joinPadelSession('${s.id}')">Beitreten</button>`);
         }
         if (s.status === 'failed' && isIn) {
           actions.push(`<button class="btn btn-primary" onclick="retryPadelSession('${s.id}')">Erneut versuchen</button>`);
         }
-        if (isIn) {
-          actions.push(`<a class="btn btn-secondary" href="/api/padel/calendar/${padelMe.calendarToken}/${s.id}.ics">📅 Zum Kalender</a>`);
-        }
-        if (isActive && isIn && s.status !== 'booking') {
-          actions.push(`<button class="btn btn-secondary" onclick="leavePadelSession('${s.id}')">Ich kann nicht</button>`);
-        }
-        if (s.createdBy === myId && ['open', 'scheduled'].includes(s.status)) {
-          actions.push(`<button class="btn btn-danger" onclick="cancelPadelSession('${s.id}')">Session absagen</button>`);
-        }
 
-        const details = [escapeHtml(s.statusMessage || '')];
-        if (['open', 'scheduled'].includes(s.status)) {
-          details.push(`Buchungsfenster: ${formatPadelDate(s.bookingOpensAt)} Uhr`);
-        }
-        if (s.hspBookingId) {
-          details.push(`HSP-Buchung #${s.hspBookingId}`);
-        }
+        const log = s.log.slice().reverse().map(entry => {
+          const at = new Date(entry.at).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+          return `<li><time>${at}</time>${escapeHtml(entry.message)}</li>`;
+        }).join('');
 
-        const log = s.log.slice().reverse().map(entry =>
-          `<li>${new Date(entry.at).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })} ${escapeHtml(entry.message)}</li>`
-        ).join('');
+        const start = new Date(s.startDate);
+        const dateLabel = start.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' });
+        const timeLabel = start.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
 
         return `
-          <div class="padel-session-card status-${s.status}" id="padel-session-${s.id}">
-            <div class="padel-session-header">
-              <div>
-                <strong>${formatPadelDate(s.startDate)} Uhr</strong>
-                <span class="padel-status">${escapeHtml(s.statusLabel)}</span>
-                <div class="padel-hint padel-session-details">${details.join(' · ')}</div>
-              </div>
+          <div class="padel-session-card status-${s.status} ${openPadelLogs.has(s.id) ? 'show-log' : ''}" id="padel-session-${s.id}">
+            <div class="padel-card-head">
+              <div class="padel-card-date">${dateLabel}<span>${timeLabel} Uhr</span></div>
+              <span class="padel-status s-${s.status}">${escapeHtml(s.statusLabel)}</span>
             </div>
-            <div class="padel-players">${players}${freeSpots}</div>
-            ${eligibilityWarning}
-            <div class="padel-session-actions">${actions.join('')}</div>
-            <details>
-              <summary>Verlauf</summary>
-              <ul>${log}</ul>
-            </details>
+            <p class="padel-card-info ${s.status === 'failed' ? 'is-error' : ''}">${padelInfoLine(s)}</p>
+            <div class="padel-players">${players}${freeLabel}</div>
+            ${warning}
+            <div class="padel-card-foot">
+              ${log ? `<button class="padel-ghost log-toggle" onclick="togglePadelLog('${s.id}')">${PADEL_ICONS.chevron}Verlauf</button>` : ''}
+              <span class="spacer"></span>
+              ${actions.join('')}
+            </div>
+            ${log ? `<ul class="padel-log">${log}</ul>` : ''}
           </div>
         `;
       }).join('');

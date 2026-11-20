@@ -189,6 +189,12 @@ function sessionView(session) {
     bookedBy: session.bookedBy,
     bookedByName: session.bookedByName,
     hspBookingId: session.hspBookingId,
+    eligibility: session.eligibility && ['open', 'scheduled', 'failed'].includes(session.status)
+      ? {
+          ...session.eligibility,
+          players: session.eligibility.players.filter(p => session.participants.some(x => x.memberId === p.memberId))
+        }
+      : null,
     bookingOpensAt: bookingOpensAt(session.startDate).toISOString(),
     minPlayers: MIN_PLAYERS,
     maxPlayers: MAX_PLAYERS,
@@ -199,10 +205,25 @@ function sessionView(session) {
 // ============ HSP API ============
 
 async function fetchProduct(productId) {
-  const res = await fetch(`${API_URL}/products/${productId}`, { headers: { 'Accept': 'application/json' } });
+  const res = await fetch(`${API_URL}/products/${productId}?join=linkedSubscriptions`, { headers: { 'Accept': 'application/json' } });
   if (!res.ok) throw new Error(`API Fehler: ${res.status}`);
   return res.json();
 }
+
+// Memberships that allow booking (isLinkedSubsRequired). The court only lists "Rückschlagspiele Club",
+// the rental additionally accepts e.g. Sportpass - whether that is enough for the court is unknown.
+// Refreshed from the API on startup; defaults are the values seen in Nov 2026.
+const membershipRules = {
+  court: new Map([[12, 'Rückschlagspiele Club']]),
+  rental: new Map([
+    [12, 'Rückschlagspiele Club'], [69, 'Volunteer Mitgliedschaft'], [70, 'Sportpass Unlimited'],
+    [72, 'Sportpass limited'], [67, 'Mitgliedschaft fachpraktische Prüfung Tennis']
+  ])
+};
+
+const subscriptionMap = product => new Map(
+  (product.linkedSubscriptions || []).map(sub => [sub.id, String(sub.description || '').trim()])
+);
 
 const toMinutes = time => {
   const [hour, minute] = time.split(':').map(Number);
@@ -225,6 +246,9 @@ async function loadRules() {
     rules.maxPerDay = strictest('bookableMaxBookingsPerDay', rules.maxPerDay);
     rules.maxPerPeriod = strictest('bookableMaxBookingsPerPeriod', rules.maxPerPeriod);
     rules.periodDays = court.bookableMaxBookingsPeriodDays || rental.bookableMaxBookingsPeriodDays || rules.periodDays;
+
+    if (court.linkedSubscriptions?.length) membershipRules.court = subscriptionMap(court);
+    if (rental.linkedSubscriptions?.length) membershipRules.rental = subscriptionMap(rental);
 
     // weekCalendar end times are inclusive ("18:59"), so +1 minute
     if (Array.isArray(court.weekCalendar) && court.weekCalendar.length > 0) {
@@ -357,44 +381,57 @@ async function postParticipation(token, payload) {
 }
 
 /**
- * Checks the member's own padel bookings against the HSP limits (per day / per period).
- * The exact HSP counting window isn't documented, so this is a best guess - a rejected booking
- * simply falls through to the next candidate anyway.
+ * Checks the member's padel bookings against the HSP limits (per day / per period).
+ * The exact HSP counting window isn't documented, so the period limit is checked as a rolling
+ * window: every periodDays-long window that contains the slot day must still have room. That also
+ * catches bookings made earlier for days *after* the slot. It is deliberately conservative - an
+ * 'over' player is only tried last, never skipped.
+ *
+ * Returns { state: 'ok' | 'over' | 'unknown', note }
  */
-async function checkQuota(token, memberId, slotStart) {
+async function checkQuota(token, memberId, slotStart, ignoreBookingId = null) {
   const day = berlinParts(slotStart);
   const dayStart = berlinToUtc(day.year, day.month, day.day);
   const dayEnd = berlinToUtc(day.year, day.month, day.day + 1);
-  const periodStart = berlinToUtc(day.year, day.month, day.day - (rules.periodDays - 1));
+  const P = rules.periodDays;
+  const rangeStart = berlinToUtc(day.year, day.month, day.day - (P - 1));
+  const rangeEnd = berlinToUtc(day.year, day.month, day.day + P);
 
   try {
     const filter = {
       'participations.memberId': memberId,
       linkedProductId: { '$in': [PADEL_PRODUCT_ID] },
       status: { '$ne': 2 },
-      startDate: { '$gte': periodStart.toISOString(), '$lt': dayEnd.toISOString() }
+      startDate: { '$gte': rangeStart.toISOString(), '$lt': rangeEnd.toISOString() }
     };
     const encoded = encodeURIComponent(JSON.stringify(filter));
     const res = await fetch(`${API_URL}/bookings?s=${encoded}&join=participations&limit=100&page=1`, {
       headers: { 'Accept': 'application/json', 'Authorization': `Bearer ${token}` }
     });
-    if (!res.ok) return { ok: true, note: 'Kontingent nicht prüfbar' };
+    if (!res.ok) return { state: 'unknown', note: `Kontingent nicht prüfbar (${res.status})` };
 
     const data = await res.json();
-    const bookings = (data.data || []).filter(b =>
-      b.participations?.some(p => p.memberId === memberId && p.status === 1)
-    );
-    const sameDay = bookings.filter(b => new Date(b.startDate) >= dayStart).length;
+    const starts = (data.data || [])
+      .filter(b => b.id !== ignoreBookingId)
+      .filter(b => b.participations?.some(p => p.memberId === memberId && p.status === 1))
+      .map(b => new Date(b.startDate).getTime());
 
+    const sameDay = starts.filter(t => t >= dayStart.getTime() && t < dayEnd.getTime()).length;
     if (sameDay >= rules.maxPerDay) {
-      return { ok: false, note: `schon ${sameDay} Buchung(en) an dem Tag` };
+      return { state: 'over', note: `schon ${sameDay} Buchung(en) an dem Tag` };
     }
-    if (bookings.length >= rules.maxPerPeriod) {
-      return { ok: false, note: `schon ${bookings.length} Buchungen in ${rules.periodDays} Tagen` };
+
+    for (let offset = -(P - 1); offset <= 0; offset++) {
+      const windowStart = berlinToUtc(day.year, day.month, day.day + offset).getTime();
+      const windowEnd = berlinToUtc(day.year, day.month, day.day + offset + P).getTime();
+      const count = starts.filter(t => t >= windowStart && t < windowEnd).length;
+      if (count >= rules.maxPerPeriod) {
+        return { state: 'over', note: `schon ${count} Buchungen innerhalb von ${P} Tagen` };
+      }
     }
-    return { ok: true };
-  } catch {
-    return { ok: true, note: 'Kontingent nicht prüfbar' };
+    return { state: 'ok', note: null };
+  } catch (error) {
+    return { state: 'unknown', note: `Kontingent nicht prüfbar (${error.message})` };
   }
 }
 
@@ -407,42 +444,229 @@ function bookingHistory(memberId) {
   return { count: booked.length, last };
 }
 
+// Booker states: 'ok' (token + membership + quota), 'unknown' (something not checkable),
+// 'over' (quota probably used up), 'noCard' (no membership that allows booking),
+// 'noToken' (no usable HSP token / no account)
+const BOOKER_STATE_ORDER = { ok: 0, unknown: 1, over: 2, noCard: 3, noToken: 4 };
+const canProbablyBook = state => state === 'ok' || state === 'unknown';
+
+// ============ MEMBERSHIP CHECK ============
+
+const MEMBERSHIP_CACHE_MS = 15 * 60 * 1000;
+const membershipCache = new Map(); // memberId -> { at, result }
+let membershipShapeLogged = false;
+
+const normalizeName = text => String(text ?? '').trim().toLowerCase();
+
 /**
- * Best booker first: has a usable token, has free quota, booked least often / least recently, joined earliest.
- * Players over quota stay at the end as a last resort (our quota check is only an estimate).
+ * The response format of /subscribers/my-memberships isn't documented - accept the usual list
+ * wrappers and the usual places for the subscription id/name. Returns null if unrecognizable.
  */
-async function rankBookers(session) {
-  const ranked = [];
+function parseMemberships(body) {
+  const items = Array.isArray(body) ? body
+    : ['data', 'items', 'results', 'memberships', 'subscribers'].map(k => body?.[k]).find(Array.isArray);
+  if (!items) return null;
 
+  return items.map(item => {
+    const sub = item.subscription || item.membership || item.product || {};
+    const ids = [item.subscriptionId, sub.id, item.membershipId]
+      .map(Number).filter(id => Number.isInteger(id) && id > 0);
+    const name = String(sub.description || sub.name || item.description || item.name || '').trim();
+    const endDate = item.endDate || item.validUntil || item.endDateTime || null;
+    return { ids, name, endDate };
+  });
+}
+
+function findAccepted(memberships, accepted) {
+  const names = new Set([...accepted.values()].map(normalizeName));
+  return memberships.find(m => m.ids.some(id => accepted.has(id)) || (m.name && names.has(normalizeName(m.name))));
+}
+
+/**
+ * Does the member hold an active membership that allows booking the padel court?
+ * Returns { state: 'ok' | 'noCard' | 'unknown', note }
+ */
+async function checkMembership(token, memberId, slotStart) {
+  const cached = membershipCache.get(memberId);
+  let memberships;
+
+  if (cached && Date.now() - cached.at < MEMBERSHIP_CACHE_MS) {
+    memberships = cached.memberships;
+  } else {
+    try {
+      const res = await fetch(`${API_URL}/subscribers/my-memberships?membershipFilter=active&page=1&pageSize=50&memberIds=${memberId}`, {
+        headers: { 'Accept': 'application/json', 'Authorization': `Bearer ${token}` }
+      });
+      if (!res.ok) return { state: 'unknown', note: `Mitgliedschaft nicht prüfbar (${res.status})` };
+      const body = await res.json();
+
+      if (!membershipShapeLogged) {
+        // Field names only (no values) to verify the parser against the real response
+        const list = Array.isArray(body) ? body : Object.values(body || {}).find(Array.isArray);
+        console.log(`🎾 my-memberships Antwort: top=${Array.isArray(body) ? 'array' : Object.keys(body || {}).join(',')} item=${list?.[0] ? Object.keys(list[0]).join(',') : '-'}`);
+        membershipShapeLogged = true;
+      }
+
+      memberships = parseMemberships(body);
+      if (!memberships) return { state: 'unknown', note: 'Mitgliedschaft nicht prüfbar (unbekanntes Format)' };
+      membershipCache.set(memberId, { at: Date.now(), memberships });
+    } catch (error) {
+      return { state: 'unknown', note: `Mitgliedschaft nicht prüfbar (${error.message})` };
+    }
+  }
+
+  const courtMatch = findAccepted(memberships, membershipRules.court);
+  const rentalMatch = courtMatch || findAccepted(memberships, membershipRules.rental);
+  if (!rentalMatch) {
+    return { state: 'noCard', note: 'keine Mitgliedschaft, die Padel-Buchungen erlaubt' };
+  }
+  if (rentalMatch.endDate && new Date(rentalMatch.endDate).getTime() < new Date(slotStart).getTime()) {
+    return { state: 'unknown', note: `Mitgliedschaft endet vor dem Termin (${formatBerlin(rentalMatch.endDate)})` };
+  }
+  if (!courtMatch) {
+    return { state: 'unknown', note: `nur ${rentalMatch.name || 'andere Mitgliedschaft'} – unklar, ob das für den Platz reicht` };
+  }
+  return { state: 'ok', note: null };
+}
+
+/**
+ * Checks for every participant whether they could book this slot with their own HSP account
+ */
+async function checkBookers(session) {
+  const results = [];
   for (const participant of session.participants) {
-    if (!getUser(participant.memberId)) continue;
+    const base = { memberId: participant.memberId, name: participant.name, joinedAt: participant.joinedAt };
 
-    const token = await getValidUserToken(participant.memberId);
+    const token = getUser(participant.memberId) ? await getValidUserToken(participant.memberId) : null;
     if (!token) {
-      addLog(session, `${participant.name}: kein gültiger HSP-Token – übersprungen`);
+      results.push({ ...base, state: 'noToken', note: 'kein gültiger HSP-Token' });
       continue;
     }
 
-    const quota = await checkQuota(token, participant.memberId, session.startDate);
-    const history = bookingHistory(participant.memberId);
-    ranked.push({
-      memberId: participant.memberId,
-      name: participant.name,
-      quotaOk: quota.ok,
-      quotaNote: quota.note,
-      recentBookings: history.count,
-      lastBookedAt: history.last,
-      joinedAt: participant.joinedAt
-    });
+    const membership = await checkMembership(token, participant.memberId, session.startDate);
+    if (membership.state === 'noCard') {
+      results.push({ ...base, state: 'noCard', note: membership.note });
+      continue;
+    }
+
+    const quota = await checkQuota(token, participant.memberId, session.startDate, session.hspBookingId);
+    // A definite quota problem wins; otherwise any uncertainty (membership or quota) makes it 'unknown'
+    if (quota.state === 'over' || (quota.state === 'ok' && membership.state === 'ok')) {
+      results.push({ ...base, state: quota.state, note: quota.note });
+    } else {
+      results.push({ ...base, state: 'unknown', note: [membership.note, quota.note].filter(Boolean).join('; ') });
+    }
+  }
+  return results;
+}
+
+/**
+ * Forget cached memberships, e.g. after a member re-imported their token (maybe they just bought one)
+ */
+function clearMembershipCache(memberId) {
+  membershipCache.delete(memberId);
+}
+
+/**
+ * Best booker first: free quota > quota unknown > over quota, then booked least often / least
+ * recently, then joined earliest. Players without a token are dropped.
+ */
+async function rankBookers(session) {
+  const checked = await checkBookers(session);
+  for (const c of checked.filter(c => c.state === 'noToken')) {
+    addLog(session, `${c.name}: kein gültiger HSP-Token – übersprungen`);
   }
 
+  const ranked = checked
+    .filter(c => c.state !== 'noToken')
+    .map(c => {
+      const history = bookingHistory(c.memberId);
+      return { ...c, recentBookings: history.count, lastBookedAt: history.last };
+    });
+
   ranked.sort((a, b) =>
-    (b.quotaOk - a.quotaOk) ||
+    (BOOKER_STATE_ORDER[a.state] - BOOKER_STATE_ORDER[b.state]) ||
     (a.recentBookings - b.recentBookings) ||
     a.lastBookedAt.localeCompare(b.lastBookedAt) ||
     a.joinedAt.localeCompare(b.joinedAt)
   );
-  return ranked;
+  return { ranked, checked };
+}
+
+// ============ ELIGIBILITY (can anyone in the session book at all?) ============
+
+const ELIGIBILITY_INTERVAL_MS = 30 * 60 * 1000;
+const eligibilityChecks = new Map(); // sessionId -> running promise
+const eligibilityRechecks = new Set(); // sessionIds that changed while a check was running
+
+function describeBookers(players) {
+  return players.map(p => `${p.name} – ${p.note}`).join(', ');
+}
+
+const SHORT_REASONS = { noToken: 'Token abgelaufen', noCard: 'keine Mitgliedschaft', over: 'Limit erreicht' };
+
+/**
+ * One short line for the status when nobody could book, e.g. "Niemand konnte buchen (Limit erreicht)".
+ * Who had which problem is shown on the player chips.
+ */
+function shortFailReason(players) {
+  const reasons = [...new Set(players.map(p => SHORT_REASONS[p.state]).filter(Boolean))];
+  return reasons.length > 0 ? `Niemand konnte buchen (${reasons.join(', ')})` : 'Niemand konnte buchen';
+}
+
+/**
+ * Re-checks token + quota of all participants and stores the result on the session, so players
+ * see *before* the booking window opens that nobody will be able to book.
+ */
+function refreshEligibility(session) {
+  if (!['open', 'scheduled'].includes(session.status)) return Promise.resolve();
+  if (eligibilityChecks.has(session.id)) {
+    eligibilityRechecks.add(session.id);
+    return eligibilityChecks.get(session.id);
+  }
+
+  const promise = (async () => {
+    const players = (await checkBookers(session)).map(({ memberId, name, state, note }) => ({ memberId, name, state, note }));
+    if (!['open', 'scheduled'].includes(session.status)) return;
+
+    const previous = session.eligibility;
+    const anyCanBook = players.some(p => canProbablyBook(p.state));
+    const changed = JSON.stringify(previous?.players) !== JSON.stringify(players);
+    session.eligibility = { checkedAt: new Date().toISOString(), anyCanBook, players };
+
+    if (!changed) return;
+    const blocked = players.filter(p => !canProbablyBook(p.state));
+    if (!anyCanBook && players.length > 0) {
+      addLog(session, `⚠️ Aktuell kann voraussichtlich niemand buchen: ${describeBookers(blocked)}`);
+    } else if (previous && !previous.anyCanBook && anyCanBook) {
+      addLog(session, `Buchung wieder möglich über ${players.filter(p => canProbablyBook(p.state)).map(p => p.name).join(', ')}`);
+    }
+    touch(session);
+  })()
+    .catch(error => console.error(`Padel eligibility check failed (${session.id}):`, error))
+    .finally(() => {
+      eligibilityChecks.delete(session.id);
+      if (eligibilityRechecks.delete(session.id)) refreshEligibility(session);
+    });
+
+  eligibilityChecks.set(session.id, promise);
+  return promise;
+}
+
+function refreshAllEligibility() {
+  for (const session of sessions.filter(s => ['open', 'scheduled'].includes(s.status))) {
+    refreshEligibility(session);
+  }
+}
+
+/**
+ * Re-check all sessions a member is in (e.g. after they imported a fresh HSP token)
+ */
+export function refreshPadelEligibilityFor(memberId) {
+  clearMembershipCache(memberId);
+  for (const session of sessions) {
+    if (session.participants.some(p => p.memberId === memberId)) refreshEligibility(session);
+  }
 }
 
 // ============ BOOKING RUN ============
@@ -460,12 +684,26 @@ async function runBooking(sessionId) {
   try {
     setStatus(session, 'booking', 'Buchung läuft...');
 
-    const candidates = await rankBookers(session);
+    const { ranked: candidates, checked } = await rankBookers(session);
+    session.eligibility = {
+      checkedAt: new Date().toISOString(),
+      anyCanBook: checked.some(c => canProbablyBook(c.state)),
+      players: checked.map(({ memberId, name, state, note }) => ({ memberId, name, state, note }))
+    };
     if (candidates.length === 0) {
-      setStatus(session, 'failed', 'Kein Teilnehmer mit gültigem HSP-Token');
+      addLog(session, `Niemand konnte buchen: ${describeBookers(checked)}`);
+      setStatus(session, 'failed', shortFailReason(checked));
       return;
     }
-    addLog(session, `Booker-Reihenfolge: ${candidates.map(c => c.quotaNote ? `${c.name} (${c.quotaNote})` : c.name).join(' → ')}`);
+
+    // Players over quota are only tried once everyone else was rejected (or if there is nobody else)
+    const preferred = candidates.filter(c => canProbablyBook(c.state));
+    const fallback = candidates.filter(c => !canProbablyBook(c.state));
+    let rotation = preferred.length > 0 ? preferred : fallback;
+    if (preferred.length === 0) {
+      addLog(session, `⚠️ Laut Prüfung hat niemand freies Kontingent (${describeBookers(fallback)}) – versuche es trotzdem`);
+    }
+    addLog(session, `Booker-Reihenfolge: ${candidates.map(c => c.note ? `${c.name} (${c.note})` : c.name).join(' → ')}`);
     touch(session);
 
     const opensAt = bookingOpensAt(session.startDate).getTime();
@@ -474,9 +712,10 @@ async function runBooking(sessionId) {
     let attempts = 0;
     let lastMessage = '';
     const loggedFailures = new Set(); // polling runs at 2/s - log each booker/error combination once
+    const rejectedBookers = new Set();
 
     while (Date.now() < deadline) {
-      const booker = candidates[index % candidates.length];
+      const booker = rotation[index % rotation.length];
       const invited = session.participants.filter(p => p.memberId !== booker.memberId);
       attempts++;
 
@@ -508,16 +747,32 @@ async function runBooking(sessionId) {
           addLog(session, `${booker.name}: ${result.message}`);
           touch(session);
         }
+        rejectedBookers.add(booker.memberId);
         index++;
+
+        // Everyone with quota was rejected - now also try the ones we thought were over quota
+        if (rotation === preferred && fallback.length > 0 && preferred.every(c => rejectedBookers.has(c.memberId))) {
+          rotation = [...preferred, ...fallback];
+          addLog(session, `Alle mit freiem Kontingent abgelehnt – versuche auch ${fallback.map(c => c.name).join(', ')}`);
+          touch(session);
+        }
       }
       lastMessage = result.message;
       await sleep(POLL_INTERVAL_MS);
     }
 
+    // Details (attempt count, raw HSP message) go to the log; the status line stays short
+    addLog(session, `Abbruch nach ${attempts} Versuchen, letzte Antwort: ${lastMessage}`);
     const taken = await isSlotTaken(session);
-    setStatus(session, 'failed', taken
-      ? 'Platz wurde von jemand anderem gebucht'
-      : `Buchung nach ${attempts} Versuchen fehlgeschlagen: ${lastMessage}`);
+    let reason;
+    if (taken) {
+      reason = 'Platz war schon vergeben';
+    } else if (preferred.length === 0) {
+      reason = shortFailReason(checked);
+    } else {
+      reason = 'HSP hat die Buchung abgelehnt';
+    }
+    setStatus(session, 'failed', reason);
   } finally {
     runningBookings.delete(sessionId);
   }
@@ -685,6 +940,7 @@ export function createSession(user, startDate) {
   sessions.push(session);
   touch(session);
   evaluateSession(session);
+  refreshEligibility(session);
   return { session: sessionView(session) };
 }
 
@@ -704,6 +960,7 @@ export function joinSession(user, sessionId) {
     addLateJoiner(session, session.participants.at(-1)).catch(error => console.error('Padel late join error:', error));
   } else {
     evaluateSession(session);
+    refreshEligibility(session);
   }
   return { session: sessionView(session) };
 }
@@ -727,6 +984,7 @@ export function leaveSession(user, sessionId) {
     addLog(session, `${user.name} hat abgesagt`);
     touch(session);
     evaluateSession(session);
+    refreshEligibility(session);
   }
   return { session: sessionView(session) };
 }
@@ -753,6 +1011,7 @@ export function retrySession(user, sessionId) {
 
   setStatus(session, 'open', `Neuer Versuch gestartet von ${user.name}`);
   evaluateSession(session);
+  refreshEligibility(session);
   return { session: sessionView(session) };
 }
 
@@ -860,18 +1119,36 @@ export function getSessionIcs(user, sessionId) {
 
 // ============ INIT ============
 
+/**
+ * Failure texts from older versions were long (attempt counts, every player's reason) - shorten them
+ * to the current format. The details are still in the session log.
+ */
+function shortenLegacyFailMessage(message = '') {
+  if (message.includes('vermutlich hatte niemand freies Kontingent')) return 'Niemand konnte buchen (Limit erreicht)';
+  if (/^Buchung nach \d+ Versuchen fehlgeschlagen/.test(message)) return 'HSP hat die Buchung abgelehnt';
+  if (message === 'Platz wurde von jemand anderem gebucht') return 'Platz war schon vergeben';
+  if (message === 'Kein Teilnehmer mit gültigem HSP-Token') return 'Niemand konnte buchen (Token abgelaufen)';
+  if (message.startsWith('Niemand konnte buchen: ')) return 'Niemand konnte buchen';
+  return message;
+}
+
 export async function initializePadel() {
   console.log('🎾 Initializing padel sessions...');
   await loadRules();
   sessions = loadSessions();
 
   for (const session of sessions) {
+    if (session.status === 'failed') {
+      session.statusMessage = shortenLegacyFailMessage(session.statusMessage);
+    }
     // A booking run was interrupted by a restart - retry it
     if (session.status === 'booking') {
       session.status = 'open';
     }
     evaluateSession(session);
   }
+  refreshAllEligibility();
+  setInterval(refreshAllEligibility, ELIGIBILITY_INTERVAL_MS);
 
   const active = sessions.filter(s => ['open', 'scheduled'].includes(s.status)).length;
   console.log(`🎾 Padel: ${active} offene Session(s), Slots öffnen ${rules.daysAhead} Tage vorher um ${rules.openTime}`);

@@ -23,12 +23,21 @@ Die Regeln werden beim Serverstart aus HSP gelesen:
 HSP erlaubt pro Person **1 Buchung pro Tag** und **2 in 7 Tagen** (Platz `108` sagt 2, Platzmiete `129` sagt 3 – der Bot nimmt das strengere Limit). Der Bot sortiert die Teilnehmer so:
 
 1. Gültiger HSP-Token (abgelaufene Tokens ohne Refresh werden übersprungen)
-2. Freies Kontingent laut eigenen Padel-Buchungen in HSP
-3. Wer in den letzten 30 Tagen am wenigsten über den Bot gebucht hat
-4. Wer am längsten nicht gebucht hat, dann wer zuerst beigetreten ist
+2. Mitgliedschaft, die Padel-Buchungen erlaubt (HSP verlangt eine verknüpfte Mitgliedschaft, für den Platz `108` ist das „Rückschlagspiele Club“; die Liste wird beim Start aus HSP gelesen). Geprüft über `/subscribers/my-memberships`, 15 min gecacht.
+3. Freies Kontingent laut eigenen Padel-Buchungen in HSP – geprüft als rollierendes 7-Tage-Fenster, d. h. auch Buchungen *nach* dem Termin zählen
+4. Wer in den letzten 30 Tagen am wenigsten über den Bot gebucht hat
+5. Wer am längsten nicht gebucht hat, dann wer zuerst beigetreten ist
 
-Lehnt HSP die Buchung ab (z. B. Kontingent), probiert der Bot automatisch den Nächsten in der Liste.
-Der Verlauf jeder Session zeigt die Reihenfolge und alle Fehlermeldungen. Fehlgeschlagene Sessions können per „Erneut versuchen“ neu gestartet werden.
+Spieler ohne Mitgliedschaft oder über dem Limit werden nicht übersprungen, sondern erst versucht, wenn alle anderen abgelehnt wurden (die Prüfung ist nur eine Schätzung). Ist etwas nicht prüfbar, zählt der Spieler als „unklar“ und wird nach den sicheren Kandidaten versucht.
+
+### Kann überhaupt jemand buchen?
+
+Der Bot prüft das nicht erst beim Buchen, sondern schon beim Anlegen, Beitreten und Austreten, beim Serverstart, nach jedem Token-Import und alle 30 min:
+
+- Spieler, die nicht buchen können, bekommen ein gelbes **!** am Namen (Grund im Tooltip).
+- Kann **niemand** in der Session buchen, erscheint auf der Karte „Niemand kann buchen“ mit Kurzgrund pro Spieler (`Token abgelaufen`, `keine Mitgliedschaft`, `Limit erreicht`). Typischer Fall: jemand ohne Mitgliedschaft ist allein in der Session und braucht einen Mitspieler, der für beide bucht.
+
+Schlägt eine Buchung fehl, zeigt die Karte nur den Kurzgrund (z. B. „Niemand konnte buchen (Limit erreicht)“, „Platz war schon vergeben“, „HSP hat die Buchung abgelehnt“). Versuche und die genaue HSP-Antwort stehen im Verlauf. Fehlgeschlagene Sessions können per „Erneut versuchen“ neu gestartet werden.
 
 ## Kalender
 
