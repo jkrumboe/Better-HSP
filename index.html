@@ -1229,18 +1229,25 @@
     .toast.info { border-left-color: #64b5f6; }
 
     /* ---------- Padel ---------- */
-    .padel-user-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 12px;
-      min-width: 0;
+    .padel-calendar {
+      padding: 10px 14px;
+      margin-bottom: 14px;
     }
 
-    .padel-user-bar > span {
-      min-width: 0;
-      overflow-wrap: anywhere;
+    .padel-calendar summary {
+      cursor: pointer;
+    }
+
+    .padel-calendar[open] summary {
+      margin-bottom: 10px;
+    }
+
+    .padel-rules summary {
+      cursor: pointer;
+    }
+
+    .padel-rules p {
+      margin-top: 4px;
     }
 
     .padel-calendar p {
@@ -1278,8 +1285,8 @@
     }
 
     .date-nav .btn {
-      width: 48px;
-      min-height: 48px;
+      width: 44px;
+      min-height: 44px;
       padding: 0;
       flex-shrink: 0;
       font-size: 1.5rem;
@@ -1293,8 +1300,8 @@
     }
 
     .padel-slot {
-      min-height: 56px;
-      padding: 8px 4px;
+      min-height: 48px;
+      padding: 6px 4px;
       border-radius: 10px;
       border: 1px solid #d5d8d0;
       background: var(--surface);
@@ -1339,27 +1346,23 @@
     .padel-session-card {
       background: var(--surface);
       border-radius: var(--radius);
-      padding: 14px 16px;
-      margin-bottom: 12px;
-      border-left: 4px solid #2196F3;
+      padding: 10px 14px;
+      margin-bottom: 8px;
       box-shadow: var(--shadow);
     }
 
     .padel-session-card.status-scheduled,
     .padel-session-card.status-booking {
-      border-left-color: var(--amber);
       background: #fff9e6;
     }
 
     .padel-session-card.status-booked {
-      border-left-color: var(--green);
       background: var(--green-soft);
     }
 
     .padel-session-card.status-failed,
     .padel-session-card.status-cancelled,
     .padel-session-card.status-expired {
-      border-left-color: var(--red);
       background: #fff5f5;
       opacity: 0.8;
     }
@@ -1390,7 +1393,7 @@
       display: flex;
       flex-wrap: wrap;
       gap: 6px;
-      margin: 10px 0;
+      margin: 8px 0;
     }
 
     .padel-player {
@@ -1419,13 +1422,13 @@
     }
 
     .padel-session-actions .btn {
-      flex: 1 1 140px;
-      padding: 8px 12px;
+      flex: 0 0 auto;
+      padding: 6px 16px;
       font-size: 0.9rem;
     }
 
     .padel-session-card details {
-      margin-top: 6px;
+      margin-top: 4px;
       font-size: 0.85rem;
       color: var(--muted);
     }
@@ -1654,7 +1657,6 @@
 
       .course-card,
       .scheduled-job-card,
-      .padel-session-card,
       .log-container {
         border-color: var(--border);
       }
@@ -1949,11 +1951,6 @@
       </div>
 
       <div id="padelMain" class="hidden">
-        <div class="padel-user-bar">
-          <span>👤 <strong id="padelUserName"></strong> <span id="padelUserEmail" style="color: #999;"></span></span>
-          <button class="btn-link" id="padelLogoutBtn" style="font-size: 0.95rem;">Abmelden</button>
-        </div>
-
         <details class="instructions padel-calendar">
           <summary>📅 Kalender aufs Handy</summary>
           <p>Einmal abonnieren – alle Sessions, bei denen du dabei bist, erscheinen automatisch und werden aktualisiert.</p>
@@ -1964,8 +1961,11 @@
           <p class="padel-hint">Android / Google Kalender: Link kopieren → calendar.google.com → „Weitere Kalender“ → „Per URL“.</p>
         </details>
 
-        <h3 style="margin-bottom: 10px;">Neue Session</h3>
-        <p class="padel-hint" id="padelRulesHint"></p>
+        <h3 style="margin-bottom: 6px;">Neue Session</h3>
+        <details class="padel-hint padel-rules">
+          <summary id="padelRulesSummary"></summary>
+          <p id="padelRulesHint"></p>
+        </details>
         <div class="date-nav">
           <button class="btn btn-secondary" id="padelPrevDay" aria-label="Vorheriger Tag">‹</button>
           <input type="date" id="padelDate" aria-label="Datum">
@@ -1973,7 +1973,7 @@
         </div>
         <div id="padelSlots" class="padel-slots"></div>
 
-        <h3 style="margin: 25px 0 15px;">Sessions</h3>
+        <h3 style="margin: 20px 0 10px;">Sessions</h3>
         <div id="padelSessions"></div>
       </div>
     </div>
@@ -3670,18 +3670,16 @@
     }
 
     function showPadelMain() {
-      const { user, calendarToken, rules } = padelMe;
+      const { calendarToken, rules } = padelMe;
       document.getElementById('padelLogin').classList.add('hidden');
       document.getElementById('padelMain').classList.remove('hidden');
-      document.getElementById('padelUserName').textContent = user.name;
-      document.getElementById('padelUserEmail').textContent = user.email;
-
       const feedPath = `${location.host}/api/padel/calendar/${calendarToken}.ics`;
       document.getElementById('padelWebcalLink').href = `webcal://${feedPath}`;
       document.getElementById('padelCopyCalBtn').dataset.url = `${location.protocol}//${feedPath}`;
 
+      document.getElementById('padelRulesSummary').textContent =
+        `Ab ${rules.minPlayers} Spielern bucht der Bot automatisch (${rules.daysAhead} Tage vorher, ${rules.openTime} Uhr)`;
       document.getElementById('padelRulesHint').textContent =
-        `Ab ${rules.minPlayers} Spielern bucht der Bot automatisch, sobald der Slot freigeschaltet wird (${rules.daysAhead} Tage vorher um ${rules.openTime} Uhr). ` +
         `HSP erlaubt pro Person ${rules.maxPerDay} Buchung/Tag und ${rules.maxPerPeriod} in ${rules.periodDays} Tagen – deshalb bucht immer, wer noch Kontingent hat und am längsten nicht dran war.`;
 
       const dateInput = document.getElementById('padelDate');
@@ -3892,7 +3890,6 @@
       }
     });
 
-    document.getElementById('padelLogoutBtn').addEventListener('click', padelLogout);
     document.getElementById('padelDate').addEventListener('change', loadPadelSlots);
     document.getElementById('padelConnectBtn').addEventListener('click', openAuthModal);
 
