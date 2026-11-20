@@ -513,21 +513,22 @@ app.get('/api/sports', async (req, res) => {
 // Kurse suchen
 app.get('/api/courses', async (req, res) => {
   try {
-    const { days = 8, level, minAvailable, sportId } = req.query;
+    const { level, minAvailable } = req.query;
+    const days = Math.min(Math.max(parseInt(req.query.days, 10) || 8, 0), 60);
 
     const start = new Date();
     start.setHours(0, 0, 0, 0);
 
     const end = new Date();
-    end.setDate(end.getDate() + parseInt(days));
+    end.setDate(end.getDate() + days);
     end.setHours(23, 59, 59, 999);
 
-    let linkedProductIds = [Volleyball_ID];
-    
-    // If sportId provided, use it
-    if (sportId) {
-      linkedProductIds = [parseInt(sportId)];
-    }
+    // sportIds=1,2,3 (mehrere Produkte mit gleichem Namen) oder legacy sportId=1
+    const rawIds = String(req.query.sportIds || req.query.sportId || '')
+      .split(',')
+      .map(v => parseInt(v, 10))
+      .filter(Number.isInteger);
+    const linkedProductIds = rawIds.length ? [...new Set(rawIds)].slice(0, 20) : [Volleyball_ID];
 
     const filter = {
       startDate: { "$gte": start.toISOString(), "$lte": end.toISOString() },
@@ -536,19 +537,20 @@ app.get('/api/courses', async (req, res) => {
     };
 
     const encoded = encodeURIComponent(JSON.stringify(filter));
-    const url = `${API_URL}/bookings?s=${encoded}&limit=100&page=1&sort=startDate,ASC`;
-
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: { 'Accept': 'application/json' }
-    });
-
-    if (!response.ok) {
-      throw new Error(`API Fehler: ${response.status}`);
+    // Alle Seiten laden statt nach 100 Einträgen abzuschneiden (max. 5 Seiten)
+    let courses = [];
+    for (let page = 1; page <= 5; page++) {
+      const response = await fetch(`${API_URL}/bookings?s=${encoded}&limit=100&page=${page}&sort=startDate,ASC`, {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' }
+      });
+      if (!response.ok) {
+        throw new Error(`API Fehler: ${response.status}`);
+      }
+      const data = await response.json();
+      courses.push(...(data.data || []));
+      if (!data.pageCount || page >= data.pageCount) break;
     }
-
-    const data = await response.json();
-    let courses = data.data || [];
 
     // Level Filter
     if (level) {

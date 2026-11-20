@@ -462,6 +462,210 @@
     .filter-panel .form-group:nth-child(5) {
       grid-column: span 3;
     }
+    .filter-count {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 20px;
+      height: 20px;
+      margin-left: 4px;
+      padding: 0 6px;
+      border-radius: 10px;
+      background: var(--green);
+      color: #fff;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+
+    /* Sportart-Auswahl (Combobox) */
+    .combo {
+      position: relative;
+    }
+
+    .combo-icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      width: 18px;
+      height: 18px;
+      transform: translateY(-50%);
+      fill: none;
+      stroke: var(--faint);
+      stroke-width: 2;
+      stroke-linecap: round;
+      pointer-events: none;
+    }
+
+    .combo input {
+      padding-left: 38px;
+      padding-right: 40px;
+      font-weight: 500;
+    }
+
+    .combo-clear {
+      position: absolute;
+      right: 4px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: none;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .combo-clear[hidden] {
+      display: none;
+    }
+
+    .combo-clear svg {
+      width: 16px;
+      height: 16px;
+      stroke: var(--muted);
+      stroke-width: 2.2;
+      stroke-linecap: round;
+    }
+
+    .combo-clear:hover {
+      background: var(--bg);
+    }
+
+    .combo-list {
+      position: absolute;
+      z-index: 50;
+      top: calc(100% + 4px);
+      left: 0;
+      right: 0;
+      max-height: min(340px, 55vh);
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      list-style: none;
+      margin: 0;
+      padding: 6px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    }
+
+    .combo-list[hidden] {
+      display: none;
+    }
+
+    .combo-group {
+      padding: 8px 10px 4px;
+      color: var(--faint);
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .combo-option {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      min-height: 40px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      color: var(--text);
+    }
+
+    .combo-option mark {
+      background: none;
+      color: var(--green-text);
+      font-weight: 700;
+    }
+
+    .combo-option.active {
+      background: var(--green-soft);
+    }
+
+    .combo-option[aria-selected="true"]::after {
+      content: '✓';
+      color: var(--green-text);
+      font-weight: 700;
+    }
+
+    .combo-empty {
+      padding: 14px 10px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    /* Ergebniszeile über der Kursliste */
+    .results-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 4px 0 10px;
+      min-height: 36px;
+    }
+
+    .results-bar[hidden] {
+      display: none;
+    }
+
+    .results-summary {
+      flex: 1;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .results-summary strong {
+      color: var(--text);
+    }
+
+    .btn-text {
+      background: none;
+      border: none;
+      padding: 6px 4px;
+      color: var(--green-text);
+      font: inherit;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .btn-text[hidden] {
+      display: none;
+    }
+
+    .btn-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      cursor: pointer;
+    }
+
+    .btn-icon svg {
+      width: 18px;
+      height: 18px;
+      fill: none;
+      stroke: var(--muted);
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .btn-icon.spinning svg {
+      animation: spin 0.8s linear infinite;
+    }
+
+    .empty-state .btn {
+      margin-top: 12px;
+    }
 
     .loading-row {
       display: flex;
@@ -1229,25 +1433,18 @@
     .toast.info { border-left-color: #64b5f6; }
 
     /* ---------- Padel ---------- */
-    .padel-calendar {
-      padding: 10px 14px;
-      margin-bottom: 14px;
+    .padel-user-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+      min-width: 0;
     }
 
-    .padel-calendar summary {
-      cursor: pointer;
-    }
-
-    .padel-calendar[open] summary {
-      margin-bottom: 10px;
-    }
-
-    .padel-rules summary {
-      cursor: pointer;
-    }
-
-    .padel-rules p {
-      margin-top: 4px;
+    .padel-user-bar > span {
+      min-width: 0;
+      overflow-wrap: anywhere;
     }
 
     .padel-calendar p {
@@ -1285,8 +1482,8 @@
     }
 
     .date-nav .btn {
-      width: 44px;
-      min-height: 44px;
+      width: 48px;
+      min-height: 48px;
       padding: 0;
       flex-shrink: 0;
       font-size: 1.5rem;
@@ -1300,8 +1497,8 @@
     }
 
     .padel-slot {
-      min-height: 48px;
-      padding: 6px 4px;
+      min-height: 56px;
+      padding: 8px 4px;
       border-radius: 10px;
       border: 1px solid #d5d8d0;
       background: var(--surface);
@@ -1346,23 +1543,27 @@
     .padel-session-card {
       background: var(--surface);
       border-radius: var(--radius);
-      padding: 10px 14px;
-      margin-bottom: 8px;
+      padding: 14px 16px;
+      margin-bottom: 12px;
+      border-left: 4px solid #2196F3;
       box-shadow: var(--shadow);
     }
 
     .padel-session-card.status-scheduled,
     .padel-session-card.status-booking {
+      border-left-color: var(--amber);
       background: #fff9e6;
     }
 
     .padel-session-card.status-booked {
+      border-left-color: var(--green);
       background: var(--green-soft);
     }
 
     .padel-session-card.status-failed,
     .padel-session-card.status-cancelled,
     .padel-session-card.status-expired {
+      border-left-color: var(--red);
       background: #fff5f5;
       opacity: 0.8;
     }
@@ -1393,7 +1594,7 @@
       display: flex;
       flex-wrap: wrap;
       gap: 6px;
-      margin: 8px 0;
+      margin: 10px 0;
     }
 
     .padel-player {
@@ -1422,13 +1623,13 @@
     }
 
     .padel-session-actions .btn {
-      flex: 0 0 auto;
-      padding: 6px 16px;
+      flex: 1 1 140px;
+      padding: 8px 12px;
       font-size: 0.9rem;
     }
 
     .padel-session-card details {
-      margin-top: 4px;
+      margin-top: 6px;
       font-size: 0.85rem;
       color: var(--muted);
     }
@@ -1621,7 +1822,7 @@
       }
 
       .search-bar {
-        flex: 1 1 200px;
+        flex: 1.4 1 280px;
         margin-bottom: 0;
       }
 
@@ -1657,6 +1858,7 @@
 
       .course-card,
       .scheduled-job-card,
+      .padel-session-card,
       .log-container {
         border-color: var(--border);
       }
@@ -1812,30 +2014,48 @@
       <div class="course-filters">
         <div class="search-bar">
           <div class="form-group">
-            <label for="filterSport">Sportart</label>
-            <input list="sportsList" id="filterSport" placeholder="Tippen zum Suchen..." autocomplete="off" enterkeyhint="search">
-            <datalist id="sportsList"></datalist>
-            <input type="hidden" id="filterSportId">
+            <label for="filterSport" id="filterSportLabel">Sportart</label>
+            <div class="combo" id="sportCombo">
+              <svg class="combo-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+              <input id="filterSport" type="text" role="combobox" aria-autocomplete="list" aria-expanded="false"
+                     aria-controls="sportListbox" aria-labelledby="filterSportLabel"
+                     placeholder="Sportart suchen, z. B. Volleyball" autocomplete="off" autocapitalize="off"
+                     spellcheck="false" enterkeyhint="search">
+              <button type="button" class="combo-clear" id="sportClear" aria-label="Eingabe löschen" hidden>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+              </button>
+              <ul class="combo-list" id="sportListbox" role="listbox" aria-labelledby="filterSportLabel" hidden></ul>
+            </div>
           </div>
-          <button class="btn btn-secondary filter-toggle" id="filterToggle" aria-expanded="false" aria-controls="filterPanel">Filter</button>
+          <button class="btn btn-secondary filter-toggle" id="filterToggle" aria-expanded="false" aria-controls="filterPanel">
+            Filter <span class="filter-count" id="filterCount" hidden></span>
+          </button>
         </div>
         <div class="filter-panel" id="filterPanel">
           <div class="form-group">
-            <label for="filterDays">Tage</label>
-            <input type="number" id="filterDays" value="8" min="1" max="30" inputmode="numeric">
+            <label for="filterDays">Zeitraum</label>
+            <select id="filterDays">
+              <option value="0">Heute</option>
+              <option value="3">3 Tage</option>
+              <option value="8" selected>8 Tage</option>
+              <option value="14">2 Wochen</option>
+              <option value="30">30 Tage</option>
+            </select>
           </div>
           <div class="form-group">
             <label for="filterLevel">Level</label>
             <select id="filterLevel">
               <option value="">Alle</option>
-              <option value="1">Level 1</option>
-              <option value="2">Level 2</option>
-              <option value="3">Level 3</option>
             </select>
           </div>
           <div class="form-group">
-            <label for="filterAvailable">Min. frei</label>
-            <input type="number" id="filterAvailable" value="0" min="0" inputmode="numeric">
+            <label for="filterAvailable">Freie Plätze</label>
+            <select id="filterAvailable">
+              <option value="0">Egal</option>
+              <option value="1">Mind. 1</option>
+              <option value="2">Mind. 2</option>
+              <option value="5">Mind. 5</option>
+            </select>
           </div>
           <div class="form-group">
             <label for="filterDate">Datum</label>
@@ -1843,10 +2063,18 @@
           </div>
           <div class="form-group">
             <label for="filterTrainer">Trainer</label>
-            <input type="text" id="filterTrainer" placeholder="Name..." enterkeyhint="search">
+            <input type="search" id="filterTrainer" list="trainerList" placeholder="Name" autocomplete="off" enterkeyhint="search">
+            <datalist id="trainerList"></datalist>
           </div>
         </div>
-        <button class="btn btn-primary btn-block" id="searchBtn">Suchen</button>
+      </div>
+
+      <div class="results-bar" id="resultsBar" hidden>
+        <span class="results-summary" id="resultsSummary" aria-live="polite"></span>
+        <button type="button" class="btn-text" id="resetFilters" hidden>Filter zurücksetzen</button>
+        <button type="button" class="btn-icon" id="refreshCourses" title="Aktualisieren" aria-label="Kurse aktualisieren">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5"/></svg>
+        </button>
       </div>
 
       <div id="coursesLoading" class="loading-row hidden">
@@ -1951,6 +2179,11 @@
       </div>
 
       <div id="padelMain" class="hidden">
+        <div class="padel-user-bar">
+          <span>👤 <strong id="padelUserName"></strong> <span id="padelUserEmail" style="color: #999;"></span></span>
+          <button class="btn-link" id="padelLogoutBtn" style="font-size: 0.95rem;">Abmelden</button>
+        </div>
+
         <details class="instructions padel-calendar">
           <summary>📅 Kalender aufs Handy</summary>
           <p>Einmal abonnieren – alle Sessions, bei denen du dabei bist, erscheinen automatisch und werden aktualisiert.</p>
@@ -1961,11 +2194,8 @@
           <p class="padel-hint">Android / Google Kalender: Link kopieren → calendar.google.com → „Weitere Kalender“ → „Per URL“.</p>
         </details>
 
-        <h3 style="margin-bottom: 6px;">Neue Session</h3>
-        <details class="padel-hint padel-rules">
-          <summary id="padelRulesSummary"></summary>
-          <p id="padelRulesHint"></p>
-        </details>
+        <h3 style="margin-bottom: 10px;">Neue Session</h3>
+        <p class="padel-hint" id="padelRulesHint"></p>
         <div class="date-nav">
           <button class="btn btn-secondary" id="padelPrevDay" aria-label="Vorheriger Tag">‹</button>
           <input type="date" id="padelDate" aria-label="Datum">
@@ -1973,7 +2203,7 @@
         </div>
         <div id="padelSlots" class="padel-slots"></div>
 
-        <h3 style="margin: 20px 0 10px;">Sessions</h3>
+        <h3 style="margin: 25px 0 15px;">Sessions</h3>
         <div id="padelSessions"></div>
       </div>
     </div>
@@ -2739,204 +2969,541 @@
       }
     }
 
-    // Sportarten laden
-    let sportsMap = new Map();
-    async function loadSports() {
-      try {
-        const res = await fetch('/api/sports');
-        const sports = await res.json();
-        
-        const datalist = document.getElementById('sportsList');
-        const input = document.getElementById('filterSport');
-        
-        sports.forEach(s => {
-          const option = document.createElement('option');
-          option.value = s.name;
-          datalist.appendChild(option);
-          sportsMap.set(s.name, s.id);
-          
-          // Default Volleyball
-          if (s.id === 285) {
-             input.value = s.name;
-             document.getElementById('filterSportId').value = s.id;
-          }
-        });
-        
-        // Input Handler für ID Mapping
-        input.addEventListener('input', (e) => {
-            const val = e.target.value;
-            const id = sportsMap.get(val);
-            if (id) {
-                document.getElementById('filterSportId').value = id;
-                // Auswahl aus der Vorschlagsliste (kein normales Tippen): direkt suchen, Tastatur einklappen
-                if (!e.inputType || e.inputType === 'insertReplacementText') {
-                    input.blur();
-                    document.getElementById('searchBtn').click();
-                }
-            } else {
-                document.getElementById('filterSportId').value = '';
-            }
-        });
-        
-        // Initial search if we have a default
-        if (input.value) document.getElementById('searchBtn').click();
+    // ============================================================
+    // Kurssuche
+    // ============================================================
+    const DEFAULT_SPORT_ID = 285; // Volleyball
+    const SPORT_STORAGE = 'hsp.sport';
+    const RECENT_SPORTS_STORAGE = 'hsp.recentSports';
 
-      } catch (e) {
-        console.error('Fehler beim Laden der Sportarten:', e);
+    let sports = [];            // [{ key, name, ids: [] }] – gleiche Namen zusammengefasst
+    let selectedSport = null;   // Eintrag aus `sports`
+    let allCourses = [];        // letzte Antwort vom Server (ohne Client-Filter)
+    let searchSeq = 0;
+    let searchAbort = null;
+    let searchInFlight = false;
+    let refreshTimer = null;
+
+    // Für die Suche: Groß/Klein, Akzente, ß, Bindestriche & Mehrfach-Leerzeichen egal
+    function normalizeText(str) {
+      return String(str || '')
+        .normalize('NFD').replace(/[̀-ͯ]/g, '')
+        .toLowerCase()
+        .replace(/ß/g, 'ss')
+        .replace(/[^a-z0-9]+/g, ' ')
+        .trim();
+    }
+
+    // Wie normalizeText, aber mit Rückverweis auf die Original-Zeichen (für Hervorhebungen)
+    function normalizeWithMap(str) {
+      let out = '';
+      const map = [];
+      for (let i = 0; i < str.length; i++) {
+        let n = str[i].normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+        if (n === 'ß') n = 'ss';
+        n = n.replace(/[^a-z0-9]/g, ' ');
+        for (const ch of n) { out += ch; map.push(i); }
+      }
+      return { out, map };
+    }
+
+    function highlightMatch(name, tokens) {
+      if (!tokens.length) return escapeHtml(name);
+      const { out, map } = normalizeWithMap(name);
+      const marked = new Array(name.length).fill(false);
+      tokens.forEach(t => {
+        let idx = out.indexOf(t);
+        while (idx !== -1) {
+          for (let k = idx; k < idx + t.length; k++) marked[map[k]] = true;
+          idx = out.indexOf(t, idx + t.length);
+        }
+      });
+      let html = '';
+      let open = false;
+      for (let i = 0; i < name.length; i++) {
+        if (marked[i] && !open) { html += '<mark>'; open = true; }
+        if (!marked[i] && open) { html += '</mark>'; open = false; }
+        html += escapeHtml(name[i]);
+      }
+      return open ? html + '</mark>' : html;
+    }
+
+    // Alle Suchwörter müssen vorkommen (Reihenfolge egal); Treffer am Wortanfang ranken höher
+    function matchSports(query) {
+      const q = normalizeText(query);
+      if (!q) return [];
+      const tokens = q.split(' ');
+      const results = [];
+      for (const s of sports) {
+        if (!tokens.every(t => s.key.includes(t))) continue;
+        let score;
+        if (s.key === q) score = 0;
+        else if (s.key.startsWith(q)) score = 1;
+        else if (tokens.every(t => (' ' + s.key).includes(' ' + t))) score = 2;
+        else score = 3;
+        results.push({ sport: s, score });
+      }
+      results.sort((a, b) => a.score - b.score || a.sport.name.localeCompare(b.sport.name, 'de'));
+      return results.map(r => r.sport);
+    }
+
+    function readStorage(key, fallback) {
+      try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; }
+    }
+
+    function writeStorage(key, value) {
+      try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* privater Modus */ }
+    }
+
+    function recentSports() {
+      const keys = readStorage(RECENT_SPORTS_STORAGE, []);
+      return keys.map(k => sports.find(s => s.key === k)).filter(Boolean);
+    }
+
+    function rememberSport(sport) {
+      writeStorage(SPORT_STORAGE, sport.key);
+      const keys = readStorage(RECENT_SPORTS_STORAGE, []).filter(k => k !== sport.key);
+      keys.unshift(sport.key);
+      writeStorage(RECENT_SPORTS_STORAGE, keys.slice(0, 5));
+    }
+
+    // ---------- Combobox ----------
+    const sportInput = document.getElementById('filterSport');
+    const sportList = document.getElementById('sportListbox');
+    const sportClear = document.getElementById('sportClear');
+    let comboOptions = [];   // aktuell angezeigte Sportarten (Reihenfolge = Optionen)
+    let comboActive = -1;
+
+    function renderSportList() {
+      const query = sportInput.value;
+      const showAll = !normalizeText(query) || (selectedSport && query === selectedSport.name);
+      const tokens = showAll ? [] : normalizeText(query).split(' ');
+      let html = '';
+      comboOptions = [];
+
+      const optionHtml = (s) => {
+        const i = comboOptions.push(s) - 1;
+        const selected = selectedSport && s.key === selectedSport.key;
+        return `<li class="combo-option" role="option" id="sportOpt${i}" data-index="${i}" aria-selected="${selected}"><span>${highlightMatch(s.name, tokens)}</span></li>`;
+      };
+
+      if (showAll) {
+        const recent = recentSports();
+        if (recent.length) {
+          html += '<li class="combo-group" role="presentation">Zuletzt gesucht</li>';
+          html += recent.map(optionHtml).join('');
+          html += '<li class="combo-group" role="presentation">Alle Sportarten</li>';
+        }
+        html += sports.map(optionHtml).join('');
+      } else {
+        const matches = matchSports(query);
+        html = matches.length
+          ? matches.map(optionHtml).join('')
+          : `<li class="combo-empty" role="presentation">Keine Sportart zu „${escapeHtml(query.trim())}“ gefunden.</li>`;
+      }
+
+      sportList.innerHTML = html;
+      sportList.scrollTop = 0;
+      if (showAll) {
+        // Aktuelle Auswahl markieren und in die Mitte scrollen (ohne Rezent-Duplikat oben)
+        const idx = comboOptions.findLastIndex(s => selectedSport && s.key === selectedSport.key);
+        setComboActive(idx, 'center');
+      } else {
+        // Beim Tippen ist der beste Treffer vorausgewählt -> Enter übernimmt ihn
+        setComboActive(comboOptions.length ? 0 : -1, null);
       }
     }
 
-    // Enter-Taste für Suche
-    ['filterSport', 'filterDays', 'filterLevel', 'filterAvailable', 'filterDate', 'filterTrainer'].forEach(id => {
-      const element = document.getElementById(id);
-      if (element) {
-        element.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter') {
-            e.preventDefault();
-            document.getElementById('searchBtn').click();
+    // scroll: 'nearest' | 'center' | null – scrollt nur die Liste, nie die Seite
+    function setComboActive(index, scroll = 'nearest') {
+      sportList.querySelector('.combo-option.active')?.classList.remove('active');
+      comboActive = index;
+      const el = index >= 0 ? document.getElementById(`sportOpt${index}`) : null;
+      if (!el) {
+        sportInput.removeAttribute('aria-activedescendant');
+        return;
+      }
+      el.classList.add('active');
+      sportInput.setAttribute('aria-activedescendant', el.id);
+      if (scroll === 'center') {
+        sportList.scrollTop = el.offsetTop - (sportList.clientHeight - el.offsetHeight) / 2;
+      } else if (scroll === 'nearest') {
+        if (el.offsetTop < sportList.scrollTop) sportList.scrollTop = el.offsetTop;
+        else if (el.offsetTop + el.offsetHeight > sportList.scrollTop + sportList.clientHeight) {
+          sportList.scrollTop = el.offsetTop + el.offsetHeight - sportList.clientHeight;
+        }
+      }
+    }
+
+    function openSportList() {
+      if (!sports.length) return;
+      sportList.hidden = false;
+      sportInput.setAttribute('aria-expanded', 'true');
+      renderSportList();
+    }
+
+    function closeSportList() {
+      sportList.hidden = true;
+      sportInput.setAttribute('aria-expanded', 'false');
+      sportInput.removeAttribute('aria-activedescendant');
+      comboActive = -1;
+    }
+
+    function updateClearButton() {
+      sportClear.hidden = !sportInput.value;
+    }
+
+    // Eingabe immer auf die tatsächlich angezeigte Sportart zurücksetzen,
+    // damit Feld und Ergebnisliste nie auseinanderlaufen
+    function restoreSportInput() {
+      sportInput.value = selectedSport ? selectedSport.name : '';
+      updateClearButton();
+    }
+
+    function selectSport(sport, { search = true } = {}) {
+      const changed = !selectedSport || selectedSport.key !== sport.key;
+      selectedSport = sport;
+      restoreSportInput();
+      closeSportList();
+      rememberSport(sport);
+      if (changed) {
+        // Level und Trainer sind sportartspezifisch und passen nicht mehr
+        document.getElementById('filterLevel').value = '';
+        document.getElementById('filterTrainer').value = '';
+      }
+      if (search) searchCourses();
+    }
+
+    sportInput.addEventListener('focus', () => {
+      sportInput.select();
+      openSportList();
+    });
+
+    sportInput.addEventListener('input', () => {
+      updateClearButton();
+      if (sportList.hidden) openSportList();
+      else renderSportList();
+    });
+
+    sportInput.addEventListener('keydown', (e) => {
+      const open = !sportList.hidden;
+      switch (e.key) {
+        case 'ArrowDown':
+          e.preventDefault();
+          if (!open) { openSportList(); return; }
+          setComboActive(Math.min(comboActive + 1, comboOptions.length - 1));
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          if (open) setComboActive(Math.max(comboActive - 1, 0));
+          break;
+        case 'Enter': {
+          e.preventDefault();
+          const pick = comboOptions[comboActive];
+          if (open && pick) {
+            selectSport(pick);
+            if (matchMedia('(pointer: coarse)').matches) sportInput.blur();
+          } else if (!open) {
+            searchCourses();
           }
-        });
+          break;
+        }
+        case 'Escape':
+          if (open) {
+            e.preventDefault();
+            restoreSportInput();
+            closeSportList();
+            sportInput.select();
+          }
+          break;
+        case 'Tab':
+          closeSportList();
+          break;
       }
     });
 
-    // Filters re-trigger search on change (kein extra Tipp auf "Suchen" nötig)
-    ['filterDate', 'filterLevel', 'filterDays', 'filterAvailable'].forEach(id => {
-      document.getElementById(id).addEventListener('change', () => {
-        document.getElementById('searchBtn').click();
+    sportInput.addEventListener('blur', () => {
+      // Klicks auf die Liste verhindern das Blur (mousedown preventDefault), daher hier direkt schließen
+      closeSportList();
+      restoreSportInput();
+    });
+
+    sportList.addEventListener('mousedown', (e) => e.preventDefault());
+    sportList.addEventListener('click', (e) => {
+      const opt = e.target.closest('.combo-option');
+      if (!opt) return;
+      selectSport(comboOptions[+opt.dataset.index]);
+      if (matchMedia('(pointer: coarse)').matches) sportInput.blur();
+    });
+    sportList.addEventListener('mousemove', (e) => {
+      const opt = e.target.closest('.combo-option');
+      if (opt && +opt.dataset.index !== comboActive) setComboActive(+opt.dataset.index, false);
+    });
+
+    sportClear.addEventListener('mousedown', (e) => e.preventDefault());
+    sportClear.addEventListener('click', () => {
+      sportInput.value = '';
+      updateClearButton();
+      sportInput.focus();
+      openSportList();
+    });
+
+    // Sportarten laden
+    async function loadSports() {
+      try {
+        const res = await fetch('/api/sports');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const list = await res.json();
+
+        // Gleich benannte Produkte (z. B. doppelte Einträge im HSP) zu einer Sportart zusammenfassen
+        const byKey = new Map();
+        list.forEach(s => {
+          const name = String(s.name || '').replace(/\s+/g, ' ').trim();
+          const key = normalizeText(name);
+          if (!key) return;
+          if (!byKey.has(key)) byKey.set(key, { key, name, ids: [] });
+          byKey.get(key).ids.push(s.id);
+        });
+        sports = [...byKey.values()].sort((a, b) => a.name.localeCompare(b.name, 'de'));
+
+        const savedKey = readStorage(SPORT_STORAGE, null);
+        const initial = sports.find(s => s.key === savedKey)
+          || sports.find(s => s.ids.includes(DEFAULT_SPORT_ID))
+          || sports[0];
+        if (initial) {
+          selectedSport = initial;
+          restoreSportInput();
+          searchCourses();
+        }
+      } catch (e) {
+        console.error('Fehler beim Laden der Sportarten:', e);
+        document.getElementById('coursesList').innerHTML =
+          '<div class="alert alert-error">Sportarten konnten nicht geladen werden. Bitte Seite neu laden.</div>';
+      }
+    }
+
+    // ---------- Filter ----------
+    // "Level 2" -> [2], "Level 1-3 (FA/F)" -> [1,2,3], "Level 2+" -> [2..max]
+    // openEnded=false: "Level 2+" zählt nur als 2 (für die Auswahlliste)
+    function parseLevels(desc, openEnded = true) {
+      const m = String(desc || '').match(/level\s*(\d)\s*(?:(?:-|–|bis)\s*(\d)|(\+))?/i);
+      if (!m) return [];
+      const from = +m[1];
+      const to = m[2] ? +m[2] : (m[3] && openEnded) ? 9 : from;
+      const levels = [];
+      for (let l = from; l <= Math.max(from, to); l++) levels.push(l);
+      return levels;
+    }
+
+    // Level-Auswahl aus den tatsächlich vorhandenen Kursen aufbauen
+    function updateLevelOptions() {
+      const select = document.getElementById('filterLevel');
+      const current = select.value;
+      const found = new Set();
+      allCourses.forEach(c => parseLevels(c.level, false).forEach(l => found.add(l)));
+      if (current) found.add(+current);
+      const levels = [...found].sort((a, b) => a - b);
+      select.innerHTML = '<option value="">Alle</option>' +
+        levels.map(l => `<option value="${l}">Level ${l}</option>`).join('');
+      select.value = current;
+      select.disabled = levels.length === 0;
+    }
+
+    function updateTrainerOptions() {
+      const names = new Set();
+      allCourses.forEach(c => (c.supervisors || []).forEach(s => {
+        const n = `${s.firstName || ''} ${s.lastName || ''}`.trim();
+        if (n) names.add(n);
+      }));
+      document.getElementById('trainerList').innerHTML = [...names]
+        .sort((a, b) => a.localeCompare(b, 'de'))
+        .map(n => `<option value="${escapeHtml(n)}"></option>`).join('');
+    }
+
+    function localDateKey(d) {
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+
+    function getClientFilters() {
+      return {
+        level: document.getElementById('filterLevel').value,
+        minAvailable: parseInt(document.getElementById('filterAvailable').value, 10) || 0,
+        date: document.getElementById('filterDate').value,
+        trainer: normalizeText(document.getElementById('filterTrainer').value)
+      };
+    }
+
+    function activeFilterCount() {
+      const f = getClientFilters();
+      return [f.level, f.minAvailable > 0, f.date, f.trainer].filter(Boolean).length
+        + (document.getElementById('filterDays').value !== '8' ? 1 : 0);
+    }
+
+    function filterCourses(courses) {
+      const f = getClientFilters();
+      return courses.filter(c => {
+        if (f.level && !parseLevels(c.level).includes(+f.level)) return false;
+        if (f.minAvailable > 0 && !(c.available >= f.minAvailable)) return false;
+        if (f.date && localDateKey(new Date(c.startDate)) !== f.date) return false;
+        if (f.trainer) {
+          const tokens = f.trainer.split(' ');
+          const ok = (c.supervisors || []).some(s => {
+            const n = normalizeText(`${s.firstName} ${s.lastName}`);
+            return tokens.every(t => n.includes(t));
+          });
+          if (!ok) return false;
+        }
+        return true;
       });
+    }
+
+    function updateResultsBar(shown) {
+      const bar = document.getElementById('resultsBar');
+      const summary = document.getElementById('resultsSummary');
+      const count = activeFilterCount();
+      const badge = document.getElementById('filterCount');
+      badge.hidden = count === 0;
+      badge.textContent = count;
+      document.getElementById('resetFilters').hidden = count === 0;
+
+      if (!selectedSport) { bar.hidden = true; return; }
+      bar.hidden = false;
+      const total = allCourses.length;
+      const free = shown.filter(c => c.available > 0).length;
+      const word = (n) => n === 1 ? 'Kurs' : 'Kurse';
+      summary.innerHTML = shown.length === total
+        ? `<strong>${total} ${word(total)}</strong> · ${free} mit freien Plätzen`
+        : `<strong>${shown.length} von ${total} ${word(total)}</strong> · ${free} mit freien Plätzen`;
+    }
+
+    function applyFilters(silent = false) {
+      const shown = filterCourses(allCourses);
+      updateResultsBar(shown);
+      renderCourses(shown, silent);
+    }
+
+    function resetFilters() {
+      document.getElementById('filterLevel').value = '';
+      document.getElementById('filterAvailable').value = '0';
+      document.getElementById('filterDate').value = '';
+      document.getElementById('filterTrainer').value = '';
+      const daysChanged = document.getElementById('filterDays').value !== '8';
+      document.getElementById('filterDays').value = '8';
+      if (daysChanged) searchCourses();
+      else applyFilters();
+    }
+
+    document.getElementById('resetFilters').addEventListener('click', resetFilters);
+    document.getElementById('refreshCourses').addEventListener('click', () => searchCourses(true));
+
+    // Client-Filter wirken sofort, ohne neue Anfrage
+    ['filterLevel', 'filterAvailable', 'filterDate'].forEach(id => {
+      document.getElementById(id).addEventListener('change', () => applyFilters());
     });
     let trainerDebounce = null;
     document.getElementById('filterTrainer').addEventListener('input', () => {
       clearTimeout(trainerDebounce);
-      trainerDebounce = setTimeout(() => document.getElementById('searchBtn').click(), 400);
+      trainerDebounce = setTimeout(() => applyFilters(), 200);
     });
+    // Zeitraum braucht neue Daten vom Server
+    document.getElementById('filterDays').addEventListener('change', () => searchCourses());
 
-    // Kurse suchen
-    let autoRefreshInterval = null;
-    let isRefreshing = false;
+    // ---------- Suche ----------
+    // silent = Hintergrund-Aktualisierung (keine Ladeanzeige, Karten werden nur aktualisiert)
+    // auto = Timer-Refresh; der überspringt, solange schon eine Anfrage läuft
+    async function searchCourses(silent = false, { auto = false } = {}) {
+      if (!selectedSport) return;
+      if (auto && searchInFlight) { startAutoRefresh(); return; }
 
-    async function searchCourses(silent = false) {
-      const days = document.getElementById('filterDays').value;
-      const level = document.getElementById('filterLevel').value;
-      const minAvailable = document.getElementById('filterAvailable').value;
-      const sportId = document.getElementById('filterSportId').value;
-      
-      // Fallback: Wenn User tippt aber nicht exakt auswählt, versuchen wir zu matchen (case insensitive)
-      if (!sportId) {
-         const val = document.getElementById('filterSport').value.toLowerCase();
-         for (let [name, id] of sportsMap.entries()) {
-             if (name.toLowerCase() === val) {
-                 document.getElementById('filterSportId').value = id;
-                 break;
-             }
-         }
-      }
-      
-      // Wenn immer noch kein ID, warnen (oder Volleyball nehmen?)
-      const finalSportId = document.getElementById('filterSportId').value || 285; // Fallback Volleyball
+      searchAbort?.abort();
+      const controller = new AbortController();
+      searchAbort = controller;
+      const seq = ++searchSeq;
+      const sport = selectedSport;
+      searchInFlight = true;
 
-      // Only show loading and clear list on initial search, not on refresh
+      const refreshBtn = document.getElementById('refreshCourses');
+      refreshBtn.classList.add('spinning');
       if (!silent) {
+        clearTimeout(refreshTimer);
         document.getElementById('coursesLoading').classList.remove('hidden');
         document.getElementById('coursesList').innerHTML = '';
-      } else {
-        isRefreshing = true;
+        document.getElementById('resultsBar').hidden = true;
       }
 
       try {
-        const params = new URLSearchParams({ days });
-        if (level) params.append('level', level);
-        if (minAvailable > 0) params.append('minAvailable', minAvailable);
-        if (finalSportId) params.append('sportId', finalSportId);
+        const params = new URLSearchParams({
+          days: document.getElementById('filterDays').value,
+          sportIds: sport.ids.join(',')
+        });
+        const res = await fetch(`/api/courses?${params}`, { signal: controller.signal });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+        if (seq !== searchSeq) return; // veraltete Antwort (Sportart inzwischen gewechselt)
 
-        const res = await fetch(`/api/courses?${params}`);
-        const data = await res.json();
-
-        renderCourses(data.courses, silent);
+        allCourses = data.courses || [];
+        updateLevelOptions();
+        updateTrainerOptions();
+        applyFilters(silent);
       } catch (error) {
+        if (error.name === 'AbortError' || seq !== searchSeq) return;
         if (!silent) {
-          document.getElementById('coursesList').innerHTML = 
-            `<div class="alert alert-error">Fehler: ${error.message}</div>`;
+          document.getElementById('coursesList').innerHTML =
+            `<div class="alert alert-error">Kurse konnten nicht geladen werden: ${escapeHtml(error.message)}</div>`;
         }
       } finally {
-        document.getElementById('coursesLoading').classList.add('hidden');
-        isRefreshing = false;
+        if (seq === searchSeq) {
+          searchInFlight = false;
+          refreshBtn.classList.remove('spinning');
+          document.getElementById('coursesLoading').classList.add('hidden');
+          startAutoRefresh();
+        }
       }
     }
 
-    document.getElementById('searchBtn').addEventListener('click', async () => {
-      await searchCourses(false);
-      startAutoRefresh();
-    });
-
-    // Auto-refresh every 30 seconds (at :00 and :30 of each minute)
+    // Auto-Refresh jeweils zur :00 / :30 Sekunde; ein einziger Timer, der sich selbst neu plant
     function startAutoRefresh() {
-      // Clear existing interval
-      if (autoRefreshInterval) {
-        clearInterval(autoRefreshInterval);
-      }
-
-      // Calculate time until next 30-second mark
-      const now = new Date();
-      const seconds = now.getSeconds();
-      const msUntilNext30 = ((30 - (seconds % 30)) % 30) * 1000;
-
-      // Wait until next 30-second mark, then refresh every 30 seconds
-      setTimeout(() => {
-        searchCourses(true);
-        autoRefreshInterval = setInterval(() => searchCourses(true), 30000);
-      }, msUntilNext30 || 30000);
+      clearTimeout(refreshTimer);
+      const ms = 30000 - (Date.now() % 30000);
+      refreshTimer = setTimeout(() => {
+        if (document.hidden) startAutoRefresh();
+        else searchCourses(true, { auto: true });
+      }, ms);
     }
+
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden && selectedSport) searchCourses(true);
+    });
 
     function renderCourses(courses, silent = false) {
       const container = document.getElementById('coursesList');
 
-      // Client-side date filter
-      const filterDate = document.getElementById('filterDate').value;
-      if (filterDate) {
-        const fd = new Date(filterDate);
-        courses = courses.filter(c => {
-          const cd = new Date(c.startDate);
-          return cd.getUTCFullYear() === fd.getFullYear()
-            && cd.getUTCMonth() === fd.getMonth()
-            && cd.getUTCDate() === fd.getDate();
-        });
-      }
-
-      // Client-side trainer name filter
-      const filterTrainer = document.getElementById('filterTrainer').value.trim().toLowerCase();
-      if (filterTrainer) {
-        courses = courses.filter(c =>
-          c.supervisors && c.supervisors.some(s =>
-            `${s.firstName} ${s.lastName}`.toLowerCase().includes(filterTrainer)
-          )
-        );
-      }
-      
-      if (courses.length === 0 && !silent) {
-        container.innerHTML = '<p class="empty-state">Keine Kurse gefunden</p>';
+      if (courses.length === 0) {
+        const days = document.getElementById('filterDays');
+        const dayLabel = days.options[days.selectedIndex]?.text || `${days.value} Tage`;
+        if (allCourses.length > 0) {
+          container.innerHTML = `<div class="empty-state">Keine Kurse passen zu deinen Filtern.<br>
+            <button class="btn btn-secondary" onclick="resetFilters()">Filter zurücksetzen</button></div>`;
+        } else {
+          const canWiden = days.value !== '30';
+          container.innerHTML = `<div class="empty-state">Keine Termine für <strong>${escapeHtml(selectedSport?.name || '')}</strong>
+            im Zeitraum „${escapeHtml(dayLabel)}“.
+            ${canWiden ? `<br><button class="btn btn-secondary" onclick="document.getElementById('filterDays').value='30'; searchCourses();">Nächste 30 Tage anzeigen</button>` : ''}</div>`;
+        }
         return;
-      }
-
-      if (courses.length === 0 && silent) {
-        return; // Don't clear existing courses on silent refresh if no results
       }
 
       const days = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
-      
-      // If silent refresh, update existing cards instead of replacing all HTML
-      if (silent && container.children.length > 0) {
-        courses.forEach(course => {
-          const existingCard = container.querySelector(`[data-course-id="${course.id}"]`);
-          if (existingCard) {
-            updateCourseCard(existingCard, course);
-          } else {
-            // New course appeared, add it
-            const newCard = createCourseCard(course, days);
-            container.appendChild(newCard);
-          }
-        });
-        return;
+
+      // Hintergrund-Refresh: gleiche Kurse -> Karten nur aktualisieren (keine Sprünge, Animationen bleiben)
+      if (silent) {
+        const cards = [...container.querySelectorAll('.course-card[data-course-id]')];
+        const sameSet = cards.length === courses.length
+          && cards.every((card, i) => card.dataset.courseId === String(courses[i].id));
+        if (sameSet) {
+          courses.forEach((course, i) => updateCourseCard(cards[i], course));
+          return;
+        }
       }
 
       // Initial render or explicit refresh
@@ -3168,10 +3735,6 @@
       }
     }
 
-    function createCourseCard(course, days) {
-      // This would create a new card element, but for now we can skip since courses don't usually appear mid-session
-      return null;
-    }
 
     // Schnelle Anmeldung
     async function quickRegister(bookingId) {
@@ -3670,16 +4233,18 @@
     }
 
     function showPadelMain() {
-      const { calendarToken, rules } = padelMe;
+      const { user, calendarToken, rules } = padelMe;
       document.getElementById('padelLogin').classList.add('hidden');
       document.getElementById('padelMain').classList.remove('hidden');
+      document.getElementById('padelUserName').textContent = user.name;
+      document.getElementById('padelUserEmail').textContent = user.email;
+
       const feedPath = `${location.host}/api/padel/calendar/${calendarToken}.ics`;
       document.getElementById('padelWebcalLink').href = `webcal://${feedPath}`;
       document.getElementById('padelCopyCalBtn').dataset.url = `${location.protocol}//${feedPath}`;
 
-      document.getElementById('padelRulesSummary').textContent =
-        `Ab ${rules.minPlayers} Spielern bucht der Bot automatisch (${rules.daysAhead} Tage vorher, ${rules.openTime} Uhr)`;
       document.getElementById('padelRulesHint').textContent =
+        `Ab ${rules.minPlayers} Spielern bucht der Bot automatisch, sobald der Slot freigeschaltet wird (${rules.daysAhead} Tage vorher um ${rules.openTime} Uhr). ` +
         `HSP erlaubt pro Person ${rules.maxPerDay} Buchung/Tag und ${rules.maxPerPeriod} in ${rules.periodDays} Tagen – deshalb bucht immer, wer noch Kontingent hat und am längsten nicht dran war.`;
 
       const dateInput = document.getElementById('padelDate');
@@ -3890,6 +4455,7 @@
       }
     });
 
+    document.getElementById('padelLogoutBtn').addEventListener('click', padelLogout);
     document.getElementById('padelDate').addEventListener('change', loadPadelSlots);
     document.getElementById('padelConnectBtn').addEventListener('click', openAuthModal);
 
