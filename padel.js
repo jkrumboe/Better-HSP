@@ -284,7 +284,9 @@ function slotStartMinutes(year, month, day) {
   return starts;
 }
 
-const BLOCK_LOOKBEHIND_MS = 24 * 60 * 60 * 1000; // staff blocks can span a whole day
+// Query padding: staff blocks can span a whole day, and HSP compares date filters in its local
+// time (a "…Z" bound is shifted by the Berlin offset). The exact overlap is checked here instead.
+const QUERY_PADDING_MS = 24 * 60 * 60 * 1000;
 
 /**
  * Everything on the court (by anyone) overlapping a time range: rentals, but also courses and
@@ -294,7 +296,10 @@ const BLOCK_LOOKBEHIND_MS = 24 * 60 * 60 * 1000; // staff blocks can span a whol
  */
 async function fetchCourtBookings(from, to) {
   const filter = {
-    startDate: { '$gte': new Date(from.getTime() - BLOCK_LOOKBEHIND_MS).toISOString(), '$lt': to.toISOString() },
+    startDate: {
+      '$gte': new Date(from.getTime() - QUERY_PADDING_MS).toISOString(),
+      '$lt': new Date(to.getTime() + QUERY_PADDING_MS).toISOString()
+    },
     productId: { '$in': [COURT_PRODUCT_ID] }
   };
   const encoded = encodeURIComponent(JSON.stringify(filter));
@@ -703,6 +708,89 @@ export function refreshPadelEligibilityFor(memberId) {
   }
 }
 
+// ============ AUTO RETRY (failed sessions whose slot became bookable again) ============
+
+const AUTO_RETRY_INTERVAL_MS = 60 * 60 * 1000;   // background check
+const VIEW_RECHECK_THROTTLE_MS = 5 * 60 * 1000;  // extra check when someone opens the padel tab
+const AUTO_RETRY_COOLDOWN_MS = 60 * 60 * 1000;   // nothing changed since the failure: retry at most hourly
+const AUTO_RETRY_MIN_LEAD_MS = 15 * 60 * 1000;   // don't start a run right before the slot
+const MAX_AUTO_RETRIES = 5;                      // per session, reset by a manual retry
+
+let lastFailedRecheckAt = 0;
+let failedRecheck = null;
+
+function failSession(session, reason, { slotTaken = false } = {}) {
+  session.failure = { at: new Date().toISOString(), slotTaken };
+  setStatus(session, 'failed', reason);
+}
+
+function isAutoRetryCandidate(session) {
+  return session.status === 'failed'
+    && new Date(session.startDate).getTime() > Date.now() + AUTO_RETRY_MIN_LEAD_MS
+    && session.participants.length >= MIN_PLAYERS
+    && (session.autoRetries || 0) < MAX_AUTO_RETRIES;
+}
+
+/**
+ * Restarts a failed session once its slot is free and someone in it can probably book.
+ * Cheap when nothing changed: one public GET per session, the player check only once the slot is free.
+ */
+async function recheckFailedSession(session) {
+  let blocker;
+  try {
+    const taken = await fetchCourtBookings(new Date(session.startDate), new Date(session.endDate));
+    blocker = taken.find(b => b.id !== session.hspBookingId);
+  } catch {
+    return; // HSP not reachable - next check
+  }
+  if (blocker || !isAutoRetryCandidate(session)) return;
+
+  // The slot was free at the last failure too: don't hammer HSP with the same situation
+  const failure = session.failure || {};
+  const sinceFailure = Date.now() - new Date(failure.at || 0).getTime();
+  if (!failure.slotTaken && sinceFailure < AUTO_RETRY_COOLDOWN_MS) return;
+
+  const players = (await checkBookers(session)).map(({ memberId, name, state, note }) => ({ memberId, name, state, note }));
+  if (!isAutoRetryCandidate(session)) return; // changed while we were checking
+
+  const anyCanBook = players.some(p => canProbablyBook(p.state));
+  const changed = JSON.stringify(session.eligibility?.players) !== JSON.stringify(players);
+  session.eligibility = { checkedAt: new Date().toISOString(), anyCanBook, players };
+  if (!anyCanBook) {
+    if (changed) {
+      addLog(session, `Platz ist frei, aber niemand kann buchen: ${describeBookers(players)}`);
+      touch(session);
+    }
+    return;
+  }
+
+  session.autoRetries = (session.autoRetries || 0) + 1;
+  setStatus(session, 'open', failure.slotTaken
+    ? 'Platz ist wieder frei – automatischer neuer Versuch'
+    : 'Automatischer neuer Versuch');
+  evaluateSession(session);
+}
+
+function recheckFailedSessions() {
+  if (failedRecheck) return failedRecheck;
+  lastFailedRecheckAt = Date.now();
+  failedRecheck = (async () => {
+    for (const session of sessions.filter(isAutoRetryCandidate)) {
+      await recheckFailedSession(session);
+    }
+  })()
+    .catch(error => console.error('Padel failed-session recheck failed:', error))
+    .finally(() => { failedRecheck = null; });
+  return failedRecheck;
+}
+
+/**
+ * Someone looks at the sessions - check failed ones again, but at most every few minutes
+ */
+function recheckFailedSessionsSoon() {
+  if (Date.now() - lastFailedRecheckAt >= VIEW_RECHECK_THROTTLE_MS) recheckFailedSessions();
+}
+
 // ============ BOOKING RUN ============
 
 async function runBooking(sessionId) {
@@ -726,7 +814,7 @@ async function runBooking(sessionId) {
     };
     if (candidates.length === 0) {
       addLog(session, `Niemand konnte buchen: ${describeBookers(checked)}`);
-      setStatus(session, 'failed', shortFailReason(checked));
+      failSession(session, shortFailReason(checked));
       return;
     }
 
@@ -734,7 +822,7 @@ async function runBooking(sessionId) {
     const blocker = await findSlotBlocker(session);
     if (blocker) {
       addLog(session, `Slot belegt durch HSP-Buchung ${blocker.id}${blocker.description ? ` („${blocker.description}“)` : ''} – keine Buchungsversuche`);
-      setStatus(session, 'failed', blockerReason(blocker));
+      failSession(session, blockerReason(blocker), { slotTaken: true });
       return;
     }
 
@@ -753,7 +841,7 @@ async function runBooking(sessionId) {
     let index = 0;
     let attempts = 0;
     let lastMessage = '';
-    let slotBlocked = false;
+    let slotBlocker; // undefined = not checked yet, null = slot is free
     const loggedFailures = new Set(); // log each booker/error combination once
     const rejectedBookers = new Set();
     const droppedBookers = new Map(); // memberId -> 'limit' | 'auth' | 'unclear' - HSP said a definite no
@@ -804,11 +892,16 @@ async function runBooking(sessionId) {
         rejectedBookers.add(booker.memberId);
         index++;
 
-        const kind = classifyRejection(result);
+        let kind = classifyRejection(result);
         if (kind === 'blocked') {
-          lastMessage = result.message;
-          slotBlocked = true;
-          break; // nobody can book a blocked slot - retrying only burdens the HSP server
+          // "blocked by a booking on <date>" names only the day: it can be a booking on the slot
+          // (nobody can book - stop) or the booker's own booking that day (only this booker is out)
+          if (slotBlocker === undefined) slotBlocker = await findSlotBlocker(session);
+          if (slotBlocker) {
+            lastMessage = result.message;
+            break; // retrying a taken slot only burdens the HSP server
+          }
+          kind = 'limit';
         }
         if (kind === 'unclear') {
           const count = (unclearRejections.get(booker.memberId) || 0) + 1;
@@ -827,21 +920,18 @@ async function runBooking(sessionId) {
     addLog(session, `Abbruch nach ${attempts} Versuch(en), letzte Antwort: ${lastMessage}`);
     const drops = [...droppedBookers.values()];
     const everyoneDropped = rotation.every(c => droppedBookers.has(c.memberId));
-    let reason;
-    if (slotBlocked) {
-      const blocker = await findSlotBlocker(session);
-      reason = blocker ? blockerReason(blocker) : 'Platz ist von HSP gesperrt';
+    if (slotBlocker) {
+      failSession(session, blockerReason(slotBlocker), { slotTaken: true });
     } else if (everyoneDropped && drops.length > 0 && drops.every(kind => kind === 'limit')) {
-      reason = 'Niemand konnte buchen (Limit erreicht)';
+      failSession(session, 'Niemand konnte buchen (Limit erreicht)');
     } else if (everyoneDropped && drops.length > 0 && drops.every(kind => kind === 'auth')) {
-      reason = 'Niemand konnte buchen (Token abgelaufen)';
+      failSession(session, 'Niemand konnte buchen (Token abgelaufen)');
     } else {
       const blocker = await findSlotBlocker(session);
-      if (blocker) reason = blockerReason(blocker);
-      else if (preferred.length === 0) reason = shortFailReason(checked);
-      else reason = 'HSP hat die Buchung abgelehnt';
+      if (blocker) failSession(session, blockerReason(blocker), { slotTaken: true });
+      else if (preferred.length === 0) failSession(session, shortFailReason(checked));
+      else failSession(session, 'HSP hat die Buchung abgelehnt');
     }
-    setStatus(session, 'failed', reason);
   } finally {
     runningBookings.delete(sessionId);
   }
@@ -889,7 +979,7 @@ function startBooking(sessionId) {
     console.error(`Padel booking error (${sessionId}):`, error);
     const session = findSession(sessionId);
     if (session?.status === 'booking') {
-      setStatus(session, 'failed', `Interner Fehler: ${error.message}`);
+      failSession(session, `Interner Fehler: ${error.message}`);
     }
   });
 }
@@ -963,6 +1053,7 @@ export async function getDaySlots(dateStr) {
 }
 
 export function listSessions() {
+  recheckFailedSessionsSoon(); // runs in the background, changes arrive via WebSocket
   const cutoff = Date.now() - 24 * 60 * 60 * 1000;
   return sessions
     .filter(s => ACTIVE_STATUSES.includes(s.status) || new Date(s.startDate).getTime() > cutoff)
@@ -1078,6 +1169,7 @@ export function retrySession(user, sessionId) {
   if (!session.participants.some(p => p.memberId === user.memberId)) return { error: 'Du bist nicht dabei' };
   if (session.status !== 'failed') return { error: 'Nur fehlgeschlagene Sessions können erneut versucht werden' };
 
+  session.autoRetries = 0;
   setStatus(session, 'open', `Neuer Versuch gestartet von ${user.name}`);
   evaluateSession(session);
   refreshEligibility(session);
@@ -1218,6 +1310,8 @@ export async function initializePadel() {
   }
   refreshAllEligibility();
   setInterval(refreshAllEligibility, ELIGIBILITY_INTERVAL_MS);
+  recheckFailedSessions();
+  setInterval(recheckFailedSessions, AUTO_RETRY_INTERVAL_MS);
 
   const active = sessions.filter(s => ['open', 'scheduled'].includes(s.status)).length;
   console.log(`🎾 Padel: ${active} offene Session(s), Slots öffnen ${rules.daysAhead} Tage vorher um ${rules.openTime}`);

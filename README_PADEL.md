@@ -39,6 +39,18 @@ Der Bot prüft das nicht erst beim Buchen, sondern schon beim Anlegen, Beitreten
 - Spieler, die nicht buchen können, bekommen ein gelbes **!** am Namen (Grund im Tooltip).
 - Kann **niemand** in der Session buchen, erscheint auf der Karte „Niemand kann buchen“ mit Kurzgrund pro Spieler (`Token abgelaufen`, `keine Mitgliedschaft`, `Limit erreicht`). Typischer Fall: jemand ohne Mitgliedschaft ist allein in der Session und braucht einen Mitspieler, der für beide bucht.
 
+### Automatisch neu versuchen
+
+Fehlgeschlagene Sessions prüft der Bot **stündlich** und zusätzlich, wenn jemand den Padel-Tab öffnet (höchstens alle 5 min). Ist der Slot frei und kann laut Prüfung jemand buchen, startet er die Buchung selbst neu:
+
+- War der Slot beim Fehlschlag belegt und ist jetzt frei (z. B. storniert), geht es sofort los.
+- War er schon frei (z. B. Limit erreicht), frühestens 1 h nach dem letzten Versuch.
+- Max. 5 automatische Versuche pro Session (ein manuelles „Erneut versuchen“ setzt den Zähler zurück), nicht in den letzten 15 min vor dem Termin.
+
+Pro Prüfung kostet das nur eine öffentliche Abfrage je Session; Token/Kontingent werden erst geprüft, wenn der Slot frei ist.
+
+HSP vergleicht Datumsfilter in deutscher Ortszeit (ein `…Z`-Wert wird um den Berlin-Offset verschoben). Der Bot fragt deshalb einen großzügigen Bereich ab und prüft die Überschneidung selbst.
+
 Schlägt eine Buchung fehl, zeigt die Karte nur den Kurzgrund (z. B. „Niemand konnte buchen (Limit erreicht)“, „Platz war schon vergeben“, „HSP hat die Buchung abgelehnt“). Versuche und die genaue HSP-Antwort stehen im Verlauf. Fehlgeschlagene Sessions können per „Erneut versuchen“ neu gestartet werden.
 
 ## Kalender
