@@ -23,9 +23,12 @@ const SLOT_MINUTES = 60;
 const LOCATION = 'Padel Tennis Platz, Horstmarer Landweg, 48149 Münster';
 const GEO = '51.971202;7.601082';
 
-const POLL_INTERVAL_MS = 500;
-const POLL_LEAD_MS = 5 * 1000;    // start polling 5s before the slot opens
-const POLL_WINDOW_MS = 60 * 1000; // keep trying for 60s after it opened
+const POLL_INTERVAL_MS = 500;       // around the opening moment
+const SLOW_POLL_INTERVAL_MS = 1000; // once the race is decided
+const DENSE_WINDOW_MS = 3 * 1000;   // poll densely until 3s after the opening
+const POLL_LEAD_MS = 2 * 1000;      // start polling 2s before the slot opens
+const POLL_WINDOW_MS = 15 * 1000;   // give up 15s after it opened (or after the start, if already open)
+const MAX_UNCLEAR_REJECTIONS = 3;   // per booker, for HSP answers we can't classify
 const FAIRNESS_DAYS = 30;         // look-back for "who booked least recently"
 const MAX_LOG_ENTRIES = 50;
 
@@ -281,15 +284,18 @@ function slotStartMinutes(year, month, day) {
   return starts;
 }
 
+const BLOCK_LOOKBEHIND_MS = 24 * 60 * 60 * 1000; // staff blocks can span a whole day
+
 /**
- * Everything on the court (by anyone) in a time range: rentals, but also courses and other
- * products that block the court. Public endpoint, no token needed.
+ * Everything on the court (by anyone) overlapping a time range: rentals, but also courses and
+ * staff blocks ("Sonderbelegung", product 524). Public endpoint, no token needed.
+ * Note: status 2 is NOT "cancelled" here - staff blocks have status 2 and HSP rejects bookings
+ * on them ("blocked by a booking"). Cancelled rentals don't show up at all.
  */
 async function fetchCourtBookings(from, to) {
   const filter = {
-    startDate: { '$gte': from.toISOString(), '$lt': to.toISOString() },
-    productId: { '$in': [COURT_PRODUCT_ID] },
-    status: { '$ne': 2 }
+    startDate: { '$gte': new Date(from.getTime() - BLOCK_LOOKBEHIND_MS).toISOString(), '$lt': to.toISOString() },
+    productId: { '$in': [COURT_PRODUCT_ID] }
   };
   const encoded = encodeURIComponent(JSON.stringify(filter));
   const res = await fetch(`${API_URL}/bookings?s=${encoded}&limit=100&page=1&sort=startDate,ASC`, {
@@ -297,16 +303,38 @@ async function fetchCourtBookings(from, to) {
   });
   if (!res.ok) throw new Error(`API Fehler: ${res.status}`);
   const data = await res.json();
-  return data.data || [];
+  return (data.data || []).filter(b => new Date(b.startDate) < to && new Date(b.endDate) > from);
 }
 
-async function isSlotTaken(session) {
+/**
+ * The booking that occupies the session's slot (someone else's rental, a course, a staff block), or null
+ */
+async function findSlotBlocker(session) {
   try {
     const taken = await fetchCourtBookings(new Date(session.startDate), new Date(session.endDate));
-    return taken.some(b => b.id !== session.hspBookingId);
+    return taken.find(b => b.id !== session.hspBookingId) || null;
   } catch {
-    return false;
+    return null;
   }
+}
+
+function blockerReason(booking) {
+  return booking.linkedProductId === PADEL_PRODUCT_ID ? 'Platz war schon vergeben' : 'Platz ist von HSP gesperrt';
+}
+
+/**
+ * Sorts an HSP rejection (after the slot opened) into:
+ *  'blocked' - the slot itself can't be booked by anyone -> stop
+ *  'limit'   - this booker hit the per-day / per-period limit -> drop the booker
+ *  'auth'    - this booker's token doesn't work -> drop the booker
+ *  'unclear' - anything else -> retry a few times
+ */
+function classifyRejection(result) {
+  const message = String(result.message || '');
+  if (/blocked by a booking/i.test(message)) return 'blocked';
+  if (/max(imum)? bookings/i.test(message)) return 'limit';
+  if (result.status === 401 || message === 'Token abgelaufen') return 'auth';
+  return 'unclear';
 }
 
 /**
@@ -398,8 +426,13 @@ async function checkQuota(token, memberId, slotStart, ignoreBookingId = null) {
   const rangeEnd = berlinToUtc(day.year, day.month, day.day + P);
 
   try {
+    // Bookings someone else made and invited this member to count towards the limit too
+    // (HSP stores those with invitedMemberId)
     const filter = {
-      'participations.memberId': memberId,
+      '$or': [
+        { 'participations.memberId': memberId },
+        { 'participations.invitedMemberId': memberId }
+      ],
       linkedProductId: { '$in': [PADEL_PRODUCT_ID] },
       status: { '$ne': 2 },
       startDate: { '$gte': rangeStart.toISOString(), '$lt': rangeEnd.toISOString() }
@@ -413,7 +446,8 @@ async function checkQuota(token, memberId, slotStart, ignoreBookingId = null) {
     const data = await res.json();
     const starts = (data.data || [])
       .filter(b => b.id !== ignoreBookingId)
-      .filter(b => b.participations?.some(p => p.memberId === memberId && p.status === 1))
+      .filter(b => b.participations?.some(p =>
+        (p.memberId === memberId || p.invitedMemberId === memberId) && p.status === 1))
       .map(b => new Date(b.startDate).getTime());
 
     const sameDay = starts.filter(t => t >= dayStart.getTime() && t < dayEnd.getTime()).length;
@@ -696,6 +730,14 @@ async function runBooking(sessionId) {
       return;
     }
 
+    // A slot that is already occupied (rental, course, staff block) can't be booked - don't even try
+    const blocker = await findSlotBlocker(session);
+    if (blocker) {
+      addLog(session, `Slot belegt durch HSP-Buchung ${blocker.id}${blocker.description ? ` („${blocker.description}“)` : ''} – keine Buchungsversuche`);
+      setStatus(session, 'failed', blockerReason(blocker));
+      return;
+    }
+
     // Players over quota are only tried once everyone else was rejected (or if there is nobody else)
     const preferred = candidates.filter(c => canProbablyBook(c.state));
     const fallback = candidates.filter(c => !canProbablyBook(c.state));
@@ -711,11 +753,23 @@ async function runBooking(sessionId) {
     let index = 0;
     let attempts = 0;
     let lastMessage = '';
-    const loggedFailures = new Set(); // polling runs at 2/s - log each booker/error combination once
+    let slotBlocked = false;
+    const loggedFailures = new Set(); // log each booker/error combination once
     const rejectedBookers = new Set();
+    const droppedBookers = new Map(); // memberId -> 'limit' | 'auth' | 'unclear' - HSP said a definite no
+    const unclearRejections = new Map(); // memberId -> count
 
     while (Date.now() < deadline) {
-      const booker = rotation[index % rotation.length];
+      // Everyone with quota was rejected - now also try the ones we thought were over quota
+      if (rotation === preferred && fallback.length > 0 && preferred.every(c => rejectedBookers.has(c.memberId))) {
+        rotation = [...preferred, ...fallback];
+        addLog(session, `Alle mit freiem Kontingent abgelehnt – versuche auch ${fallback.map(c => c.name).join(', ')}`);
+        touch(session);
+      }
+      const pool = rotation.filter(c => !droppedBookers.has(c.memberId));
+      if (pool.length === 0) break; // nobody left who could still succeed
+
+      const booker = pool[index % pool.length];
       const invited = session.participants.filter(p => p.memberId !== booker.memberId);
       attempts++;
 
@@ -750,27 +804,42 @@ async function runBooking(sessionId) {
         rejectedBookers.add(booker.memberId);
         index++;
 
-        // Everyone with quota was rejected - now also try the ones we thought were over quota
-        if (rotation === preferred && fallback.length > 0 && preferred.every(c => rejectedBookers.has(c.memberId))) {
-          rotation = [...preferred, ...fallback];
-          addLog(session, `Alle mit freiem Kontingent abgelehnt – versuche auch ${fallback.map(c => c.name).join(', ')}`);
-          touch(session);
+        const kind = classifyRejection(result);
+        if (kind === 'blocked') {
+          lastMessage = result.message;
+          slotBlocked = true;
+          break; // nobody can book a blocked slot - retrying only burdens the HSP server
+        }
+        if (kind === 'unclear') {
+          const count = (unclearRejections.get(booker.memberId) || 0) + 1;
+          unclearRejections.set(booker.memberId, count);
+          if (count >= MAX_UNCLEAR_REJECTIONS) droppedBookers.set(booker.memberId, kind);
+        } else {
+          droppedBookers.set(booker.memberId, kind);
         }
       }
       lastMessage = result.message;
-      await sleep(POLL_INTERVAL_MS);
+      const dense = Date.now() < opensAt + DENSE_WINDOW_MS;
+      await sleep(dense ? POLL_INTERVAL_MS : SLOW_POLL_INTERVAL_MS);
     }
 
     // Details (attempt count, raw HSP message) go to the log; the status line stays short
-    addLog(session, `Abbruch nach ${attempts} Versuchen, letzte Antwort: ${lastMessage}`);
-    const taken = await isSlotTaken(session);
+    addLog(session, `Abbruch nach ${attempts} Versuch(en), letzte Antwort: ${lastMessage}`);
+    const drops = [...droppedBookers.values()];
+    const everyoneDropped = rotation.every(c => droppedBookers.has(c.memberId));
     let reason;
-    if (taken) {
-      reason = 'Platz war schon vergeben';
-    } else if (preferred.length === 0) {
-      reason = shortFailReason(checked);
+    if (slotBlocked) {
+      const blocker = await findSlotBlocker(session);
+      reason = blocker ? blockerReason(blocker) : 'Platz ist von HSP gesperrt';
+    } else if (everyoneDropped && drops.length > 0 && drops.every(kind => kind === 'limit')) {
+      reason = 'Niemand konnte buchen (Limit erreicht)';
+    } else if (everyoneDropped && drops.length > 0 && drops.every(kind => kind === 'auth')) {
+      reason = 'Niemand konnte buchen (Token abgelaufen)';
     } else {
-      reason = 'HSP hat die Buchung abgelehnt';
+      const blocker = await findSlotBlocker(session);
+      if (blocker) reason = blockerReason(blocker);
+      else if (preferred.length === 0) reason = shortFailReason(checked);
+      else reason = 'HSP hat die Buchung abgelehnt';
     }
     setStatus(session, 'failed', reason);
   } finally {

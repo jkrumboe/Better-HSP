@@ -9,14 +9,16 @@ Sobald **mindestens 2 Spieler** dabei sind, bucht der Bot den Platz automatisch 
 2. **Session anlegen** – Datum wählen, freien Slot antippen. Belegte Slots (von anderen in HSP gebucht) sind durchgestrichen.
 3. **Beitreten** – die anderen tippen auf „Beitreten“ (max. 4 Spieler).
 4. **Automatische Buchung** – ab 2 Spielern plant der Bot die Buchung:
-   - Slots werden **7 Tage vorher um 14:00 Uhr** freigeschaltet. Der Bot startet 5 s vorher und versucht es bis 60 s danach (alle 500 ms).
+   - Slots werden **7 Tage vorher um 14:00 Uhr** freigeschaltet. Der Bot startet 2 s vorher, versucht es bis 3 s danach alle 500 ms, dann jede Sekunde bis max. 15 s danach.
    - Ist das Fenster schon offen, bucht er sofort.
+   - Vorher prüft er, ob der Slot schon belegt ist – dann gibt es keinen einzigen Buchungsversuch.
+   - Eindeutige Absagen von HSP beenden die Versuche: „blocked by a booking“ (Slot belegt/gesperrt) stoppt sofort, „max bookings per day/period“ oder ein ungültiger Token nimmt nur diesen Booker raus. Andere Absagen werden pro Booker max. 3× wiederholt.
    - Wer nach der Buchung beitritt, wird mit seinem eigenen Account zur bestehenden HSP-Buchung hinzugefügt.
 
 Die Regeln werden beim Serverstart aus HSP gelesen:
 - Freischaltung (7 Tage vorher, 14:00) aus der Platzmiete `129`
 - Öffnungszeiten (`weekCalendar`, z. B. Mo–Fr 8–19 Uhr, Sa/So 10–17 Uhr) aus dem Platz `108`
-- Belegt ist ein Slot, wenn auf dem Platz `108` irgendetwas liegt – auch Kurse, nicht nur Mietbuchungen
+- Belegt ist ein Slot, wenn auf dem Platz `108` irgendetwas liegt – auch Kurse und Sonderbelegungen (Produkt `524`), nicht nur Mietbuchungen. Achtung: Sonderbelegungen haben `status: 2` – das heißt **nicht** „storniert“, HSP blockiert den Slot damit.
 
 ## Wer bucht? („bester Booker“)
 

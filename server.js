@@ -680,8 +680,12 @@ app.get('/api/my-bookings', async (req, res) => {
     from.setDate(from.getDate() - 30);
     from.setHours(0, 0, 0, 0);
 
+    // Bookings someone else made and invited this member to have them as invitedMemberId
     const filter = {
-      'participations.memberId': memberInfo.memberId,
+      '$or': [
+        { 'participations.memberId': memberInfo.memberId },
+        { 'participations.invitedMemberId': memberInfo.memberId }
+      ],
       startDate: { '$gte': from.toISOString() }
     };
     const encoded = encodeURIComponent(JSON.stringify(filter));
@@ -696,7 +700,9 @@ app.get('/api/my-bookings', async (req, res) => {
     const bookings = data.data || [];
     const userBookings = {};
     bookings.forEach(booking => {
-      const participation = booking.participations?.find(p => p.memberId === memberInfo.memberId);
+      const participation = booking.participations?.find(p =>
+        p.memberId === memberInfo.memberId || p.invitedMemberId === memberInfo.memberId
+      );
       if (participation) {
         userBookings[booking.id] = {
           participationStatus: participation.status, // 1 = booked, 3 = waiting list
