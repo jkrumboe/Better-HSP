@@ -4,7 +4,8 @@ import schedule from 'node-schedule';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { getValidUserToken } from './user-store.js';
+import { getValidUserToken, listRefreshableUsers } from './user-store.js';
+import { isTokenValid } from './token-manager.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SCHEDULED_JOBS_FILE = path.join(__dirname, 'data', 'scheduled-jobs.json');
@@ -315,19 +316,32 @@ async function runPreflight(jobData) {
 }
 
 // ============ TOKEN-KEEP-ALIVE ============
-// Ohne offene App fragt niemand den Token ab: er würde erst zur Öffnung erneuert, wenn der
-// Refresh-Token womöglich schon verfallen ist. Daher erneuert der Server die Tokens aller
-// Mitglieder mit geplanten Buchungen / Platz-Überwachungen selbst, kurz bevor sie ablaufen.
+// Ohne offene App fragt niemand den Token ab: er würde erst erneuert, wenn der Refresh-Token
+// womöglich schon verfallen ist. Daher erneuert der Server die Tokens ALLER Mitglieder mit
+// Refresh-Token selbst, kurz bevor sie ablaufen – so bleiben alle dauerhaft angemeldet.
 
 const KEEPALIVE_INTERVAL_MS = 5 * 60 * 1000;
 // Erneuern, sobald der Access-Token in weniger als 1 Tag abläuft. Schlägt der Refresh fehl,
-// bleibt so noch ein Tag, um sich neu anzumelden. (Setzt voraus, dass ein neuer Token > 1 Tag gilt,
-// sonst würde alle 5 Minuten erneuert.)
+// bleibt so noch ein Tag, um sich neu anzumelden.
 const KEEPALIVE_MIN_VALIDITY_MS = 24 * 60 * 60 * 1000;
+// Mitglieder ohne geplante Buchung: nach einem fehlgeschlagenen Refresh erst nach dieser Pause
+// erneut versuchen (ein verfallener Refresh-Token wird nicht wieder gültig – erst ein neuer Login)
+const KEEPALIVE_FAILURE_BACKOFF_MS = 60 * 60 * 1000;
 const KEEPALIVE_WARNING_PREFIX = 'HSP-Login abgelaufen';
 
 let keepAliveTimer = null;
 let keepAliveBusy = false;
+// memberId -> { refreshToken, at }: letzter fehlgeschlagener Refresh
+const keepAliveFailures = new Map();
+
+/**
+ * Ab welcher Restlaufzeit erneuert wird: 1 Tag, aber höchstens die halbe Token-Laufzeit.
+ * Gilt ein neuer Token kürzer als 1 Tag, würde sonst bei jedem Tick (alle 5 Min.) erneuert.
+ */
+function keepAliveThresholdMs(lifetimeMs) {
+  if (!lifetimeMs || lifetimeMs <= 0) return KEEPALIVE_MIN_VALIDITY_MS;
+  return Math.min(KEEPALIVE_MIN_VALIDITY_MS, lifetimeMs / 2);
+}
 
 /**
  * Startet die serverseitige Token-Erneuerung.
@@ -348,13 +362,37 @@ async function keepAliveTick(getExtraMemberIds) {
   keepAliveBusy = true;
   try {
     const pendingJobs = loadScheduledJobs().filter(j => j.memberId != null && j.status === 'pending');
-    const memberIds = new Set(pendingJobs.map(j => j.memberId));
+    // Mitglieder, die gerade buchen wollen: immer prüfen (und ggf. warnen)
+    const activeIds = new Set(pendingJobs.map(j => j.memberId));
     for (const memberId of getExtraMemberIds() || []) {
-      if (memberId != null) memberIds.add(memberId);
+      if (memberId != null) activeIds.add(memberId);
     }
 
+    const refreshable = new Map(listRefreshableUsers().map(u => [u.memberId, u]));
+    const memberIds = new Set([...activeIds, ...refreshable.keys()]);
+    const now = Date.now();
+
     for (const memberId of memberIds) {
-      const token = await getValidUserToken(memberId, { minValidityMs: KEEPALIVE_MIN_VALIDITY_MS });
+      const info = refreshable.get(memberId);
+      const isActive = activeIds.has(memberId);
+
+      // Inaktive Mitglieder mit kürzlich fehlgeschlagenem Refresh (gleicher Refresh-Token) überspringen
+      const failure = keepAliveFailures.get(memberId);
+      if (!isActive && failure && failure.refreshToken === info?.refreshToken
+          && now - failure.at < KEEPALIVE_FAILURE_BACKOFF_MS) {
+        continue;
+      }
+
+      const minValidityMs = keepAliveThresholdMs(info?.lifetimeMs);
+      const token = await getValidUserToken(memberId, { minValidityMs });
+      // Kein Token, oder Refresh fehlgeschlagen (es kam nur der alte, bald ablaufende Token zurück)
+      if (!token || !isTokenValid(token, minValidityMs)) {
+        keepAliveFailures.set(memberId, { refreshToken: info?.refreshToken, at: now });
+      } else {
+        keepAliveFailures.delete(memberId);
+      }
+
+      if (!isActive) continue;
       const memberJobs = pendingJobs.filter(j => j.memberId === memberId);
 
       if (token) {

@@ -323,21 +323,37 @@ app.post('/api/auth/change-password', (req, res) => {
 });
 
 // Aktueller Account + HSP-Verknüpfung
-app.get('/api/auth/me', (req, res) => {
-  if (!req.account) return res.status(401).json({ error: 'Nicht angemeldet', needLogin: true });
-  const member = resolveHspMember(req);
-  const linkedUser = req.account.linkedMemberId ? getUser(req.account.linkedMemberId) : null;
-  let tokenInfo = null;
-  if (linkedUser?.accessToken) {
-    const info = getTokenInfo(linkedUser.accessToken);
-    if (info) {
-      tokenInfo = {
-        email: info.email, name: info.name, expiresAt: info.expiresAt,
-        remainingText: info.remainingText, isValid: info.isValid,
-        canRefresh: !!linkedUser.refreshToken
-      };
+/**
+ * Token-Status des verknüpften HSP-Accounts. Ein abgelaufener Token wird vorher per
+ * Refresh-Token erneuert – sonst zeigt die App „Abgelaufen“, obwohl der Bot buchen könnte
+ * (der Keep-Alive hält nur Mitglieder mit geplanten Buchungen / Überwachungen aktiv).
+ */
+async function linkedTokenInfo(account) {
+  const memberId = account?.linkedMemberId;
+  if (!memberId) return null;
+  let linkedUser = getUser(memberId);
+  if (!linkedUser?.accessToken) return null;
+  if (!getTokenInfo(linkedUser.accessToken)?.isValid && linkedUser.refreshToken) {
+    try {
+      await getValidUserToken(memberId);
+      linkedUser = getUser(memberId) || linkedUser;
+    } catch (error) {
+      console.error('Token-Refresh beim Status-Abruf fehlgeschlagen:', error.message);
     }
   }
+  const info = getTokenInfo(linkedUser.accessToken);
+  if (!info) return null;
+  return {
+    email: info.email, name: info.name, expiresAt: info.expiresAt,
+    remainingText: info.remainingText, isValid: info.isValid,
+    canRefresh: !!linkedUser.refreshToken
+  };
+}
+
+app.get('/api/auth/me', async (req, res) => {
+  if (!req.account) return res.status(401).json({ error: 'Nicht angemeldet', needLogin: true });
+  const member = resolveHspMember(req);
+  const tokenInfo = await linkedTokenInfo(req.account);
   res.json({
     account: publicAccount(req.account),
     // Admins bekommen die Adressen des Admin-Bereichs (nur im Heimnetz/Tailscale erreichbar)
@@ -429,19 +445,10 @@ app.get('/api/sso/callback/:state', async (req, res) => {
 // ============ API ENDPOINTS ============
 
 // Status-Check (account-zentriert)
-app.get('/api/status', (req, res) => {
+app.get('/api/status', async (req, res) => {
   const member = resolveHspMember(req);
-  const linkedUser = req.account.linkedMemberId ? getUser(req.account.linkedMemberId) : null;
-  let tokenInfo = null;
-  if (linkedUser?.accessToken) {
-    const info = getTokenInfo(linkedUser.accessToken);
-    if (info) {
-      tokenInfo = {
-        email: info.email, name: info.name, expiresAt: info.expiresAt,
-        remainingText: info.remainingText, isValid: info.isValid
-      };
-    }
-  }
+  const tokenInfo = await linkedTokenInfo(req.account);
+  if (tokenInfo) delete tokenInfo.canRefresh;
   res.json({
     authenticated: !!req.account.linkedMemberId,
     account: publicAccount(req.account),

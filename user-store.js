@@ -227,6 +227,21 @@ async function refreshUserToken(memberId, user) {
 }
 
 /**
+ * Mitglieder, deren Token der Server selbst erneuern kann (für den Token-Keep-Alive).
+ * Liefert pro Mitglied den Refresh-Token (nur zum Erkennen eines neuen Logins) und die
+ * Laufzeit des aktuellen Access-Tokens (exp - iat) in ms, falls bekannt.
+ */
+export function listRefreshableUsers() {
+  return Object.values(loadUsers())
+    .filter(u => u.refreshToken)
+    .map(u => {
+      const payload = u.accessToken ? decodeToken(u.accessToken) : null;
+      const lifetimeMs = payload?.exp && payload?.iat ? (payload.exp - payload.iat) * 1000 : null;
+      return { memberId: u.memberId, refreshToken: u.refreshToken, lifetimeMs };
+    });
+}
+
+/**
  * Alle HSP-Mitglieder ohne Token-Inhalte (für die Admin-Übersicht).
  */
 export function listUsersForAdmin() {
