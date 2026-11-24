@@ -7,6 +7,7 @@
 //   3. delcom leitet zurück auf unsere Callback-URL mit ?tokenReponse=<base64>
 //      (Tippfehler "tokenReponse" stammt aus dem delcom-Frontend – bewusst so belassen).
 //   4. base64 -> JSON { access_token, refresh_token, id_token, expires_in, scope, token_type }
+//      Wir übernehmen davon nur access_token und refresh_token – der Rest wird nie gebraucht.
 //
 // Hinweis: Ob delcom eine fremde callbackUrl akzeptiert, ist nicht garantiert. Falls der
 // Redirect scheitert, bleibt das Einfügen der delcom_auth-Daten als Fallback bestehen.
@@ -35,17 +36,13 @@ export function buildSsoRedirect(entityId, callbackUrl) {
 
 /**
  * Dekodiert den von delcom zurückgegebenen tokenReponse-Parameter.
- * Gibt { accessToken, refreshToken, idToken, expiresIn, scope, tokenType } zurück.
+ * Gibt nur { accessToken, refreshToken } zurück (id_token, scope usw. werden verworfen).
  */
 export function parseTokenResponse(tokenReponseB64) {
   if (!tokenReponseB64) throw new Error('Kein tokenReponse empfangen');
   const json = JSON.parse(Buffer.from(String(tokenReponseB64), 'base64').toString('utf8'));
   return {
     accessToken: json.access_token,
-    refreshToken: json.refresh_token,
-    idToken: json.id_token,
-    expiresIn: json.expires_in,
-    scope: json.scope,
-    tokenType: json.token_type
+    refreshToken: json.refresh_token
   };
 }

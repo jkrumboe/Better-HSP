@@ -9,7 +9,7 @@ import { encryptSecret, decryptSecret, isEncrypted } from './crypto-util.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Felder, die im Store verschlüsselt ruhen (AES-256-GCM)
-const SECRET_FIELDS = ['accessToken', 'refreshToken', 'idToken'];
+const SECRET_FIELDS = ['accessToken', 'refreshToken'];
 const API_BASE = 'https://backbone-web-api.production.munster.delcom.nl';
 const DATA_DIR = path.join(__dirname, 'data');
 const TOKEN_STORE_FILE = path.join(DATA_DIR, 'token-store.json');
@@ -23,7 +23,6 @@ if (!fs.existsSync(DATA_DIR)) {
 const EMPTY_STORE = {
   accessToken: null,
   refreshToken: null,
-  idToken: null,
   expiresIn: null,
   memberId: null,
   memberEmail: null,
@@ -117,6 +116,11 @@ function loadTokens() {
 
       // Verschlüsselte Token-Felder entschlüsseln
       let needsMigration = false;
+      // Altbestand: der id_token wurde nie genutzt und wird nicht mehr gespeichert
+      if ('idToken' in parsed) {
+        delete parsed.idToken;
+        needsMigration = true;
+      }
       for (const field of SECRET_FIELDS) {
         if (parsed[field]) {
           if (!isEncrypted(parsed[field])) needsMigration = true; // Altbestand im Klartext
@@ -193,7 +197,6 @@ async function refreshAccessToken(refreshToken, memberMeta = {}) {
 
     return {
       accessToken,
-      idToken: data.id_token || data.idToken,
       refreshToken: data.refresh_token || data.refreshToken || refreshToken,
       expiresIn: data.expires_in ?? data.expiresIn,
       memberId: memberMeta.memberId || null,
@@ -294,7 +297,6 @@ function importFromLocalStorage(jsonData) {
       const tokens = {
         accessToken: data.tokenResponse.accessToken,
         refreshToken: data.tokenResponse.refreshToken,
-        idToken: data.tokenResponse.idToken,
         expiresIn: data.tokenResponse.expiresIn,
         memberId: data.member?.id ?? null,
         memberEmail: data.member?.email ?? null,

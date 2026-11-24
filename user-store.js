@@ -13,7 +13,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const USERS_FILE = path.join(__dirname, 'data', 'users.json');
 
 // HSP-Token-Felder, die verschlüsselt ruhen
-const SECRET_FIELDS = ['accessToken', 'refreshToken', 'idToken'];
+const SECRET_FIELDS = ['accessToken', 'refreshToken'];
 
 function loadUsers() {
   try {
@@ -21,6 +21,11 @@ function loadUsers() {
       const users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'));
       let needsMigration = false;
       for (const user of Object.values(users)) {
+        // Altbestand: der id_token wurde nie genutzt und wird nicht mehr gespeichert
+        if ('idToken' in user) {
+          delete user.idToken;
+          needsMigration = true;
+        }
         for (const field of SECRET_FIELDS) {
           if (user[field]) {
             if (!isEncrypted(user[field])) needsMigration = true;
@@ -29,7 +34,7 @@ function loadUsers() {
         }
       }
       if (needsMigration) {
-        console.log('🔐 Migriere users.json auf verschlüsselte Token-Speicherung...');
+        console.log('🔐 Migriere users.json (verschlüsselte Tokens, nur benötigte Felder)...');
         saveUsers(users); // schreibt verschlüsselt zurück
       }
       return users;
@@ -91,7 +96,6 @@ export function upsertUserFromAuth(authData) {
     name: `${member.firstName || ''} ${member.lastName || ''}`.trim() || member.email,
     accessToken: tokenResponse.accessToken,
     refreshToken: tokenResponse.refreshToken,
-    idToken: tokenResponse.idToken,
     userKey: existing?.userKey || randomKey(),
     calendarToken: existing?.calendarToken || randomKey(),
     createdAt: existing?.createdAt || new Date().toISOString(),
@@ -135,8 +139,7 @@ export async function verifyAndUpsertUser(tokenResponse) {
     console.log('✅ HSP-Token direkt bei delcom verifiziert (Refresh nicht verfügbar)');
     refreshed = {
       accessToken: tokenResponse.accessToken,
-      refreshToken: tokenResponse.refreshToken || null,
-      idToken: tokenResponse.idToken || null
+      refreshToken: tokenResponse.refreshToken || null
     };
   }
 
@@ -154,8 +157,7 @@ export async function verifyAndUpsertUser(tokenResponse) {
   return upsertUserFromAuth({
     tokenResponse: {
       accessToken: refreshed.accessToken,
-      refreshToken: refreshed.refreshToken,
-      idToken: refreshed.idToken || tokenResponse.idToken || null
+      refreshToken: refreshed.refreshToken
     },
     member: {
       id: normalizeMemberId(payload.sub),
@@ -228,7 +230,6 @@ async function refreshUserToken(memberId, user) {
     ...users[memberId],
     accessToken: refreshed.accessToken,
     refreshToken: refreshed.refreshToken,
-    idToken: refreshed.idToken,
     updatedAt: new Date().toISOString()
   };
   saveUsers(users);
