@@ -241,14 +241,11 @@ async function loadRules() {
     rules.daysAhead = rental.bookableAvailableFixedDaysAhead ?? rules.daysAhead;
     rules.openTime = rental.bookableAvailableFixedTimeAhead?.slice(0, 5) ?? rules.openTime;
 
-    // Both products define booking limits - which one HSP enforces is unknown, so use the stricter one
-    const strictest = (key, fallback) => {
-      const values = [rental[key], court[key]].filter(v => v > 0);
-      return values.length > 0 ? Math.min(...values) : fallback;
-    };
-    rules.maxPerDay = strictest('bookableMaxBookingsPerDay', rules.maxPerDay);
-    rules.maxPerPeriod = strictest('bookableMaxBookingsPerPeriod', rules.maxPerPeriod);
-    rules.periodDays = court.bookableMaxBookingsPeriodDays || rental.bookableMaxBookingsPeriodDays || rules.periodDays;
+    // Both products define booking limits - the HSP booking dialog shows the rental's (1/day, 3 in 7 days)
+    const limit = (key, fallback) => rental[key] > 0 ? rental[key] : court[key] > 0 ? court[key] : fallback;
+    rules.maxPerDay = limit('bookableMaxBookingsPerDay', rules.maxPerDay);
+    rules.maxPerPeriod = limit('bookableMaxBookingsPerPeriod', rules.maxPerPeriod);
+    rules.periodDays = limit('bookableMaxBookingsPeriodDays', rules.periodDays);
 
     if (court.linkedSubscriptions?.length) membershipRules.court = subscriptionMap(court);
     if (rental.linkedSubscriptions?.length) membershipRules.rental = subscriptionMap(rental);
@@ -581,16 +578,13 @@ async function checkMembership(token, memberId, slotStart) {
     }
   }
 
-  const courtMatch = findAccepted(memberships, membershipRules.court);
-  const rentalMatch = courtMatch || findAccepted(memberships, membershipRules.rental);
-  if (!rentalMatch) {
+  // HSP accepts the rental's memberships for the court too (the booking dialog lists e.g. Sportpass Unlimited)
+  const match = findAccepted(memberships, membershipRules.court) || findAccepted(memberships, membershipRules.rental);
+  if (!match) {
     return { state: 'noCard', note: 'keine Mitgliedschaft, die Padel-Buchungen erlaubt' };
   }
-  if (rentalMatch.endDate && new Date(rentalMatch.endDate).getTime() < new Date(slotStart).getTime()) {
-    return { state: 'unknown', note: `Mitgliedschaft endet vor dem Termin (${formatBerlin(rentalMatch.endDate)})` };
-  }
-  if (!courtMatch) {
-    return { state: 'unknown', note: `nur ${rentalMatch.name || 'andere Mitgliedschaft'} – unklar, ob das für den Platz reicht` };
+  if (match.endDate && new Date(match.endDate).getTime() < new Date(slotStart).getTime()) {
+    return { state: 'unknown', note: `Mitgliedschaft endet vor dem Termin (${formatBerlin(match.endDate)})` };
   }
   return { state: 'ok', note: null };
 }
@@ -1061,6 +1055,14 @@ function evaluateSession(session) {
 
 // ============ PUBLIC API ============
 
+// A failed session still owns its slot: it can be retried (also automatically), and a second
+// session for the same slot would book it while the failed card still says "abgelehnt"
+const SLOT_HOLDING_STATUSES = [...ACTIVE_STATUSES, 'failed'];
+
+function sessionForSlot(startIso) {
+  return sessions.find(s => s.startDate === startIso && SLOT_HOLDING_STATUSES.includes(s.status)) || null;
+}
+
 export async function getDaySlots(dateStr) {
   const [year, month, day] = dateStr.split('-').map(Number);
   if (!year || !month || !day) throw new Error('Ungültiges Datum');
@@ -1071,7 +1073,7 @@ export async function getDaySlots(dateStr) {
   for (const minute of slotStartMinutes(year, month, day)) {
     const start = berlinToUtc(year, month, day, 0, minute);
     const end = new Date(start.getTime() + SLOT_MINUTES * 60000);
-    const session = sessions.find(s => s.startDate === start.toISOString() && ACTIVE_STATUSES.includes(s.status));
+    const session = sessionForSlot(start.toISOString());
     const takenBooking = taken.find(b => new Date(b.startDate) < end && new Date(b.endDate) > start);
 
     slots.push({
@@ -1111,8 +1113,15 @@ export function createSession(user, startDate) {
   if (start.getTime() <= Date.now()) return { error: 'Der Termin liegt in der Vergangenheit' };
 
   const startIso = start.toISOString();
-  const existing = sessions.find(s => s.startDate === startIso && ACTIVE_STATUSES.includes(s.status));
-  if (existing) return { error: 'Für diesen Slot gibt es schon eine Session – tritt ihr bei', sessionId: existing.id };
+  const existing = sessionForSlot(startIso);
+  if (existing) {
+    return {
+      error: existing.status === 'failed'
+        ? 'Für diesen Slot gibt es schon eine fehlgeschlagene Session – tritt ihr bei und versuche es dort erneut'
+        : 'Für diesen Slot gibt es schon eine Session – tritt ihr bei',
+      sessionId: existing.id
+    };
+  }
 
   const session = {
     id: crypto.randomUUID(),
@@ -1141,7 +1150,7 @@ export function createSession(user, startDate) {
 export function joinSession(user, sessionId) {
   const session = findSession(sessionId);
   if (!session) return { error: 'Session nicht gefunden' };
-  if (!ACTIVE_STATUSES.includes(session.status)) return { error: `Session ist ${STATUS_LABELS[session.status].toLowerCase()}` };
+  if (!SLOT_HOLDING_STATUSES.includes(session.status)) return { error: `Session ist ${STATUS_LABELS[session.status].toLowerCase()}` };
   if (session.participants.some(p => p.memberId === user.memberId)) return { error: 'Du bist schon dabei' };
   if (session.participants.length >= MAX_PLAYERS) return { error: 'Session ist voll' };
 

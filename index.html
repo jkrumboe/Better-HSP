@@ -4557,7 +4557,7 @@
           const title = [p.email, isBooker ? 'hat gebucht' : null, blocked ? check.note : null].filter(Boolean).join(' – ');
           return `<span class="padel-player ${isBooker ? 'booker' : ''} ${blocked ? 'blocked' : ''}" title="${escapeHtml(title)}"><span class="padel-avatar">${blocked ? '!' : escapeHtml(padelInitials(p.name))}</span>${escapeHtml(p.name)}</span>`;
         }).join('');
-        const free = isActive ? s.maxPlayers - s.participants.length : 0;
+        const free = (isActive || s.status === 'failed') ? s.maxPlayers - s.participants.length : 0;
         const freeLabel = free > 0 ? `<span class="padel-free">+${free} frei</span>` : '';
 
         // ---- Warning: nobody can book ----
@@ -4587,7 +4587,7 @@
         if (isCreator && cancellable) {
           actions.push(`<button class="padel-ghost danger" onclick="cancelPadelSession('${s.id}')" title="Session absagen" aria-label="Session absagen">${PADEL_ICONS.trash}</button>`);
         }
-        if (isActive && !isIn && free > 0) {
+        if (free > 0 && !isIn) {
           actions.push(`<button class="btn btn-primary" onclick="joinPadelSession('${s.id}')">Beitreten</button>`);
         }
         if (s.status === 'failed' && isIn) {

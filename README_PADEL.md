@@ -22,10 +22,10 @@ Die Regeln werden beim Serverstart aus HSP gelesen:
 
 ## Wer bucht? („bester Booker“)
 
-HSP erlaubt pro Person **1 Buchung pro Tag** und **2 in 7 Tagen** (Platz `108` sagt 2, Platzmiete `129` sagt 3 – der Bot nimmt das strengere Limit). Der Bot sortiert die Teilnehmer so:
+HSP erlaubt pro Person **1 Buchung pro Tag** und **3 in 7 Tagen** (so zeigt es der HSP-Buchungsdialog; Werte der Platzmiete `129`). Der Bot sortiert die Teilnehmer so:
 
 1. Gültiger HSP-Token (abgelaufene Tokens ohne Refresh werden übersprungen)
-2. Mitgliedschaft, die Padel-Buchungen erlaubt (HSP verlangt eine verknüpfte Mitgliedschaft, für den Platz `108` ist das „Rückschlagspiele Club“; die Liste wird beim Start aus HSP gelesen). Geprüft über `/subscribers/my-memberships`, 15 min gecacht.
+2. Mitgliedschaft, die Padel-Buchungen erlaubt (HSP verlangt eine verknüpfte Mitgliedschaft, z. B. „Rückschlagspiele Club“ oder „Sportpass Unlimited“; die Liste wird beim Start aus HSP gelesen). Geprüft über `/subscribers/my-memberships`, 15 min gecacht.
    Außerdem gilt pro Mitgliedschaft **nur eine offene Buchung gleichzeitig** (`maxSimultaneousPerPerson: 1`): wer schon einen kommenden Padel-Termin selbst gebucht hat, kann erst nach diesem Termin wieder buchen. HSP antwortet sonst mit „you need to have one of the required subscriptions“. Solche Spieler gelten als `schon eine offene Buchung` und werden erst zuletzt versucht.
 3. Freies Kontingent laut eigenen Padel-Buchungen in HSP – geprüft als rollierendes 7-Tage-Fenster, d. h. auch Buchungen *nach* dem Termin zählen
 4. Wer in den letzten 30 Tagen am wenigsten über den Bot gebucht hat
