@@ -1678,6 +1678,11 @@
 
     .padel-player.booker .padel-avatar { background: var(--green); color: #fff; }
     .padel-player.blocked { background: #fff4dc; }
+    .padel-player.outside { opacity: 0.55; outline: 1px dashed var(--muted); outline-offset: -1px; }
+    .padel-card {
+      font-size: 0.78em;
+      color: var(--muted);
+    }
     .padel-player.blocked .padel-avatar { background: var(--amber); color: #fff; }
 
     .padel-free {
@@ -4573,12 +4578,25 @@
 
         // ---- Players ----
         const eligibilityOf = memberId => s.eligibility?.players.find(e => e.memberId === memberId);
+        // Booked: who is really in the HSP booking, and with which membership
+        const hspPlayerOf = memberId => s.hspPlayers?.find(h => h.memberId === memberId);
         const players = s.participants.map(p => {
           const isBooker = p.memberId === s.bookedBy;
           const check = eligibilityOf(p.memberId);
-          const blocked = check && ['over', 'busy', 'noCard', 'noToken'].includes(check.state);
-          const title = [p.email, isBooker ? 'hat gebucht' : null, blocked ? check.note : null].filter(Boolean).join(' – ');
-          return `<span class="padel-player ${isBooker ? 'booker' : ''} ${blocked ? 'blocked' : ''}" title="${escapeHtml(title)}"><span class="padel-avatar">${blocked ? '!' : escapeHtml(padelInitials(p.name))}</span>${escapeHtml(p.name)}</span>`;
+          const blocked = check && ['over', 'noCard', 'noToken'].includes(check.state);
+          const hsp = hspPlayerOf(p.memberId);
+          const outsideBooking = s.hspPlayers && !hsp;
+          const membership = hsp?.membership || check?.membership;
+          const title = [
+            p.email,
+            isBooker ? 'hat gebucht' : null,
+            hsp ? 'in der HSP-Buchung' : null,
+            outsideBooking ? 'nicht in der HSP-Buchung' : null,
+            membership ? `Mitgliedschaft: ${membership}` : null,
+            blocked ? check.note : null
+          ].filter(Boolean).join(' – ');
+          const cardLabel = hsp && membership ? `<span class="padel-card">${escapeHtml(membership)}</span>` : '';
+          return `<span class="padel-player ${isBooker ? 'booker' : ''} ${blocked ? 'blocked' : ''} ${outsideBooking ? 'outside' : ''}" title="${escapeHtml(title)}"><span class="padel-avatar">${blocked ? '!' : escapeHtml(padelInitials(p.name))}</span>${escapeHtml(p.name)}${cardLabel}</span>`;
         }).join('');
         const free = (isActive || s.status === 'failed') ? s.maxPlayers - s.participants.length : 0;
         const freeLabel = free > 0 ? `<span class="padel-free">+${free} frei</span>` : '';
@@ -4591,7 +4609,7 @@
           warning = `<div class="padel-eligibility-warning"><strong>Zu wenige Spieler mit Mitgliedschaft</strong>HSP verlangt mind. ${s.minCardHolders} Spieler mit Mitgliedschaft${noCard ? ` · ohne: ${noCard}` : ''}</div>`;
         } else if (isPlanning && s.eligibility && s.eligibility.enoughCards !== false && s.eligibility.players.length > 0 && !s.eligibility.anyCanBook) {
           // Short reasons only - the full detail is in the player's tooltip
-          const SHORT_REASON = { noToken: 'Token abgelaufen', noCard: 'keine Mitgliedschaft', over: 'Limit erreicht', busy: 'schon eine offene Buchung' };
+          const SHORT_REASON = { noToken: 'Token abgelaufen', noCard: 'keine Mitgliedschaft', over: 'Limit erreicht' };
           const reasons = s.eligibility.players
             .filter(e => SHORT_REASON[e.state])
             .map(e => `${escapeHtml(e.name)}: ${SHORT_REASON[e.state]}`)

@@ -181,6 +181,17 @@ function setStatus(session, status, message) {
 
 const findSession = id => sessions.find(s => s.id === id);
 
+/**
+ * Who is in the HSP booking with which membership. Older sessions didn't store it: then booker +
+ * invited players, membership names from the membership cache (no request).
+ */
+function hspPlayersView(session) {
+  if (session.status !== 'booked') return null;
+  const players = session.hspPlayers
+    || hspPlayersFrom([session.bookedBy, ...(session.invitedMemberIds || [])].filter(Boolean), []);
+  return players.map(p => ({ ...p, membership: p.membership || cachedMembershipName(p.memberId) }));
+}
+
 function sessionView(session) {
   return {
     id: session.id,
@@ -194,6 +205,7 @@ function sessionView(session) {
     bookedBy: session.bookedBy,
     bookedByName: session.bookedByName,
     hspBookingId: session.hspBookingId,
+    hspPlayers: hspPlayersView(session),
     eligibility: session.eligibility && ['open', 'scheduled', 'failed'].includes(session.status)
       ? {
           ...session.eligibility,
@@ -338,8 +350,8 @@ function classifyRejection(result) {
   const message = String(result.message || '');
   if (/blocked by a booking/i.test(message)) return 'blocked';
   if (/max(imum)? bookings/i.test(message)) return 'limit';
-  // No accepted membership - or the membership is already "in use" by another upcoming padel booking
-  // (all linked subscriptions have maxSimultaneousPerPerson = 1). Retrying won't change that.
+  // The booker or one of the invited players has no accepted membership - HSP rejects the whole
+  // booking then. Retrying with the same invite list won't change that.
   if (/required subscriptions?/i.test(message)) return 'subscription';
   if (result.status === 401 || message === 'Token abgelaufen') return 'auth';
   return 'unclear';
@@ -525,6 +537,7 @@ function adoptOwnBooking(session, booking) {
   session.bookedAt = new Date().toISOString();
   session.hspBookingId = booking.id;
   session.invitedMemberIds = session.participants.map(p => p.memberId).filter(id => id !== bookerId && ids.includes(id));
+  session.hspPlayers = hspPlayersFrom(ids, session.eligibility?.players || []);
   delete session.failure;
   cancelRun(session.id);
 
@@ -661,15 +674,6 @@ async function checkQuota(token, memberId, slotStart, ignoreBookingId = null) {
         (p.memberId === memberId || p.invitedMemberId === memberId) && p.status === 1));
     const starts = relevant.map(b => new Date(b.startDate).getTime());
 
-    // A booking this member made themselves that isn't over yet blocks their membership
-    const active = relevant
-      .filter(b => b.participations.some(p => p.memberId === memberId && p.status === 1))
-      .filter(b => new Date(b.endDate).getTime() > Date.now())
-      .sort((a, b) => a.startDate.localeCompare(b.startDate))[0];
-    if (active) {
-      return { state: 'busy', note: activeBookingNote(active.startDate) };
-    }
-
     const sameDay = starts.filter(t => t >= dayStart.getTime() && t < dayEnd.getTime()).length;
     if (sameDay >= rules.maxPerDay) {
       return { state: 'over', note: `schon ${sameDay} Buchung(en) an dem Tag` };
@@ -699,24 +703,9 @@ function bookingHistory(memberId) {
 }
 
 // Booker states: 'ok' (token + membership + quota), 'unknown' (something not checkable),
-// 'over' (quota probably used up), 'busy' (membership already used by another upcoming padel
-// booking), 'noCard' (no membership that allows booking), 'noToken' (no usable HSP token / no account)
-const BOOKER_STATE_ORDER = { ok: 0, unknown: 1, over: 2, busy: 3, noCard: 4, noToken: 5 };
-
-function activeBookingNote(startDate) {
-  return `hat schon eine offene Padel-Buchung (${formatBerlin(startDate)}) – HSP erlaubt pro Mitgliedschaft nur eine gleichzeitig`;
-}
-
-/**
- * HSP allows only one upcoming booking per membership (maxSimultaneousPerPerson = 1 on every linked
- * subscription): a member who booked another slot through the bot can't book again until it's over.
- */
-function activeBotBooking(memberId, excludeSessionId) {
-  return sessions
-    .filter(s => s.id !== excludeSessionId && s.status === 'booked' && s.bookedBy === memberId)
-    .filter(s => new Date(s.endDate).getTime() > Date.now())
-    .sort((a, b) => a.startDate.localeCompare(b.startDate))[0] || null;
-}
+// 'over' (quota probably used up), 'noCard' (no membership that allows booking),
+// 'noToken' (no usable HSP token / no account)
+const BOOKER_STATE_ORDER = { ok: 0, unknown: 1, over: 2, noCard: 3, noToken: 4 };
 const canProbablyBook = state => state === 'ok' || state === 'unknown';
 
 // Everyone except 'noCard' may hold a membership (noToken: can't be checked, so give the benefit of the doubt)
@@ -728,7 +717,7 @@ const cardHolderCount = players => players.filter(p => mayHoldCard(p.state)).len
  * with a membership in total (the booker counts, so at least one invited player needs one too).
  */
 function eligibilityOf(players) {
-  const list = players.map(({ memberId, name, state, note }) => ({ memberId, name, state, note }));
+  const list = players.map(({ memberId, name, state, note, membership }) => ({ memberId, name, state, note, membership: membership || null }));
   const enoughCards = cardHolderCount(list) >= MIN_CARD_HOLDERS;
   return {
     checkedAt: new Date().toISOString(),
@@ -815,7 +804,7 @@ async function checkMembership(token, memberId, slotStart) {
   if (match.endDate && new Date(match.endDate).getTime() < new Date(slotStart).getTime()) {
     return { state: 'unknown', note: `Mitgliedschaft endet vor dem Termin (${formatBerlin(match.endDate)})` };
   }
-  return { state: 'ok', note: null };
+  return { state: 'ok', note: null, membership: match.name || null };
 }
 
 /**
@@ -833,26 +822,31 @@ async function checkBookers(session) {
     }
 
     const membership = await checkMembership(token, participant.memberId, session.startDate);
+    base.membership = membership.membership || null;
     if (membership.state === 'noCard') {
       results.push({ ...base, state: 'noCard', note: membership.note });
       continue;
     }
 
-    const ownBooking = activeBotBooking(participant.memberId, session.id);
-    if (ownBooking) {
-      results.push({ ...base, state: 'busy', note: activeBookingNote(ownBooking.startDate) });
-      continue;
-    }
-
     const quota = await checkQuota(token, participant.memberId, session.startDate, session.hspBookingId);
     // A definite quota problem wins; otherwise any uncertainty (membership or quota) makes it 'unknown'
-    if (quota.state === 'busy' || quota.state === 'over' || (quota.state === 'ok' && membership.state === 'ok')) {
+    if (quota.state === 'over' || (quota.state === 'ok' && membership.state === 'ok')) {
       results.push({ ...base, state: quota.state, note: quota.note });
     } else {
       results.push({ ...base, state: 'unknown', note: [membership.note, quota.note].filter(Boolean).join('; ') });
     }
   }
   return results;
+}
+
+/**
+ * Name of the member's padel membership if it was checked recently, else null
+ */
+function cachedMembershipName(memberId) {
+  const memberships = membershipCache.get(memberId)?.memberships;
+  if (!memberships) return null;
+  const match = findAccepted(memberships, membershipRules.court) || findAccepted(memberships, membershipRules.rental);
+  return match?.name || null;
 }
 
 /**
@@ -898,10 +892,10 @@ function describeBookers(players) {
   return players.map(p => `${p.name} – ${p.note}`).join(', ');
 }
 
-const SHORT_REASONS = { noToken: 'Token abgelaufen', noCard: 'keine Mitgliedschaft', over: 'Limit erreicht', busy: 'schon eine offene Buchung' };
+const SHORT_REASONS = { noToken: 'Token abgelaufen', noCard: 'keine Mitgliedschaft', over: 'Limit erreicht' };
 
 // Why HSP turned a booker down for good (see classifyRejection)
-const DROP_REASONS = { limit: 'Limit erreicht', auth: 'Token abgelaufen', subscription: 'Mitgliedschaft fehlt oder ist durch eine andere Buchung belegt' };
+const DROP_REASONS = { limit: 'Limit erreicht', auth: 'Token abgelaufen', subscription: 'Mitgliedschaft fehlt' };
 
 /**
  * One short line for the status when nobody could book, e.g. "Niemand konnte buchen (Limit erreicht)".
@@ -1063,6 +1057,16 @@ function recheckFailedSessionsSoon() {
 // ============ BOOKING RUN ============
 
 /**
+ * Who is in the HSP booking and with which membership (as far as the membership check could tell)
+ */
+function hspPlayersFrom(memberIds, checked) {
+  return [...new Set(memberIds)].map(memberId => ({
+    memberId,
+    membership: checked.find(c => c.memberId === memberId)?.membership || null
+  }));
+}
+
+/**
  * The slot is taken - if it's by the session's own players (e.g. booked by hand in HSP), mark the
  * session booked instead of failing. Returns true if adopted.
  */
@@ -1115,6 +1119,10 @@ async function runBooking(sessionId) {
       addLog(session, `⚠️ Laut Prüfung ${NOT_ENOUGH_CARDS} – HSP lehnt die Buchung vermutlich ab, versuche es trotzdem`);
     }
     addLog(session, `Booker-Reihenfolge: ${candidates.map(c => c.note ? `${c.name} (${c.note})` : c.name).join(' → ')}`);
+    const noCardIds = new Set(checked.filter(c => c.state === 'noCard').map(c => c.memberId));
+    if (noCardIds.size > 0) {
+      addLog(session, `Nicht eingeladen (keine Padel-Mitgliedschaft, HSP würde sonst die ganze Buchung ablehnen): ${checked.filter(c => noCardIds.has(c.memberId)).map(c => c.name).join(', ')}`);
+    }
     touch(session);
 
     const opensAt = bookingOpensAt(session.startDate).getTime();
@@ -1139,7 +1147,8 @@ async function runBooking(sessionId) {
       if (pool.length === 0) break; // nobody left who could still succeed
 
       const booker = pool[index % pool.length];
-      const invited = session.participants.filter(p => p.memberId !== booker.memberId);
+      // HSP rejects the whole booking if one invited player has no membership - leave those out
+      const invited = session.participants.filter(p => p.memberId !== booker.memberId && !noCardIds.has(p.memberId));
       attempts++;
 
       const result = await postSlotBooking(session, booker, invited);
@@ -1150,15 +1159,21 @@ async function runBooking(sessionId) {
         session.bookedAt = new Date().toISOString();
         session.hspBookingId = result.bookingId;
         session.invitedMemberIds = invited.map(p => p.memberId);
+        session.hspPlayers = hspPlayersFrom([booker.memberId, ...session.invitedMemberIds], checked);
         forgetMemberBookings(session.participants.map(p => p.memberId));
         console.log(`🎾 Padel-Session ${session.id} gebucht von ${booker.name} nach ${attempts} Versuch(en)`);
         setStatus(session, 'booked', `Gebucht von ${booker.name} (${attempts} Versuch(e))`);
 
         // Players who joined while the booking was running weren't part of the invite
         for (const p of session.participants) {
-          if (p.memberId !== booker.memberId && !session.invitedMemberIds.includes(p.memberId)) {
+          if (p.memberId !== booker.memberId && !session.invitedMemberIds.includes(p.memberId) && !noCardIds.has(p.memberId)) {
             await addLateJoiner(session, p);
           }
+        }
+        const leftOut = session.participants.filter(p => noCardIds.has(p.memberId));
+        if (leftOut.length > 0) {
+          addLog(session, `Nicht in der HSP-Buchung (keine Padel-Mitgliedschaft): ${leftOut.map(p => p.name).join(', ')}`);
+          touch(session);
         }
         return;
       }
@@ -1243,9 +1258,14 @@ async function addLateJoiner(session, participant) {
     bookingId: parseInt(session.hspBookingId),
     organizationId: null
   });
-  addLog(session, result.success
-    ? `${participant.name} zur HSP-Buchung hinzugefügt`
-    : `${participant.name} konnte nicht hinzugefügt werden (${result.message}) – bitte von ${session.bookedByName} in HSP einladen lassen`);
+  if (result.success) {
+    session.hspPlayers = [...(session.hspPlayers || []), { memberId: participant.memberId, membership: null }];
+    addLog(session, `${participant.name} zur HSP-Buchung hinzugefügt`);
+  } else if (classifyRejection(result) === 'subscription') {
+    addLog(session, `${participant.name} konnte nicht in die HSP-Buchung (keine Padel-Mitgliedschaft)`);
+  } else {
+    addLog(session, `${participant.name} konnte nicht hinzugefügt werden (${result.message}) – bitte von ${session.bookedByName} in HSP einladen lassen`);
+  }
   touch(session);
 }
 

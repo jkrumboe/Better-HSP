@@ -26,12 +26,11 @@ HSP erlaubt pro Person **1 Buchung pro Tag** und **3 in 7 Tagen** (so zeigt es d
 
 1. Gültiger HSP-Token (abgelaufene Tokens ohne Refresh werden übersprungen)
 2. Mitgliedschaft, die Padel-Buchungen erlaubt (HSP verlangt eine verknüpfte Mitgliedschaft, z. B. „Rückschlagspiele Club“ oder „Sportpass Unlimited“; die Liste wird beim Start aus HSP gelesen). Geprüft über `/subscribers/my-memberships`, 15 min gecacht.
-   Außerdem gilt pro Mitgliedschaft **nur eine offene Buchung gleichzeitig** (`maxSimultaneousPerPerson: 1`): wer schon einen kommenden Padel-Termin selbst gebucht hat, kann erst nach diesem Termin wieder buchen. HSP antwortet sonst mit „you need to have one of the required subscriptions“. Solche Spieler gelten als `schon eine offene Buchung` und werden erst zuletzt versucht.
 3. Freies Kontingent laut eigenen Padel-Buchungen in HSP – geprüft als rollierendes 7-Tage-Fenster, d. h. auch Buchungen *nach* dem Termin zählen
 4. Wer in den letzten 30 Tagen am wenigsten über den Bot gebucht hat
 5. Wer am längsten nicht gebucht hat, dann wer zuerst beigetreten ist
 
-HSP verlangt pro Buchung **mindestens 2 Spieler mit Mitgliedschaft** (der Booker + mind. ein eingeladener Spieler). Weitere Mitspieler dürfen ohne Mitgliedschaft dabei sein. Spieler ohne gültigen Token zählen dabei als „vielleicht mit Mitgliedschaft“, weil sie nicht prüfbar sind.
+HSP verlangt pro Buchung **mindestens 2 Spieler mit Mitgliedschaft** (der Booker + mind. ein eingeladener Spieler). **Jeder eingeladene Spieler braucht ebenfalls eine Mitgliedschaft** – ist auch nur einer ohne dabei, lehnt HSP die ganze Buchung ab („you need to have one of the required subscriptions“). Der Bot lädt deshalb nur Spieler ein, die laut Prüfung eine Mitgliedschaft haben (oder nicht prüfbar sind); die anderen stehen im Verlauf als „Nicht eingeladen“ und auf der gebuchten Karte gestrichelt („nicht in der HSP-Buchung“). Bei gebuchten Sessions zeigt jeder Spieler-Chip in der HSP-Buchung die verwendete Mitgliedschaft. Spieler ohne gültigen Token zählen dabei als „vielleicht mit Mitgliedschaft“, weil sie nicht prüfbar sind.
 
 Spieler ohne Mitgliedschaft oder über dem Limit werden nicht übersprungen, sondern erst versucht, wenn alle anderen abgelehnt wurden (die Prüfung ist nur eine Schätzung). Ist etwas nicht prüfbar, zählt der Spieler als „unklar“ und wird nach den sicheren Kandidaten versucht.
 
@@ -40,7 +39,7 @@ Spieler ohne Mitgliedschaft oder über dem Limit werden nicht übersprungen, son
 Der Bot prüft das nicht erst beim Buchen, sondern schon beim Anlegen, Beitreten und Austreten, beim Serverstart, nach jedem Token-Import und alle 30 min:
 
 - Spieler, die nicht buchen können, bekommen ein gelbes **!** am Namen (Grund im Tooltip).
-- Kann **niemand** in der Session buchen, erscheint auf der Karte „Niemand kann buchen“ mit Kurzgrund pro Spieler (`Token abgelaufen`, `keine Mitgliedschaft`, `Limit erreicht`, `schon eine offene Buchung`). Typischer Fall: jemand ohne Mitgliedschaft ist allein in der Session und braucht einen Mitspieler, der für beide bucht.
+- Kann **niemand** in der Session buchen, erscheint auf der Karte „Niemand kann buchen“ mit Kurzgrund pro Spieler (`Token abgelaufen`, `keine Mitgliedschaft`, `Limit erreicht`). Typischer Fall: jemand ohne Mitgliedschaft ist allein in der Session und braucht einen Mitspieler, der für beide bucht.
 - Haben weniger als 2 Spieler eine Mitgliedschaft, erscheint stattdessen „Zu wenige Spieler mit Mitgliedschaft“. Der Bot versucht die Buchung trotzdem (die Prüfung ist nur eine Schätzung), meldet beim Fehlschlag aber genau diesen Grund.
 
 ### Automatisch neu versuchen
