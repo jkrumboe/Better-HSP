@@ -11,6 +11,7 @@ import { fileURLToPath } from 'url';
 
 // Importiere die bestehenden Module
 import { getTokenInfo, loadTokens } from './token-manager.js';
+import { getMemberBookings, participationOf } from './member-bookings.js';
 import {
   initializeScheduler,
   setWaitlistHandler,
@@ -676,33 +677,11 @@ app.get('/api/my-bookings', async (req, res) => {
       return res.status(401).json({ error: 'HSP-Account nicht verknüpft. Bitte via Uni-SSO anmelden oder Token importieren.' });
     }
 
-    const from = new Date();
-    from.setDate(from.getDate() - 30);
-    from.setHours(0, 0, 0, 0);
-
-    // Bookings someone else made and invited this member to have them as invitedMemberId
-    const filter = {
-      '$or': [
-        { 'participations.memberId': memberInfo.memberId },
-        { 'participations.invitedMemberId': memberInfo.memberId }
-      ],
-      startDate: { '$gte': from.toISOString() }
-    };
-    const encoded = encodeURIComponent(JSON.stringify(filter));
-    const response = await fetch(`${API_URL}/bookings?s=${encoded}&join=participations&limit=100&page=1&sort=startDate,ASC`, {
-      headers: { 'Accept': 'application/json', 'Authorization': `Bearer ${token}` }
-    });
-    if (!response.ok) {
-      throw new Error(`API Fehler: ${response.status}`);
-    }
-
-    const data = await response.json();
-    const bookings = data.data || [];
+    // Courses and padel court rentals come from the same query (shared with the padel code)
+    const bookings = await getMemberBookings(token, memberInfo.memberId, { fresh: true });
     const userBookings = {};
     bookings.forEach(booking => {
-      const participation = booking.participations?.find(p =>
-        p.memberId === memberInfo.memberId || p.invitedMemberId === memberInfo.memberId
-      );
+      const participation = participationOf(booking, memberInfo.memberId);
       if (participation) {
         userBookings[booking.id] = {
           participationStatus: participation.status, // 1 = booked, 3 = waiting list
@@ -788,10 +767,11 @@ async function formatCourses(courses, userBookings = {}) {
   }
 
   // Format für Frontend
+  // Court rentals have no course title - name them like HSP's "Meine Termine" does
+  const PADEL_RENTAL_PRODUCT_ID = 129;
   return courses.map(c => ({
     id: c.id,
-    description: courseTitles[c.linkedProductId] || c.description,
-    level: c.description,
+    description: c.linkedProductId === PADEL_RENTAL_PRODUCT_ID ? 'Padel Tennis (Platzmiete)' : (courseTitles[c.linkedProductId] || c.description),    level: c.description,
     startDate: c.startDate,
     endDate: c.endDate,
     location: locationNames[c.productId] || c.location || 'Unbekannt',

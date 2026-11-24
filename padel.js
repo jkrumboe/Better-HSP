@@ -9,6 +9,7 @@ import path from 'path';
 import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 import { getUser, getValidUserToken } from './user-store.js';
+import { getMemberBookings, forgetMemberBookings } from './member-bookings.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SESSIONS_FILE = path.join(__dirname, 'data', 'padel-sessions.json');
@@ -413,6 +414,98 @@ async function postParticipation(token, payload) {
   }
 }
 
+// ============ MEMBER BOOKINGS ============
+
+/**
+ * The member's padel court bookings, from the same (cached) query as "Meine Buchungen"
+ * Returns { ok: true, bookings } or { ok: false, status }
+ */
+async function getMemberPadelBookings(token, memberId) {
+  try {
+    const bookings = await getMemberBookings(token, memberId);
+    return { ok: true, bookings: bookings.filter(b => b.linkedProductId === PADEL_PRODUCT_ID && b.status !== 2) };
+  } catch (error) {
+    return { ok: false, status: error.status || error.message };
+  }
+}
+
+/**
+ * Is this court booking one of the session's players' (e.g. booked by hand in the HSP app)?
+ * Asks one participant at a time and stops at the first hit. Returns the booking incl. participations, or null.
+ */
+async function findOwnBooking(session, courtBooking) {
+  if (courtBooking.linkedProductId !== PADEL_PRODUCT_ID) return null; // course / staff block
+  for (const participant of session.participants) {
+    const token = getUser(participant.memberId) ? await getValidUserToken(participant.memberId) : null;
+    if (!token) continue;
+    try {
+      const result = await getMemberPadelBookings(token, participant.memberId);
+      const own = result.ok && result.bookings.find(b => b.id === courtBooking.id);
+      if (own) return own;
+    } catch {
+      // HSP not reachable for this member - try the next one
+    }
+  }
+  return null;
+}
+
+/**
+ * Marks the session as booked with a booking that was made outside the bot (or not recognized as a success)
+ */
+function adoptOwnBooking(session, booking) {
+  const parts = booking.participations || [];
+  const inBooking = id => parts.some(p => p.memberId === id || p.invitedMemberId === id);
+  const booker = parts.find(p => p.memberId && !p.invitedMemberId) || parts.find(p => p.memberId);
+  const bookerId = booker?.memberId ?? null;
+  const bookerName = session.participants.find(p => p.memberId === bookerId)?.name
+    || (bookerId && getUser(bookerId)?.name)
+    || 'jemand außerhalb des Bots';
+
+  session.bookedBy = bookerId;
+  session.bookedByName = bookerName;
+  session.bookedAt = new Date().toISOString();
+  session.hspBookingId = booking.id;
+  session.invitedMemberIds = session.participants.map(p => p.memberId).filter(id => id !== bookerId && inBooking(id));
+  delete session.failure;
+  cancelRun(session.id);
+
+  const missing = session.participants.filter(p => p.memberId !== bookerId && !inBooking(p.memberId));
+  if (missing.length > 0) {
+    addLog(session, `Nicht in der HSP-Buchung: ${missing.map(p => p.name).join(', ')} – bitte in HSP einladen lassen`);
+  }
+  console.log(`🎾 Padel-Session ${session.id}: eigene HSP-Buchung ${booking.id} gefunden (${bookerName})`);
+  setStatus(session, 'booked', `In HSP gebucht von ${bookerName} (Buchung ${booking.id})`);
+}
+
+/**
+ * Sessions that aren't marked booked, but whose slot holds a booking of their own players
+ * (booked by hand in HSP): mark them booked. One public request for the whole range, then member
+ * lookups only for slots that are actually taken.
+ */
+async function syncOwnBookings() {
+  const now = Date.now();
+  const candidates = sessions.filter(s =>
+    ['open', 'scheduled', 'failed'].includes(s.status) && new Date(s.endDate).getTime() > now);
+  if (candidates.length === 0) return [];
+
+  const from = new Date(Math.min(...candidates.map(s => new Date(s.startDate).getTime())));
+  const to = new Date(Math.max(...candidates.map(s => new Date(s.endDate).getTime())));
+  const taken = await fetchCourtBookings(from, to);
+
+  for (const session of candidates) {
+    const start = new Date(session.startDate);
+    const end = new Date(session.endDate);
+    const booking = taken.find(b => b.linkedProductId === PADEL_PRODUCT_ID
+      && new Date(b.startDate) < end && new Date(b.endDate) > start
+      && !sessions.some(s => s.hspBookingId === b.id)); // already linked to another session
+    if (!booking) continue;
+    const own = await findOwnBooking(session, booking);
+    // Status may have changed while we were asking HSP
+    if (own && ['open', 'scheduled', 'failed'].includes(session.status)) adoptOwnBooking(session, own);
+  }
+  return taken;
+}
+
 /**
  * Checks the member's padel bookings against the HSP limits (per day / per period).
  * The exact HSP counting window isn't documented, so the period limit is checked as a rolling
@@ -431,26 +524,15 @@ async function checkQuota(token, memberId, slotStart, ignoreBookingId = null) {
   const rangeEnd = berlinToUtc(day.year, day.month, day.day + P);
 
   try {
-    // Bookings someone else made and invited this member to count towards the limit too
-    // (HSP stores those with invitedMemberId)
-    const filter = {
-      '$or': [
-        { 'participations.memberId': memberId },
-        { 'participations.invitedMemberId': memberId }
-      ],
-      linkedProductId: { '$in': [PADEL_PRODUCT_ID] },
-      status: { '$ne': 2 },
-      startDate: { '$gte': rangeStart.toISOString(), '$lt': rangeEnd.toISOString() }
-    };
-    const encoded = encodeURIComponent(JSON.stringify(filter));
-    const res = await fetch(`${API_URL}/bookings?s=${encoded}&join=participations&limit=100&page=1`, {
-      headers: { 'Accept': 'application/json', 'Authorization': `Bearer ${token}` }
-    });
-    if (!res.ok) return { state: 'unknown', note: `Kontingent nicht prüfbar (${res.status})` };
+    const result = await getMemberPadelBookings(token, memberId);
+    if (!result.ok) return { state: 'unknown', note: `Kontingent nicht prüfbar (${result.status})` };
 
-    const data = await res.json();
-    const relevant = (data.data || [])
+    const relevant = result.bookings
       .filter(b => b.id !== ignoreBookingId)
+      .filter(b => {
+        const t = new Date(b.startDate).getTime();
+        return t >= rangeStart.getTime() && t < rangeEnd.getTime();
+      })
       .filter(b => b.participations?.some(p =>
         (p.memberId === memberId || p.invitedMemberId === memberId) && p.status === 1));
     const starts = relevant.map(b => new Date(b.startDate).getTime());
@@ -765,14 +847,10 @@ function isAutoRetryCandidate(session) {
  * Restarts a failed session once its slot is free and someone in it can probably book.
  * Cheap when nothing changed: one public GET per session, the player check only once the slot is free.
  */
-async function recheckFailedSession(session) {
-  let blocker;
-  try {
-    const taken = await fetchCourtBookings(new Date(session.startDate), new Date(session.endDate));
-    blocker = taken.find(b => b.id !== session.hspBookingId);
-  } catch {
-    return; // HSP not reachable - next check
-  }
+async function recheckFailedSession(session, taken) {
+  const start = new Date(session.startDate);
+  const end = new Date(session.endDate);
+  const blocker = taken.find(b => b.id !== session.hspBookingId && new Date(b.startDate) < end && new Date(b.endDate) > start);
   if (blocker || !isAutoRetryCandidate(session)) return;
 
   // The slot was free at the last failure too: don't hammer HSP with the same situation
@@ -805,8 +883,16 @@ function recheckFailedSessions() {
   if (failedRecheck) return failedRecheck;
   lastFailedRecheckAt = Date.now();
   failedRecheck = (async () => {
+    // One public request covers all sessions: first pick up bookings made by hand in HSP,
+    // then restart failed sessions whose slot is free again
+    let taken;
+    try {
+      taken = await syncOwnBookings();
+    } catch {
+      return; // HSP not reachable - next check
+    }
     for (const session of sessions.filter(isAutoRetryCandidate)) {
-      await recheckFailedSession(session);
+      await recheckFailedSession(session, taken);
     }
   })()
     .catch(error => console.error('Padel failed-session recheck failed:', error))
@@ -822,6 +908,17 @@ function recheckFailedSessionsSoon() {
 }
 
 // ============ BOOKING RUN ============
+
+/**
+ * The slot is taken - if it's by the session's own players (e.g. booked by hand in HSP), mark the
+ * session booked instead of failing. Returns true if adopted.
+ */
+async function adoptIfOwn(session, blocker) {
+  const own = await findOwnBooking(session, blocker).catch(() => null);
+  if (!own) return false;
+  adoptOwnBooking(session, own);
+  return true;
+}
 
 async function runBooking(sessionId) {
   if (runningBookings.has(sessionId)) return;
@@ -850,6 +947,7 @@ async function runBooking(sessionId) {
 
     // A slot that is already occupied (rental, course, staff block) can't be booked - don't even try
     const blocker = await findSlotBlocker(session);
+    if (blocker && await adoptIfOwn(session, blocker)) return;
     if (blocker) {
       addLog(session, `Slot belegt durch HSP-Buchung ${blocker.id}${blocker.description ? ` („${blocker.description}“)` : ''} – keine Buchungsversuche`);
       failSession(session, blockerReason(blocker), { slotTaken: true });
@@ -899,6 +997,7 @@ async function runBooking(sessionId) {
         session.bookedAt = new Date().toISOString();
         session.hspBookingId = result.bookingId;
         session.invitedMemberIds = invited.map(p => p.memberId);
+        forgetMemberBookings(session.participants.map(p => p.memberId));
         console.log(`🎾 Padel-Session ${session.id} gebucht von ${booker.name} nach ${attempts} Versuch(en)`);
         setStatus(session, 'booked', `Gebucht von ${booker.name} (${attempts} Versuch(e))`);
 
@@ -927,6 +1026,7 @@ async function runBooking(sessionId) {
           // "blocked by a booking on <date>" names only the day: it can be a booking on the slot
           // (nobody can book - stop) or the booker's own booking that day (only this booker is out)
           if (slotBlocker === undefined) slotBlocker = await findSlotBlocker(session);
+          if (slotBlocker && await adoptIfOwn(session, slotBlocker)) return;
           if (slotBlocker) {
             lastMessage = result.message;
             break; // retrying a taken slot only burdens the HSP server
@@ -951,11 +1051,13 @@ async function runBooking(sessionId) {
     const drops = [...droppedBookers.values()];
     const everyoneDropped = rotation.every(c => droppedBookers.has(c.memberId));
     if (slotBlocker) {
+      // The own-booking check already ran when slotBlocker was found
       failSession(session, blockerReason(slotBlocker), { slotTaken: true });
     } else if (everyoneDropped && drops.length > 0 && drops.every(kind => DROP_REASONS[kind])) {
       failSession(session, `Niemand konnte buchen (${[...new Set(drops.map(kind => DROP_REASONS[kind]))].join(', ')})`);
     } else {
       const blocker = await findSlotBlocker(session);
+      if (blocker && await adoptIfOwn(session, blocker)) return;
       if (blocker) failSession(session, blockerReason(blocker), { slotTaken: true });
       else if (preferred.length === 0) failSession(session, shortFailReason(checked));
       else failSession(session, 'HSP hat die Buchung abgelehnt');

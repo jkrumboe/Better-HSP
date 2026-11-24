@@ -54,6 +54,8 @@ HSP vergleicht Datumsfilter in deutscher Ortszeit (ein `…Z`-Wert wird um den B
 
 Schlägt eine Buchung fehl, zeigt die Karte nur den Kurzgrund (z. B. „Niemand konnte buchen (Limit erreicht)“, „Platz war schon vergeben“, „HSP hat die Buchung abgelehnt“). Versuche und die genaue HSP-Antwort stehen im Verlauf. Fehlgeschlagene Sessions können per „Erneut versuchen“ neu gestartet werden.
 
+Wurde der Slot von Spielern der Session **von Hand in HSP** gebucht, erkennt der Bot das und setzt die Session auf „Gebucht“ (Status „In HSP gebucht von …“). Geprüft wird beim Buchungslauf, wenn der Slot belegt ist, und mit dem Check für fehlgeschlagene Sessions (stündlich, beim Öffnen des Padel-Tabs alle 5 min): ein öffentlicher Request für alle Court-Buchungen, danach nur für belegte Slots die eigenen Buchungen der Teilnehmer – einer nach dem anderen, bis die Buchung gefunden ist (60 s gecacht, dieselbe Abfrage nutzt auch die Limit-Prüfung).
+
 ## Kalender
 
 - **Kalender abonnieren** (webcal) – einmal auf dem Handy hinzufügen. Alle eigenen Sessions erscheinen automatisch: geplant = vorläufig, gebucht = bestätigt (mit Erinnerung 1 h vorher), abgesagt = storniert.
