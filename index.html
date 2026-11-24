@@ -983,6 +983,11 @@
       font-size: 0.9rem;
     }
 
+    .player-booker {
+      color: var(--muted);
+      font-size: 0.9em;
+    }
+
     .my-bookings-past {
       margin-top: 10px;
     }
@@ -3690,6 +3695,7 @@
     const WEEKDAYS_SHORT = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
     const ICON_PIN = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>';
     const ICON_USER = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>';
+    const ICON_USERS = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><circle cx="17" cy="9" r="2.8"/><path d="M16.5 14.2c3 .2 5 2.4 5 5.3"/></svg>';
     const ICON_CLOCK = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
 
     function courseCardHtml(c) {
@@ -3730,6 +3736,7 @@
               ${c.timeRange ? `<span class="meta-row">${ICON_CLOCK}<span>${c.timeRange} Uhr</span></span>` : ''}
               <span class="meta-row">${ICON_PIN}<span>${escapeHtml(c.location)}</span></span>
               ${trainers}
+              ${c.extraMeta || ''}
             </div>
             ${map}
           </div>
@@ -3788,11 +3795,27 @@
         location: booking.location,
         locationId: booking.locationId,
         supervisors: booking.supervisors,
+        extraMeta: bookingPlayersHtml(booking.players),
         cardClass: `${isWaiting ? 'waiting' : 'booked'} ${isPast ? 'past' : ''}`,
         statusBadge: isWaiting
           ? '<span class="status-badge waiting">⏳ Warteliste</span>'
           : '<span class="status-badge">✓ Angemeldet</span>'
       });
+    }
+
+    /**
+     * "Spieler: Du, Johannes Schick (gebucht), +1 weiteres Mitglied" - names come from the app's users,
+     * HSP members without an app account are only counted
+     */
+    function bookingPlayersHtml(players) {
+      if (!players?.length) return '';
+      const named = players.filter(p => p.isMe || p.name).map(p => {
+        const name = p.isMe ? 'Du' : escapeHtml(p.name);
+        return p.isBooker ? `${name} <span class="player-booker">(gebucht)</span>` : name;
+      });
+      const unknown = players.length - named.length;
+      if (unknown > 0) named.push(`+${unknown} ${unknown === 1 ? 'weiteres Mitglied' : 'weitere Mitglieder'}`);
+      return `<span class="meta-row" title="Spieler">${ICON_USERS}<span>${named.join(', ')}</span></span>`;
     }
 
     document.getElementById('myBookingsRefreshBtn').addEventListener('click', loadMyBookings);
@@ -4562,7 +4585,11 @@
 
         // ---- Warning: nobody can book ----
         let warning = '';
-        if (isPlanning && s.eligibility && s.eligibility.players.length > 0 && !s.eligibility.anyCanBook) {
+        if (isPlanning && s.eligibility && s.eligibility.enoughCards === false && s.participants.length >= s.minPlayers) {
+          // HSP needs at least 2 players with a membership (the booker + one invited player)
+          const noCard = s.eligibility.players.filter(e => e.state === 'noCard').map(e => escapeHtml(e.name)).join(', ');
+          warning = `<div class="padel-eligibility-warning"><strong>Zu wenige Spieler mit Mitgliedschaft</strong>HSP verlangt mind. ${s.minCardHolders} Spieler mit Mitgliedschaft${noCard ? ` · ohne: ${noCard}` : ''}</div>`;
+        } else if (isPlanning && s.eligibility && s.eligibility.enoughCards !== false && s.eligibility.players.length > 0 && !s.eligibility.anyCanBook) {
           // Short reasons only - the full detail is in the player's tooltip
           const SHORT_REASON = { noToken: 'Token abgelaufen', noCard: 'keine Mitgliedschaft', over: 'Limit erreicht', busy: 'schon eine offene Buchung' };
           const reasons = s.eligibility.players

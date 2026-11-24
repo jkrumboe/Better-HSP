@@ -31,6 +31,8 @@ HSP erlaubt pro Person **1 Buchung pro Tag** und **3 in 7 Tagen** (so zeigt es d
 4. Wer in den letzten 30 Tagen am wenigsten über den Bot gebucht hat
 5. Wer am längsten nicht gebucht hat, dann wer zuerst beigetreten ist
 
+HSP verlangt pro Buchung **mindestens 2 Spieler mit Mitgliedschaft** (der Booker + mind. ein eingeladener Spieler). Weitere Mitspieler dürfen ohne Mitgliedschaft dabei sein. Spieler ohne gültigen Token zählen dabei als „vielleicht mit Mitgliedschaft“, weil sie nicht prüfbar sind.
+
 Spieler ohne Mitgliedschaft oder über dem Limit werden nicht übersprungen, sondern erst versucht, wenn alle anderen abgelehnt wurden (die Prüfung ist nur eine Schätzung). Ist etwas nicht prüfbar, zählt der Spieler als „unklar“ und wird nach den sicheren Kandidaten versucht.
 
 ### Kann überhaupt jemand buchen?
@@ -39,6 +41,7 @@ Der Bot prüft das nicht erst beim Buchen, sondern schon beim Anlegen, Beitreten
 
 - Spieler, die nicht buchen können, bekommen ein gelbes **!** am Namen (Grund im Tooltip).
 - Kann **niemand** in der Session buchen, erscheint auf der Karte „Niemand kann buchen“ mit Kurzgrund pro Spieler (`Token abgelaufen`, `keine Mitgliedschaft`, `Limit erreicht`, `schon eine offene Buchung`). Typischer Fall: jemand ohne Mitgliedschaft ist allein in der Session und braucht einen Mitspieler, der für beide bucht.
+- Haben weniger als 2 Spieler eine Mitgliedschaft, erscheint stattdessen „Zu wenige Spieler mit Mitgliedschaft“. Der Bot versucht die Buchung trotzdem (die Prüfung ist nur eine Schätzung), meldet beim Fehlschlag aber genau diesen Grund.
 
 ### Automatisch neu versuchen
 

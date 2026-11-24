@@ -52,7 +52,10 @@ import {
   retrySession,
   getCalendarFeed,
   getSessionIcs,
-  refreshPadelEligibilityFor
+  refreshPadelEligibilityFor,
+  getBookingPlayers,
+  importPadelBookings,
+  syncMemberPadelBookings
 } from './padel.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -690,7 +693,18 @@ app.get('/api/my-bookings', async (req, res) => {
       }
     });
 
-    const formatted = await formatCourses(bookings.filter(b => userBookings[b.id]), userBookings);
+    // Court bookings made by hand in HSP show up in the padel tab too (no extra request)
+    importPadelBookings(memberInfo.memberId, bookings);
+
+    const own = bookings.filter(b => userBookings[b.id]);
+    const formatted = await formatCourses(own, userBookings);
+    // Who plays: HSP participations + padel session, names from the app's users
+    formatted.forEach((booking, i) => {
+      const players = getBookingPlayers(own[i]);
+      if (players) {
+        booking.players = players.map(p => ({ ...p, isMe: p.memberId === memberInfo.memberId }));
+      }
+    });
     res.json({ bookings: formatted, total: formatted.length });
   } catch (error) {
     console.error('Eigene Buchungen laden Fehler:', error);
@@ -1050,6 +1064,8 @@ app.get('/api/padel/slots', requireUser, async (req, res) => {
 });
 
 app.get('/api/padel/sessions', requireUser, (req, res) => {
+  // Court bookings this member made by hand in HSP - arrive via WebSocket once imported
+  syncMemberPadelBookings(req.user.memberId).catch(error => console.error('Padel sync failed:', error));
   res.json({ sessions: listSessions() });
 });
 
