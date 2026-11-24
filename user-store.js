@@ -207,10 +207,19 @@ export async function getValidUserToken(memberId, { minValidityMs = 60000 } = {}
 const refreshInFlight = new Map();
 
 async function refreshUserToken(memberId, user) {
+  const fallback = () => (isTokenValid(user.accessToken) ? user.accessToken : null);
+  // Kein Refresh-Token (nie vorhanden oder nach Fehlschlag verworfen): nicht bei delcom anfragen
+  if (!user.refreshToken) return fallback();
+
+  // Genau EIN Versuch pro Refresh-Token: Schlägt er fehl, wird der Refresh-Token verworfen und nie
+  // wiederholt – erst ein neuer Login bringt einen neuen. Viele Stellen (Buchungsfenster im
+  // Sekundentakt, Polling, Statusabfragen, Keep-Alive) rufen das hier auf; ohne diese Regel
+  // würde delcom bei einem Fehler mit Refresh-Anfragen überflutet.
   const refreshed = await refreshAccessToken(user.refreshToken, {});
   if (!refreshed?.accessToken) {
-    // Refresh fehlgeschlagen: den alten Token weiterverwenden, solange er überhaupt noch gilt
-    return isTokenValid(user.accessToken) ? user.accessToken : null;
+    dropRefreshToken(memberId, user.refreshToken);
+    // Den alten Access-Token weiterverwenden, solange er überhaupt noch gilt
+    return fallback();
   }
 
   // Re-read before writing so we don't clobber concurrent updates of other users
@@ -224,6 +233,20 @@ async function refreshUserToken(memberId, user) {
   };
   saveUsers(users);
   return refreshed.accessToken;
+}
+
+function dropRefreshToken(memberId, rejectedRefreshToken) {
+  const users = loadUsers();
+  const current = users[memberId];
+  // Nur verwerfen, wenn inzwischen kein neuer Login einen anderen Refresh-Token gespeichert hat
+  if (!current || current.refreshToken !== rejectedRefreshToken) return;
+  users[memberId] = {
+    ...current,
+    refreshToken: null,
+    refreshTokenFailedAt: new Date().toISOString()
+  };
+  saveUsers(users);
+  console.warn(`⚠️ Token-Refresh für Mitglied ${memberId} fehlgeschlagen – kein weiterer Versuch, neuer Login nötig`);
 }
 
 /**

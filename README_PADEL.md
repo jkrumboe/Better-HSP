@@ -26,6 +26,7 @@ HSP erlaubt pro Person **1 Buchung pro Tag** und **2 in 7 Tagen** (Platz `108` s
 
 1. Gültiger HSP-Token (abgelaufene Tokens ohne Refresh werden übersprungen)
 2. Mitgliedschaft, die Padel-Buchungen erlaubt (HSP verlangt eine verknüpfte Mitgliedschaft, für den Platz `108` ist das „Rückschlagspiele Club“; die Liste wird beim Start aus HSP gelesen). Geprüft über `/subscribers/my-memberships`, 15 min gecacht.
+   Außerdem gilt pro Mitgliedschaft **nur eine offene Buchung gleichzeitig** (`maxSimultaneousPerPerson: 1`): wer schon einen kommenden Padel-Termin selbst gebucht hat, kann erst nach diesem Termin wieder buchen. HSP antwortet sonst mit „you need to have one of the required subscriptions“. Solche Spieler gelten als `schon eine offene Buchung` und werden erst zuletzt versucht.
 3. Freies Kontingent laut eigenen Padel-Buchungen in HSP – geprüft als rollierendes 7-Tage-Fenster, d. h. auch Buchungen *nach* dem Termin zählen
 4. Wer in den letzten 30 Tagen am wenigsten über den Bot gebucht hat
 5. Wer am längsten nicht gebucht hat, dann wer zuerst beigetreten ist
@@ -37,7 +38,7 @@ Spieler ohne Mitgliedschaft oder über dem Limit werden nicht übersprungen, son
 Der Bot prüft das nicht erst beim Buchen, sondern schon beim Anlegen, Beitreten und Austreten, beim Serverstart, nach jedem Token-Import und alle 30 min:
 
 - Spieler, die nicht buchen können, bekommen ein gelbes **!** am Namen (Grund im Tooltip).
-- Kann **niemand** in der Session buchen, erscheint auf der Karte „Niemand kann buchen“ mit Kurzgrund pro Spieler (`Token abgelaufen`, `keine Mitgliedschaft`, `Limit erreicht`). Typischer Fall: jemand ohne Mitgliedschaft ist allein in der Session und braucht einen Mitspieler, der für beide bucht.
+- Kann **niemand** in der Session buchen, erscheint auf der Karte „Niemand kann buchen“ mit Kurzgrund pro Spieler (`Token abgelaufen`, `keine Mitgliedschaft`, `Limit erreicht`, `schon eine offene Buchung`). Typischer Fall: jemand ohne Mitgliedschaft ist allein in der Session und braucht einen Mitspieler, der für beide bucht.
 
 ### Automatisch neu versuchen
 

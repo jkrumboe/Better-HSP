@@ -338,6 +338,9 @@ function classifyRejection(result) {
   const message = String(result.message || '');
   if (/blocked by a booking/i.test(message)) return 'blocked';
   if (/max(imum)? bookings/i.test(message)) return 'limit';
+  // No accepted membership - or the membership is already "in use" by another upcoming padel booking
+  // (all linked subscriptions have maxSimultaneousPerPerson = 1). Retrying won't change that.
+  if (/required subscriptions?/i.test(message)) return 'subscription';
   if (result.status === 401 || message === 'Token abgelaufen') return 'auth';
   return 'unclear';
 }
@@ -449,11 +452,20 @@ async function checkQuota(token, memberId, slotStart, ignoreBookingId = null) {
     if (!res.ok) return { state: 'unknown', note: `Kontingent nicht prüfbar (${res.status})` };
 
     const data = await res.json();
-    const starts = (data.data || [])
+    const relevant = (data.data || [])
       .filter(b => b.id !== ignoreBookingId)
       .filter(b => b.participations?.some(p =>
-        (p.memberId === memberId || p.invitedMemberId === memberId) && p.status === 1))
-      .map(b => new Date(b.startDate).getTime());
+        (p.memberId === memberId || p.invitedMemberId === memberId) && p.status === 1));
+    const starts = relevant.map(b => new Date(b.startDate).getTime());
+
+    // A booking this member made themselves that isn't over yet blocks their membership
+    const active = relevant
+      .filter(b => b.participations.some(p => p.memberId === memberId && p.status === 1))
+      .filter(b => new Date(b.endDate).getTime() > Date.now())
+      .sort((a, b) => a.startDate.localeCompare(b.startDate))[0];
+    if (active) {
+      return { state: 'busy', note: activeBookingNote(active.startDate) };
+    }
 
     const sameDay = starts.filter(t => t >= dayStart.getTime() && t < dayEnd.getTime()).length;
     if (sameDay >= rules.maxPerDay) {
@@ -484,9 +496,24 @@ function bookingHistory(memberId) {
 }
 
 // Booker states: 'ok' (token + membership + quota), 'unknown' (something not checkable),
-// 'over' (quota probably used up), 'noCard' (no membership that allows booking),
-// 'noToken' (no usable HSP token / no account)
-const BOOKER_STATE_ORDER = { ok: 0, unknown: 1, over: 2, noCard: 3, noToken: 4 };
+// 'over' (quota probably used up), 'busy' (membership already used by another upcoming padel
+// booking), 'noCard' (no membership that allows booking), 'noToken' (no usable HSP token / no account)
+const BOOKER_STATE_ORDER = { ok: 0, unknown: 1, over: 2, busy: 3, noCard: 4, noToken: 5 };
+
+function activeBookingNote(startDate) {
+  return `hat schon eine offene Padel-Buchung (${formatBerlin(startDate)}) – HSP erlaubt pro Mitgliedschaft nur eine gleichzeitig`;
+}
+
+/**
+ * HSP allows only one upcoming booking per membership (maxSimultaneousPerPerson = 1 on every linked
+ * subscription): a member who booked another slot through the bot can't book again until it's over.
+ */
+function activeBotBooking(memberId, excludeSessionId) {
+  return sessions
+    .filter(s => s.id !== excludeSessionId && s.status === 'booked' && s.bookedBy === memberId)
+    .filter(s => new Date(s.endDate).getTime() > Date.now())
+    .sort((a, b) => a.startDate.localeCompare(b.startDate))[0] || null;
+}
 const canProbablyBook = state => state === 'ok' || state === 'unknown';
 
 // ============ MEMBERSHIP CHECK ============
@@ -588,9 +615,15 @@ async function checkBookers(session) {
       continue;
     }
 
+    const ownBooking = activeBotBooking(participant.memberId, session.id);
+    if (ownBooking) {
+      results.push({ ...base, state: 'busy', note: activeBookingNote(ownBooking.startDate) });
+      continue;
+    }
+
     const quota = await checkQuota(token, participant.memberId, session.startDate, session.hspBookingId);
     // A definite quota problem wins; otherwise any uncertainty (membership or quota) makes it 'unknown'
-    if (quota.state === 'over' || (quota.state === 'ok' && membership.state === 'ok')) {
+    if (quota.state === 'busy' || quota.state === 'over' || (quota.state === 'ok' && membership.state === 'ok')) {
       results.push({ ...base, state: quota.state, note: quota.note });
     } else {
       results.push({ ...base, state: 'unknown', note: [membership.note, quota.note].filter(Boolean).join('; ') });
@@ -642,7 +675,10 @@ function describeBookers(players) {
   return players.map(p => `${p.name} – ${p.note}`).join(', ');
 }
 
-const SHORT_REASONS = { noToken: 'Token abgelaufen', noCard: 'keine Mitgliedschaft', over: 'Limit erreicht' };
+const SHORT_REASONS = { noToken: 'Token abgelaufen', noCard: 'keine Mitgliedschaft', over: 'Limit erreicht', busy: 'schon eine offene Buchung' };
+
+// Why HSP turned a booker down for good (see classifyRejection)
+const DROP_REASONS = { limit: 'Limit erreicht', auth: 'Token abgelaufen', subscription: 'Mitgliedschaft fehlt oder ist durch eine andere Buchung belegt' };
 
 /**
  * One short line for the status when nobody could book, e.g. "Niemand konnte buchen (Limit erreicht)".
@@ -922,10 +958,8 @@ async function runBooking(sessionId) {
     const everyoneDropped = rotation.every(c => droppedBookers.has(c.memberId));
     if (slotBlocker) {
       failSession(session, blockerReason(slotBlocker), { slotTaken: true });
-    } else if (everyoneDropped && drops.length > 0 && drops.every(kind => kind === 'limit')) {
-      failSession(session, 'Niemand konnte buchen (Limit erreicht)');
-    } else if (everyoneDropped && drops.length > 0 && drops.every(kind => kind === 'auth')) {
-      failSession(session, 'Niemand konnte buchen (Token abgelaufen)');
+    } else if (everyoneDropped && drops.length > 0 && drops.every(kind => DROP_REASONS[kind])) {
+      failSession(session, `Niemand konnte buchen (${[...new Set(drops.map(kind => DROP_REASONS[kind]))].join(', ')})`);
     } else {
       const blocker = await findSlotBlocker(session);
       if (blocker) failSession(session, blockerReason(blocker), { slotTaken: true });
@@ -1153,7 +1187,7 @@ export function cancelSession(user, sessionId) {
   const session = findSession(sessionId);
   if (!session) return { error: 'Session nicht gefunden' };
   if (session.createdBy !== user.memberId) return { error: 'Nur der Ersteller kann die Session absagen' };
-  if (!['open', 'scheduled'].includes(session.status)) return { error: `Session ist ${STATUS_LABELS[session.status].toLowerCase()} und kann nicht mehr abgesagt werden` };
+  if (!['open', 'scheduled', 'failed'].includes(session.status)) return { error: `Session ist ${STATUS_LABELS[session.status].toLowerCase()} und kann nicht mehr abgesagt werden` };
 
   cancelRun(session.id);
   setStatus(session, 'cancelled', `Abgesagt von ${user.name}`);

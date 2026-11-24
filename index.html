@@ -4553,7 +4553,7 @@
         const players = s.participants.map(p => {
           const isBooker = p.memberId === s.bookedBy;
           const check = eligibilityOf(p.memberId);
-          const blocked = check && ['over', 'noCard', 'noToken'].includes(check.state);
+          const blocked = check && ['over', 'busy', 'noCard', 'noToken'].includes(check.state);
           const title = [p.email, isBooker ? 'hat gebucht' : null, blocked ? check.note : null].filter(Boolean).join(' – ');
           return `<span class="padel-player ${isBooker ? 'booker' : ''} ${blocked ? 'blocked' : ''}" title="${escapeHtml(title)}"><span class="padel-avatar">${blocked ? '!' : escapeHtml(padelInitials(p.name))}</span>${escapeHtml(p.name)}</span>`;
         }).join('');
@@ -4564,7 +4564,7 @@
         let warning = '';
         if (isPlanning && s.eligibility && s.eligibility.players.length > 0 && !s.eligibility.anyCanBook) {
           // Short reasons only - the full detail is in the player's tooltip
-          const SHORT_REASON = { noToken: 'Token abgelaufen', noCard: 'keine Mitgliedschaft', over: 'Limit erreicht' };
+          const SHORT_REASON = { noToken: 'Token abgelaufen', noCard: 'keine Mitgliedschaft', over: 'Limit erreicht', busy: 'schon eine offene Buchung' };
           const reasons = s.eligibility.players
             .filter(e => SHORT_REASON[e.state])
             .map(e => `${escapeHtml(e.name)}: ${SHORT_REASON[e.state]}`)
@@ -4579,10 +4579,12 @@
         }
         const isCreator = s.createdBy === myId;
         const aloneCreator = isCreator && s.participants.length === 1; // leaving == cancelling, show only the trash
-        if (isActive && isIn && s.status !== 'booking' && !(isPlanning && aloneCreator)) {
+        const isFailed = s.status === 'failed';
+        const cancellable = isPlanning || isFailed;
+        if ((isActive || isFailed) && isIn && s.status !== 'booking' && !(cancellable && aloneCreator)) {
           actions.push(`<button class="padel-ghost" onclick="leavePadelSession('${s.id}')">Ich kann nicht</button>`);
         }
-        if (isCreator && isPlanning) {
+        if (isCreator && cancellable) {
           actions.push(`<button class="padel-ghost danger" onclick="cancelPadelSession('${s.id}')" title="Session absagen" aria-label="Session absagen">${PADEL_ICONS.trash}</button>`);
         }
         if (isActive && !isIn && free > 0) {

@@ -5,7 +5,6 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { getValidUserToken, listRefreshableUsers } from './user-store.js';
-import { isTokenValid } from './token-manager.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SCHEDULED_JOBS_FILE = path.join(__dirname, 'data', 'scheduled-jobs.json');
@@ -321,26 +320,29 @@ async function runPreflight(jobData) {
 // Refresh-Token selbst, kurz bevor sie ablaufen – so bleiben alle dauerhaft angemeldet.
 
 const KEEPALIVE_INTERVAL_MS = 5 * 60 * 1000;
-// Erneuern, sobald der Access-Token in weniger als 1 Tag abläuft. Schlägt der Refresh fehl,
-// bleibt so noch ein Tag, um sich neu anzumelden.
+// Erneuern spätestens, wenn der Access-Token in weniger als 1 Tag abläuft. Schlägt der Refresh
+// fehl, bleibt so noch ein Tag, um sich neu anzumelden.
 const KEEPALIVE_MIN_VALIDITY_MS = 24 * 60 * 60 * 1000;
-// Mitglieder ohne geplante Buchung: nach einem fehlgeschlagenen Refresh erst nach dieser Pause
-// erneut versuchen (ein verfallener Refresh-Token wird nicht wieder gültig – erst ein neuer Login)
-const KEEPALIVE_FAILURE_BACKOFF_MS = 60 * 60 * 1000;
+// Zusätzlich erneuern, sobald der Access-Token älter als 12 h ist. Der (opake) Refresh-Token hat
+// eine eigene, kürzere Laufzeit als der ~7-Tage-Access-Token: würde erst kurz vor Ablauf des
+// Access-Tokens erneuert, wäre der Refresh-Token dann schon verfallen („Refresh token expired“).
+const KEEPALIVE_REFRESH_AFTER_MS = 12 * 60 * 60 * 1000;
 const KEEPALIVE_WARNING_PREFIX = 'HSP-Login abgelaufen';
 
 let keepAliveTimer = null;
 let keepAliveBusy = false;
-// memberId -> { refreshToken, at }: letzter fehlgeschlagener Refresh
-const keepAliveFailures = new Map();
 
 /**
- * Ab welcher Restlaufzeit erneuert wird: 1 Tag, aber höchstens die halbe Token-Laufzeit.
- * Gilt ein neuer Token kürzer als 1 Tag, würde sonst bei jedem Tick (alle 5 Min.) erneuert.
+ * Ab welcher Restlaufzeit erneuert wird: sobald der Token älter als 12 h ist, spätestens aber
+ * 1 Tag (bzw. bei kurzlebigen Tokens die halbe Laufzeit) vor Ablauf. Der Schwellwert bleibt
+ * immer unter der Laufzeit – sonst würde ein frischer Token bei jedem Tick erneut erneuert.
  */
 function keepAliveThresholdMs(lifetimeMs) {
   if (!lifetimeMs || lifetimeMs <= 0) return KEEPALIVE_MIN_VALIDITY_MS;
-  return Math.min(KEEPALIVE_MIN_VALIDITY_MS, lifetimeMs / 2);
+  return Math.max(
+    lifetimeMs - KEEPALIVE_REFRESH_AFTER_MS,
+    Math.min(KEEPALIVE_MIN_VALIDITY_MS, lifetimeMs / 2)
+  );
 }
 
 /**
@@ -370,27 +372,15 @@ async function keepAliveTick(getExtraMemberIds) {
 
     const refreshable = new Map(listRefreshableUsers().map(u => [u.memberId, u]));
     const memberIds = new Set([...activeIds, ...refreshable.keys()]);
-    const now = Date.now();
 
     for (const memberId of memberIds) {
       const info = refreshable.get(memberId);
       const isActive = activeIds.has(memberId);
 
-      // Inaktive Mitglieder mit kürzlich fehlgeschlagenem Refresh (gleicher Refresh-Token) überspringen
-      const failure = keepAliveFailures.get(memberId);
-      if (!isActive && failure && failure.refreshToken === info?.refreshToken
-          && now - failure.at < KEEPALIVE_FAILURE_BACKOFF_MS) {
-        continue;
-      }
-
+      // Ein fehlgeschlagener Refresh verwirft den Refresh-Token (user-store) – danach fragt
+      // getValidUserToken delcom für dieses Mitglied nicht mehr an, bis es sich neu anmeldet.
       const minValidityMs = keepAliveThresholdMs(info?.lifetimeMs);
       const token = await getValidUserToken(memberId, { minValidityMs });
-      // Kein Token, oder Refresh fehlgeschlagen (es kam nur der alte, bald ablaufende Token zurück)
-      if (!token || !isTokenValid(token, minValidityMs)) {
-        keepAliveFailures.set(memberId, { refreshToken: info?.refreshToken, at: now });
-      } else {
-        keepAliveFailures.delete(memberId);
-      }
 
       if (!isActive) continue;
       const memberJobs = pendingJobs.filter(j => j.memberId === memberId);
